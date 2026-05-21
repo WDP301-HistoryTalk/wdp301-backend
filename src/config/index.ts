@@ -4,14 +4,6 @@ import path from 'path';
 // Load environment variables from .env file
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const requiredEnv = (name: string): string => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Environment variable ${name} is required but missing!`);
-  }
-  return value;
-};
-
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',

@@ -1,13 +1,12 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { AppError } from '../utils/app-error';
 import { logger } from '../utils/logger';
 import { ZodError } from 'zod';
 
 export const errorHandler: ErrorRequestHandler = (
   err: any,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   let statusCode = err.statusCode || 500;
   let status = err.status || 'error';
