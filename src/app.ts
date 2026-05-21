@@ -2,8 +2,10 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import 'express-async-errors'; // Handles async controller exceptions automatically
+import swaggerUi from 'swagger-ui-express';
+import 'express-async-errors';
 import { config } from './config';
+import { swaggerSpec } from './config/swagger';
 import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { AppError } from './utils/app-error';
@@ -11,10 +13,8 @@ import { logger } from './utils/logger';
 
 const app = express();
 
-// Set security HTTP headers
 app.use(helmet());
 
-// Enable CORS
 app.use(
   cors({
     origin: config.corsOrigin,
@@ -22,19 +22,14 @@ app.use(
   })
 );
 
-// HTTP request logging
-if (config.nodeEnv === 'development') {
-  app.use(morgan('dev'));
-} else {
-  // Production simple logs
-  app.use(morgan('combined'));
+// Suppress request logs during tests
+if (config.nodeEnv !== 'test') {
+  app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
 }
 
-// Parse JSON and urlencoded request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Standard health check endpoint
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
     status: 'success',
@@ -44,15 +39,21 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Register api router
-app.use('/api', apiRouter);
+// OpenAPI docs — available at /api-docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
-// Fallback error for undefined routes
+logger.info(`Swagger docs available at /api-docs`);
+
+app.use('/api/v1', apiRouter);
+
 app.use('*', (req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-// Register global error middleware
 app.use(errorHandler);
 
 export default app;
