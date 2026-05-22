@@ -1,11 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IAnswerDetail {
-  questionId: mongoose.Types.ObjectId;
-  selectedOption: number;
-  isCorrect: boolean;
-}
-
 export interface IQuizSession extends Document {
   quizId: mongoose.Types.ObjectId;
   uid: mongoose.Types.ObjectId;
@@ -13,19 +7,9 @@ export interface IQuizSession extends Document {
   startTime: Date;
   endTime?: Date;
   score?: number;
-  answers: IAnswerDetail[];
   createdAt: Date;
   updatedAt: Date;
 }
-
-const answerDetailSchema = new Schema<IAnswerDetail>(
-  {
-    questionId: { type: Schema.Types.ObjectId, required: true },
-    selectedOption: { type: Number, required: true },
-    isCorrect: { type: Boolean, required: true },
-  },
-  { _id: false }
-);
 
 const quizSessionSchema = new Schema<IQuizSession>(
   {
@@ -35,7 +19,6 @@ const quizSessionSchema = new Schema<IQuizSession>(
     startTime: { type: Date, required: true },
     endTime: { type: Date },
     score: { type: Number },
-    answers: [answerDetailSchema],
   },
   { timestamps: true }
 );
