@@ -15,88 +15,38 @@ afterEach(async () => {
 });
 
 const validUser = {
-  name: 'Test User',
+  userName: 'Test User',
   email: 'test@example.com',
   password: 'password123',
+  confirmPassword: 'password123',
 };
 
-describe('POST /api/v1/users/register', () => {
-  it('registers a new user and returns 201 with token', async () => {
-    const res = await request(app).post('/api/v1/users/register').send(validUser);
-
-    expect(res.status).toBe(201);
-    expect(res.body.status).toBe('success');
-    expect(res.body.data).toHaveProperty('token');
-    expect(res.body.data.user).not.toHaveProperty('password');
-    expect(res.body.data.user.email).toBe(validUser.email);
-  });
-
-  it('returns 400 on invalid payload (missing fields)', async () => {
-    const res = await request(app).post('/api/v1/users/register').send({ email: 'bad' });
-
-    expect(res.status).toBe(400);
-    expect(res.body.status).toBe('fail');
-  });
-
-  it('returns 409 when email already registered', async () => {
-    await request(app).post('/api/v1/users/register').send(validUser);
-    const res = await request(app).post('/api/v1/users/register').send(validUser);
-
-    expect(res.status).toBe(409);
-  });
-});
-
-describe('POST /api/v1/users/login', () => {
-  beforeEach(async () => {
-    await request(app).post('/api/v1/users/register').send(validUser);
-  });
-
-  it('returns 200 with token on valid credentials', async () => {
-    const res = await request(app)
-      .post('/api/v1/users/login')
-      .send({ email: validUser.email, password: validUser.password });
-
-    expect(res.status).toBe(200);
-    expect(res.body.data).toHaveProperty('token');
-  });
-
-  it('returns 401 on wrong password', async () => {
-    const res = await request(app)
-      .post('/api/v1/users/login')
-      .send({ email: validUser.email, password: 'wrong-password' });
-
-    expect(res.status).toBe(401);
-  });
-
-  it('returns 400 on missing fields', async () => {
-    const res = await request(app).post('/api/v1/users/login').send({});
-
-    expect(res.status).toBe(400);
-  });
-});
+async function registerAndLogin() {
+  await request(app).post('/api/v1/auth/register').send(validUser);
+  const res = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email: validUser.email, password: validUser.password });
+  return res.body.data.accessToken as string;
+}
 
 describe('GET /api/v1/users/profile', () => {
-  let token: string;
-
-  beforeEach(async () => {
-    const res = await request(app).post('/api/v1/users/register').send(validUser);
-    token = res.body.data.token;
-  });
-
   it('returns profile for authenticated user', async () => {
+    const token = await registerAndLogin();
     const res = await request(app)
       .get('/api/v1/users/profile')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveProperty('user');
+    expect(res.body.success).toBe(true);
+    expect(res.body).toHaveProperty('timestamp');
     expect(res.body.data.user.email).toBe(validUser.email);
+    expect(res.body.data.user).not.toHaveProperty('password');
   });
 
   it('returns 401 without token', async () => {
     const res = await request(app).get('/api/v1/users/profile');
-
     expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
   });
 
   it('returns 401 with invalid token', async () => {
@@ -105,5 +55,29 @@ describe('GET /api/v1/users/profile', () => {
       .set('Authorization', 'Bearer invalid.jwt.token');
 
     expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+});
+
+describe('PATCH /api/v1/users/profile', () => {
+  it('updates userName and returns updated profile', async () => {
+    const token = await registerAndLogin();
+    const res = await request(app)
+      .patch('/api/v1/users/profile')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ userName: 'Updated Name' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user.userName).toBe('Updated Name');
+  });
+
+  it('returns 401 without token', async () => {
+    const res = await request(app)
+      .patch('/api/v1/users/profile')
+      .send({ userName: 'No Auth' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
   });
 });

@@ -18,6 +18,6 @@ describe('GET /api/unknown', () => {
     const res = await request(app).get('/api/route-that-does-not-exist');
 
     expect(res.status).toBe(404);
-    expect(res.body.status).toBe('fail');
+    expect(res.body.success).toBe(false);
   });
 });
