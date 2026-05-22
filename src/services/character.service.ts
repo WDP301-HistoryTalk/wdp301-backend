@@ -12,6 +12,7 @@ export interface CreateCharacterInput {
   lifespan?: string;
   era?: EventEra;
   personality?: string;
+  side?: string;
 }
 
 export interface UpdateCharacterInput extends Partial<CreateCharacterInput> {
@@ -46,7 +47,11 @@ export class CharacterService {
   }
 
   static async findById(id: string): Promise<ICharacter> {
-    const character = await Character.findOne({ characterId: id, deletedAt: { $exists: false } });
+    // Try characterId first, then _id
+    let character = await Character.findOne({ characterId: id, deletedAt: { $exists: false } });
+    if (!character && mongoose.isValidObjectId(id)) {
+      character = await Character.findOne({ _id: id, deletedAt: { $exists: false } });
+    }
     if (!character) {
       throw new AppError('Character not found', 404);
     }
@@ -70,10 +75,16 @@ export class CharacterService {
       filter.era = era;
     }
 
-    const [content, totalElements] = await Promise.all([
+    const [characters, totalElements] = await Promise.all([
       Character.find(filter).skip(skip).limit(pageSize).sort({ createdAt: -1 }),
       Character.countDocuments(filter),
     ]);
+
+    // Map to include id field for FE compatibility
+    const content = characters.map(char => ({
+      ...char.toObject(),
+      id: char._id.toString(),
+    }));
 
     const totalPages = Math.ceil(totalElements / pageSize);
 
@@ -103,11 +114,19 @@ export class CharacterService {
   }
 
   static async update(id: string, data: UpdateCharacterInput): Promise<ICharacter> {
-    const character = await Character.findOneAndUpdate(
+    // Try update by characterId first, then _id
+    let character = await Character.findOneAndUpdate(
       { characterId: id, deletedAt: { $exists: false } },
       { ...data, updatedAt: new Date() },
       { returnDocument: 'after', runValidators: true }
     );
+    if (!character && mongoose.isValidObjectId(id)) {
+      character = await Character.findOneAndUpdate(
+        { _id: id, deletedAt: { $exists: false } },
+        { ...data, updatedAt: new Date() },
+        { returnDocument: 'after', runValidators: true }
+      );
+    }
 
     if (!character) {
       throw new AppError('Character not found', 404);
@@ -117,10 +136,17 @@ export class CharacterService {
   }
 
   static async delete(id: string): Promise<void> {
-    const character = await Character.findOneAndDelete({
+    // Try delete by characterId first, then _id
+    let character = await Character.findOneAndDelete({
       characterId: id,
       deletedAt: { $exists: false },
     });
+    if (!character && mongoose.isValidObjectId(id)) {
+      character = await Character.findOneAndDelete({
+        _id: id,
+        deletedAt: { $exists: false },
+      });
+    }
 
     if (!character) {
       throw new AppError('Character not found', 404);
@@ -134,11 +160,19 @@ export class CharacterService {
   }
 
   static async softDelete(id: string): Promise<ICharacter> {
-    const character = await Character.findOneAndUpdate(
+    // Try soft delete by characterId first, then _id
+    let character = await Character.findOneAndUpdate(
       { characterId: id, deletedAt: { $exists: false } },
       { deletedAt: new Date(), isActive: false },
       { returnDocument: 'after' }
     );
+    if (!character && mongoose.isValidObjectId(id)) {
+      character = await Character.findOneAndUpdate(
+        { _id: id, deletedAt: { $exists: false } },
+        { deletedAt: new Date(), isActive: false },
+        { returnDocument: 'after' }
+      );
+    }
 
     if (!character) {
       throw new AppError('Character not found', 404);
@@ -148,13 +182,19 @@ export class CharacterService {
   }
 
   static async toggleActive(id: string): Promise<ICharacter> {
-    const character = await Character.findOne({ characterId: id, deletedAt: { $exists: false } });
+    // Find by characterId or _id
+    let character = await Character.findOne({ characterId: id, deletedAt: { $exists: false } });
+    if (!character && mongoose.isValidObjectId(id)) {
+      character = await Character.findOne({ _id: id, deletedAt: { $exists: false } });
+    }
     if (!character) {
       throw new AppError('Character not found', 404);
     }
 
+    // Toggle isActive
+    const query = character.characterId ? { characterId: character.characterId } : { _id: character._id };
     const updated = await Character.findOneAndUpdate(
-      { characterId: id },
+      query,
       { isActive: !character.isActive },
       { returnDocument: 'after' }
     );

@@ -24,7 +24,11 @@ export class HistoricalContextController {
     try {
       const { id } = req.params;
       const context = await HistoricalContextService.findById(id as string);
-      sendSuccess(res, { context }, 'Historical context fetched successfully');
+      const responseData = {
+        ...context.toObject(),
+        id: context._id.toString(),
+      };
+      sendSuccess(res, responseData, 'Historical context fetched successfully');
     } catch (error) {
       next(error);
     }
@@ -34,7 +38,11 @@ export class HistoricalContextController {
     try {
       const userId = req.user!.id;
       const context = await HistoricalContextService.create(userId, req.body);
-      sendSuccess(res, { context }, 'Historical context created successfully', 201);
+      const responseData = {
+        ...context.toObject(),
+        id: context._id.toString(),
+      };
+      sendSuccess(res, responseData, 'Historical context created successfully', 201);
     } catch (error) {
       next(error);
     }
@@ -44,7 +52,11 @@ export class HistoricalContextController {
     try {
       const { id } = req.params;
       const context = await HistoricalContextService.update(id as string, req.body);
-      sendSuccess(res, { context }, 'Historical context updated successfully');
+      const responseData = {
+        ...context.toObject(),
+        id: context._id.toString(),
+      };
+      sendSuccess(res, responseData, 'Historical context updated successfully');
     } catch (error) {
       next(error);
     }
@@ -64,7 +76,11 @@ export class HistoricalContextController {
     try {
       const { id } = req.params;
       const context = await HistoricalContextService.softDelete(id as string);
-      sendSuccess(res, { context }, 'Historical context soft-deleted successfully');
+      const responseData = {
+        ...context.toObject(),
+        id: context._id.toString(),
+      };
+      sendSuccess(res, responseData, 'Historical context soft-deleted successfully');
     } catch (error) {
       next(error);
     }
@@ -74,7 +90,12 @@ export class HistoricalContextController {
     try {
       const { id } = req.params;
       const context = await HistoricalContextService.toggleActive(id as string);
-      sendSuccess(res, { context, isActive: context.isActive }, 'Historical context active status toggled');
+      const responseData = {
+        ...context.toObject(),
+        id: context._id.toString(),
+        isActive: context.isActive,
+      };
+      sendSuccess(res, responseData, 'Historical context active status toggled');
     } catch (error) {
       next(error);
     }

@@ -33,7 +33,11 @@ export class CharacterController {
     try {
       const { id } = req.params;
       const character = await CharacterService.findById(id as string);
-      sendSuccess(res, { character }, 'Character fetched successfully');
+      const responseData = {
+        ...character.toObject(),
+        id: character._id.toString(),
+      };
+      sendSuccess(res, responseData, 'Character fetched successfully');
     } catch (error) {
       next(error);
     }
@@ -43,7 +47,12 @@ export class CharacterController {
     try {
       const userId = req.user!.id;
       const character = await CharacterService.create(userId, req.body);
-      sendSuccess(res, { character }, 'Character created successfully', 201);
+      // Return both _id (as id) and characterId for FE compatibility
+      const responseData = {
+        ...character.toObject(),
+        id: character._id.toString(),
+      };
+      sendSuccess(res, responseData, 'Character created successfully', 201);
     } catch (error) {
       next(error);
     }
@@ -53,7 +62,11 @@ export class CharacterController {
     try {
       const { id } = req.params;
       const character = await CharacterService.update(id as string, req.body);
-      sendSuccess(res, { character }, 'Character updated successfully');
+      const responseData = {
+        ...character.toObject(),
+        id: character._id.toString(),
+      };
+      sendSuccess(res, responseData, 'Character updated successfully');
     } catch (error) {
       next(error);
     }
@@ -73,7 +86,11 @@ export class CharacterController {
     try {
       const { id } = req.params;
       const character = await CharacterService.softDelete(id as string);
-      sendSuccess(res, { character }, 'Character soft-deleted successfully');
+      const responseData = {
+        ...character.toObject(),
+        id: character._id.toString(),
+      };
+      sendSuccess(res, responseData, 'Character soft-deleted successfully');
     } catch (error) {
       next(error);
     }
@@ -83,7 +100,12 @@ export class CharacterController {
     try {
       const { id } = req.params;
       const character = await CharacterService.toggleActive(id as string);
-      sendSuccess(res, { character, isActive: character.isActive }, 'Character active status toggled');
+      const responseData = {
+        ...character.toObject(),
+        id: character._id.toString(),
+        isActive: character.isActive,
+      };
+      sendSuccess(res, responseData, 'Character active status toggled');
     } catch (error) {
       next(error);
     }

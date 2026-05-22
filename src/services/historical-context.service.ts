@@ -41,7 +41,11 @@ export class HistoricalContextService {
   }
 
   static async findById(id: string): Promise<IHistoricalContext> {
-    const context = await HistoricalContext.findOne({ contextId: id, deletedAt: { $exists: false } }).populate('characterIds');
+    // Try contextId first, then _id
+    let context = await HistoricalContext.findOne({ contextId: id, deletedAt: { $exists: false } }).populate('characterIds');
+    if (!context && mongoose.isValidObjectId(id)) {
+      context = await HistoricalContext.findOne({ _id: id, deletedAt: { $exists: false } }).populate('characterIds');
+    }
     if (!context) {
       throw new AppError('Historical context not found', 404);
     }
@@ -69,7 +73,7 @@ export class HistoricalContextService {
       filter.category = category;
     }
 
-    const [content, totalElements] = await Promise.all([
+    const [contexts, totalElements] = await Promise.all([
       HistoricalContext.find(filter)
         .populate('characterIds')
         .skip(skip)
@@ -77,6 +81,12 @@ export class HistoricalContextService {
         .sort({ createdAt: -1 }),
       HistoricalContext.countDocuments(filter),
     ]);
+
+    // Map to include id field for FE compatibility
+    const content = contexts.map(ctx => ({
+      ...ctx.toObject(),
+      id: ctx._id.toString(),
+    }));
 
     const totalPages = Math.ceil(totalElements / pageSize);
 
@@ -92,11 +102,19 @@ export class HistoricalContextService {
   }
 
   static async update(id: string, data: UpdateHistoricalContextInput): Promise<IHistoricalContext> {
-    const context = await HistoricalContext.findOneAndUpdate(
+    // Try update by contextId first, then _id
+    let context = await HistoricalContext.findOneAndUpdate(
       { contextId: id, deletedAt: { $exists: false } },
       { ...data, updatedAt: new Date() },
       { returnDocument: 'after', runValidators: true }
     ).populate('characterIds');
+    if (!context && mongoose.isValidObjectId(id)) {
+      context = await HistoricalContext.findOneAndUpdate(
+        { _id: id, deletedAt: { $exists: false } },
+        { ...data, updatedAt: new Date() },
+        { returnDocument: 'after', runValidators: true }
+      ).populate('characterIds');
+    }
 
     if (!context) {
       throw new AppError('Historical context not found', 404);
@@ -106,10 +124,17 @@ export class HistoricalContextService {
   }
 
   static async delete(id: string): Promise<void> {
-    const context = await HistoricalContext.findOneAndDelete({
+    // Try delete by contextId first, then _id
+    let context = await HistoricalContext.findOneAndDelete({
       contextId: id,
       deletedAt: { $exists: false },
     });
+    if (!context && mongoose.isValidObjectId(id)) {
+      context = await HistoricalContext.findOneAndDelete({
+        _id: id,
+        deletedAt: { $exists: false },
+      });
+    }
 
     if (!context) {
       throw new AppError('Historical context not found', 404);
@@ -117,11 +142,19 @@ export class HistoricalContextService {
   }
 
   static async softDelete(id: string): Promise<IHistoricalContext> {
-    const context = await HistoricalContext.findOneAndUpdate(
+    // Try soft delete by contextId first, then _id
+    let context = await HistoricalContext.findOneAndUpdate(
       { contextId: id, deletedAt: { $exists: false } },
       { deletedAt: new Date(), isActive: false },
       { returnDocument: 'after' }
     );
+    if (!context && mongoose.isValidObjectId(id)) {
+      context = await HistoricalContext.findOneAndUpdate(
+        { _id: id, deletedAt: { $exists: false } },
+        { deletedAt: new Date(), isActive: false },
+        { returnDocument: 'after' }
+      );
+    }
 
     if (!context) {
       throw new AppError('Historical context not found', 404);
@@ -131,13 +164,19 @@ export class HistoricalContextService {
   }
 
   static async toggleActive(id: string): Promise<IHistoricalContext> {
-    const context = await HistoricalContext.findOne({ contextId: id, deletedAt: { $exists: false } });
+    // Find by contextId or _id
+    let context = await HistoricalContext.findOne({ contextId: id, deletedAt: { $exists: false } });
+    if (!context && mongoose.isValidObjectId(id)) {
+      context = await HistoricalContext.findOne({ _id: id, deletedAt: { $exists: false } });
+    }
     if (!context) {
       throw new AppError('Historical context not found', 404);
     }
 
+    // Toggle isActive
+    const query = context.contextId ? { contextId: context.contextId } : { _id: context._id };
     const updated = await HistoricalContext.findOneAndUpdate(
-      { contextId: id },
+      query,
       { isActive: !context.isActive },
       { returnDocument: 'after' }
     );
