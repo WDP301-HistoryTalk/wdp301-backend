@@ -11,7 +11,6 @@ export interface ICharacter extends Document {
   lifespan?: string;
   era?: EventEra;
   personality?: string;
-  side?: string;
   isPublished: boolean;
   isActive: boolean;
   deletedAt?: Date;
@@ -39,7 +38,6 @@ const characterSchema = new Schema<ICharacter>(
     lifespan: { type: String },
     era: { type: String, enum: Object.values(EventEra) },
     personality: { type: String },
-    side: { type: String },
     isPublished: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     deletedAt: { type: Date },

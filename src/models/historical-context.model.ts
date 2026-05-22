@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { EventEra, EventCategory } from '../types/enums';
+import { EventEra } from '../types/enums';
 
 export interface IHistoricalContext extends Document {
   contextId: string;
@@ -7,7 +7,6 @@ export interface IHistoricalContext extends Document {
   name: string;
   description?: string;
   era: EventEra;
-  category?: EventCategory;
   year?: number;
   period?: string;
   location?: string;
@@ -37,7 +36,6 @@ const historicalContextSchema = new Schema<IHistoricalContext>(
     name: { type: String, required: true, trim: true },
     description: { type: String },
     era: { type: String, enum: Object.values(EventEra), required: true },
-    category: { type: String, enum: Object.values(EventCategory) },
     year: { type: Number },
     period: { type: String },
     location: { type: String },
@@ -54,5 +52,13 @@ const historicalContextSchema = new Schema<IHistoricalContext>(
 historicalContextSchema.index({ era: 1 });
 historicalContextSchema.index({ name: 'text' });
 historicalContextSchema.index({ contextId: 1 });
+
+// Virtual field for yearLabel
+historicalContextSchema.virtual('yearLabel').get(function() {
+  if (this.year) {
+    return `${this.year} SCN`;
+  }
+  return undefined;
+});
 
 export default mongoose.model<IHistoricalContext>('HistoricalContext', historicalContextSchema);

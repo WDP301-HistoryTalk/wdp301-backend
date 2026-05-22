@@ -2,14 +2,13 @@ import mongoose from 'mongoose';
 import HistoricalContext, { IHistoricalContext } from '../models/historical-context.model';
 import Character from '../models/character.model';
 import { AppError } from '../utils/app-error';
-import { EventEra, EventCategory } from '../types/enums';
+import { EventEra } from '../types/enums';
 import { PaginationResult } from './character.service';
 
 export interface CreateHistoricalContextInput {
   name: string;
   description?: string;
   era: EventEra;
-  category?: EventCategory;
   year?: number;
   period?: string;
   location?: string;
@@ -27,7 +26,6 @@ export interface ListHistoricalContextsQuery {
   page?: number;
   limit?: number;
   era?: EventEra;
-  category?: EventCategory;
 }
 
 export class HistoricalContextService {
@@ -53,7 +51,7 @@ export class HistoricalContextService {
   }
 
   static async list(query: ListHistoricalContextsQuery): Promise<PaginationResult<IHistoricalContext>> {
-    const { search, era, category, page = 1, limit = 6 } = query;
+    const { search, era, page = 1, limit = 6 } = query;
     // FE sends 1-indexed, convert to 0-indexed for DB
     const currentPage = Math.max(0, page - 1);
     const pageSize = limit;
@@ -67,10 +65,6 @@ export class HistoricalContextService {
 
     if (era) {
       filter.era = era;
-    }
-
-    if (category) {
-      filter.category = category;
     }
 
     const [contexts, totalElements] = await Promise.all([

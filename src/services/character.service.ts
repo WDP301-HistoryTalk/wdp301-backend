@@ -12,7 +12,6 @@ export interface CreateCharacterInput {
   lifespan?: string;
   era?: EventEra;
   personality?: string;
-  side?: string;
 }
 
 export interface UpdateCharacterInput extends Partial<CreateCharacterInput> {

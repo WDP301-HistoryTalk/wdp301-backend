@@ -1,18 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { HistoricalContextService } from '../services/historical-context.service';
 import { sendSuccess } from '../utils/response';
-import { EventEra, EventCategory } from '../types/enums';
+import { EventEra } from '../types/enums';
 
 export class HistoricalContextController {
   static async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { search, page = '1', limit = '10', era, category } = req.query;
+      const { search, page = '1', limit = '10', era } = req.query;
       const result = await HistoricalContextService.list({
         search: search as string,
         page: parseInt(page as string, 10),
         limit: parseInt(limit as string, 10),
         era: era as EventEra,
-        category: category as EventCategory,
       });
       sendSuccess(res, result, 'Historical contexts fetched successfully');
     } catch (error) {
