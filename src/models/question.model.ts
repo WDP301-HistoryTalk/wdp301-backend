@@ -5,6 +5,7 @@ export interface IQuestion extends Document {
   content: string;
   options: string[];
   correctAnswer: number;
+  orderIndex: number;
   explanation?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -16,9 +17,12 @@ const questionSchema = new Schema<IQuestion>(
     content: { type: String, required: true },
     options: { type: [String], required: true },
     correctAnswer: { type: Number, required: true },
+    orderIndex: { type: Number, required: true, default: 0 },
     explanation: { type: String },
   },
   { timestamps: true }
 );
+
+questionSchema.index({ quizId: 1, orderIndex: 1 });
 
 export default mongoose.model<IQuestion>('Question', questionSchema);

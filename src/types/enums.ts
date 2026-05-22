@@ -4,16 +4,30 @@ export enum EntityType {
 }
 
 export enum EventEra {
-  Ancient = 'Ancient',
-  Medieval = 'Medieval',
-  Modern = 'Modern',
-  Contemporary = 'Contemporary',
+  Ancient = 'ANCIENT',
+  Medieval = 'MEDIEVAL',
+  Modern = 'MODERN',
+  Contemporary = 'CONTEMPORARY',
+}
+
+export enum EventCategory {
+  War = 'WAR',
+  Politics = 'POLITICS',
+  Culture = 'CULTURE',
+  Science = 'SCIENCE',
+  Religion = 'RELIGION',
+  Other = 'OTHER',
 }
 
 export enum UserRole {
-  Customer = 'customer',
-  ContentAdmin = 'content_admin',
-  SystemAdmin = 'system_admin',
+  Customer = 'CUSTOMER',
+  ContentAdmin = 'CONTENT_ADMIN',
+  SystemAdmin = 'SYSTEM_ADMIN',
+}
+
+export enum MessageRole {
+  User = 'USER',
+  Assistant = 'ASSISTANT',
 }
 
 export enum TierTitle {
