@@ -24,7 +24,7 @@ process.on('uncaughtException', (error: Error) => {
 });
 
 // Handle unhandled promise rejections (fatal asynchronous errors)
-process.on('unhandledRejection', (reason: any) => {
+process.on('unhandledRejection', (reason: unknown) => {
   logger.error('UNHANDLED REJECTION! Shutting down server gracefully...', reason);
   
   server.close(() => {

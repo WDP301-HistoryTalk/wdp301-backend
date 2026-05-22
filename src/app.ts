@@ -10,7 +10,6 @@ import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { globalLimiter } from './middlewares/rate-limit.middleware';
 import { AppError } from './utils/app-error';
-import { logger } from './utils/logger';
 
 const app = express();
 

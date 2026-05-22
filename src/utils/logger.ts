@@ -7,21 +7,21 @@ const COLORS = {
 };
 
 export const logger = {
-  info: (message: string, ...meta: any[]) => {
+  info: (message: string, ...meta: unknown[]) => {
     console.log(
       `${COLORS.info}[INFO] ${new Date().toISOString()}:${COLORS.reset} ${message}`,
       meta.length ? meta : ''
     );
   },
 
-  warn: (message: string, ...meta: any[]) => {
+  warn: (message: string, ...meta: unknown[]) => {
     console.warn(
       `${COLORS.warn}[WARN] ${new Date().toISOString()}:${COLORS.reset} ${message}`,
       meta.length ? meta : ''
     );
   },
 
-  error: (message: string, error?: any, ...meta: any[]) => {
+  error: (message: string, error?: unknown, ...meta: unknown[]) => {
     console.error(
       `${COLORS.error}[ERROR] ${new Date().toISOString()}:${COLORS.reset} ${message}`,
       error ? error : '',
@@ -29,7 +29,7 @@ export const logger = {
     );
   },
 
-  debug: (message: string, ...meta: any[]) => {
+  debug: (message: string, ...meta: unknown[]) => {
     if (process.env.NODE_ENV !== 'production') {
       console.log(
         `${COLORS.debug}[DEBUG] ${new Date().toISOString()}:${COLORS.reset} ${message}`,

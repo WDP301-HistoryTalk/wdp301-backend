@@ -3,31 +3,33 @@ import { ZodError } from 'zod';
 import { logger } from '../utils/logger';
 
 export const errorHandler: ErrorRequestHandler = (
-  err: any,
+  err: unknown,
   _req: Request,
   res: Response,
   _next: NextFunction
 ): void => {
-  let statusCode: number = err.statusCode || 500;
-  let message: string = err.message || 'Something went wrong';
+  const e = err as { statusCode?: number; message?: string; name?: string; stack?: string };
+
+  let statusCode = e.statusCode ?? 500;
+  let message = e.message ?? 'Something went wrong';
 
   if (err instanceof ZodError) {
     statusCode = 400;
-    message = err.issues.map((i: any) => i.message).join(', ');
+    message = err.issues.map((i) => i.message).join(', ');
   }
 
-  if (err.name === 'JsonWebTokenError') {
+  if (e.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token. Please log in again.';
   }
 
-  if (err.name === 'TokenExpiredError') {
+  if (e.name === 'TokenExpiredError') {
     statusCode = 401;
     message = 'Your token has expired. Please log in again.';
   }
 
   if (statusCode === 500) {
-    logger.error(`[500] ${err.message}`, err.stack);
+    logger.error(`[500] ${e.message}`, e.stack);
   } else {
     logger.warn(`[${statusCode}] ${message}`);
   }
@@ -39,6 +41,6 @@ export const errorHandler: ErrorRequestHandler = (
     message: isProduction && statusCode === 500 ? 'Internal server error' : message,
     data: null,
     timestamp: new Date().toISOString(),
-    ...(!isProduction && statusCode === 500 && { stack: err.stack }),
+    ...(!isProduction && statusCode === 500 && { stack: e.stack }),
   });
 };
