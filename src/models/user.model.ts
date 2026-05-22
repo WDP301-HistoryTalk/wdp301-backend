@@ -1,15 +1,19 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { UserRole } from '../types/enums';
 
 export interface IUser extends Document {
   name: string;
   email: string;
   password?: string;
-  role: string;
+  role: UserRole;
+  tierId?: mongoose.Types.ObjectId;
+  token: number;
+  lastActiveDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const userSchema: Schema = new Schema(
+const userSchema = new Schema<IUser>(
   {
     name: {
       type: String,
@@ -27,17 +31,26 @@ const userSchema: Schema = new Schema(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      select: false, // Don't return password by default in queries
+      select: false,
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: Object.values(UserRole),
+      default: UserRole.Customer,
+    },
+    tierId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Tier',
+    },
+    token: {
+      type: Number,
+      default: 0,
+    },
+    lastActiveDate: {
+      type: Date,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 export default mongoose.model<IUser>('User', userSchema);
