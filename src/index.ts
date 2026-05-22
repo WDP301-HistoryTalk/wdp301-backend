@@ -12,6 +12,7 @@ const startServer = async () => {
     logger.info(`=================================`);
     logger.info(`  Server running in [${config.nodeEnv}] mode`);
     logger.info(`  Listening on http://localhost:${config.port}`);
+    logger.info(`  API docs:  http://localhost:${config.port}/api-docs`);
     logger.info(`=================================`);
   });
 };
