@@ -9,6 +9,7 @@ import { swaggerSpec } from './config/swagger';
 import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { globalLimiter } from './middlewares/rate-limit.middleware';
+import { apiLogger } from './middlewares/api-logger.middleware';
 import { AppError } from './utils/app-error';
 
 const app = express();
@@ -30,6 +31,11 @@ if (config.nodeEnv !== 'test') {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(globalLimiter);
+
+// API Logger with chalk - tracks all API calls
+if (config.nodeEnv !== 'test') {
+  app.use(apiLogger);
+}
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
