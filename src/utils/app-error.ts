@@ -7,9 +7,9 @@ export class AppError extends Error {
   public readonly statusCode: number;
   public readonly status: string;
   public readonly isOperational: boolean;
-  public readonly errors: any;
+  public readonly errors: unknown;
 
-  constructor(message: string, statusCode: number, errors: any = null) {
+  constructor(message: string, statusCode: number, errors: unknown = null) {
     super(message);
 
     this.statusCode = statusCode;

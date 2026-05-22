@@ -1,58 +1,46 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { logger } from '../utils/logger';
 import { ZodError } from 'zod';
+import { logger } from '../utils/logger';
 
 export const errorHandler: ErrorRequestHandler = (
-  err: any,
+  err: unknown,
   _req: Request,
   res: Response,
   _next: NextFunction
 ): void => {
-  let statusCode = err.statusCode || 500;
-  let status = err.status || 'error';
-  let message = err.message || 'Something went wrong';
-  let errors = err.errors || null;
+  const e = err as { statusCode?: number; message?: string; name?: string; stack?: string };
 
-  // Handle Zod Schema Validation Errors
+  let statusCode = e.statusCode ?? 500;
+  let message = e.message ?? 'Something went wrong';
+
   if (err instanceof ZodError) {
     statusCode = 400;
-    status = 'fail';
-    message = 'Validation failed';
-    errors = err.issues.map((issue: any) => ({
-      field: issue.path.join('.'),
-      message: issue.message,
-    }));
+    message = err.issues.map((i) => i.message).join(', ');
   }
 
-  // Handle JWT specific errors
-  if (err.name === 'JsonWebTokenError') {
+  if (e.name === 'JsonWebTokenError') {
     statusCode = 401;
-    status = 'fail';
     message = 'Invalid token. Please log in again.';
   }
-  if (err.name === 'TokenExpiredError') {
+
+  if (e.name === 'TokenExpiredError') {
     statusCode = 401;
-    status = 'fail';
     message = 'Your token has expired. Please log in again.';
   }
 
-  // Log all errors
   if (statusCode === 500) {
-    logger.error(`Unhandled Exception: ${err.message}`, err);
+    logger.error(`[500] ${e.message}`, e.stack);
   } else {
-    logger.warn(`Operational Error: [${statusCode}] ${message}`, errors || '');
+    logger.warn(`[${statusCode}] ${message}`);
   }
 
-  // In production, keep 500 error messages generic to avoid leaking server data
   const isProduction = process.env.NODE_ENV === 'production';
-  const responseMessage = isProduction && statusCode === 500 
-    ? 'Internal server error' 
-    : message;
 
   res.status(statusCode).json({
-    status,
-    message: responseMessage,
-    ...(errors && { errors }),
-    ...(!isProduction && statusCode === 500 && { stack: err.stack }),
+    success: false,
+    message: isProduction && statusCode === 500 ? 'Internal server error' : message,
+    data: null,
+    timestamp: new Date().toISOString(),
+    ...(!isProduction && statusCode === 500 && { stack: e.stack }),
   });
 };

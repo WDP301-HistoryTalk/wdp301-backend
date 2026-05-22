@@ -12,6 +12,7 @@ const startServer = async () => {
     logger.info(`=================================`);
     logger.info(`  Server running in [${config.nodeEnv}] mode`);
     logger.info(`  Listening on http://localhost:${config.port}`);
+    logger.info(`  API docs:  http://localhost:${config.port}/api-docs`);
     logger.info(`=================================`);
   });
 };
@@ -23,7 +24,7 @@ process.on('uncaughtException', (error: Error) => {
 });
 
 // Handle unhandled promise rejections (fatal asynchronous errors)
-process.on('unhandledRejection', (reason: any) => {
+process.on('unhandledRejection', (reason: unknown) => {
   logger.error('UNHANDLED REJECTION! Shutting down server gracefully...', reason);
   
   server.close(() => {
