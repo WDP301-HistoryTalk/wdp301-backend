@@ -174,7 +174,7 @@ Yêu cầu role `ADMIN`.
   "email": "string",
   "password": "string",
   "confirmPassword": "string",
-  "roleName": "STAFF"
+  "roleName": "CONTENT_ADMIN"
 }
 ```
 

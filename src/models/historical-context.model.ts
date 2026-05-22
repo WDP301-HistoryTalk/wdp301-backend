@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 import { EventEra, EventCategory } from '../types/enums';
 
 export interface IHistoricalContext extends Document {
+  contextId: string;
   createdBy: mongoose.Types.ObjectId;
   name: string;
   description?: string;
@@ -20,8 +21,18 @@ export interface IHistoricalContext extends Document {
   updatedAt: Date;
 }
 
+const generateContextId = () => {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let id = 'ctx-';
+  for (let i = 0; i < 10; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+};
+
 const historicalContextSchema = new Schema<IHistoricalContext>(
   {
+    contextId: { type: String, unique: true, default: generateContextId },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true, trim: true },
     description: { type: String },
@@ -42,5 +53,6 @@ const historicalContextSchema = new Schema<IHistoricalContext>(
 
 historicalContextSchema.index({ era: 1 });
 historicalContextSchema.index({ name: 'text' });
+historicalContextSchema.index({ contextId: 1 });
 
 export default mongoose.model<IHistoricalContext>('HistoricalContext', historicalContextSchema);

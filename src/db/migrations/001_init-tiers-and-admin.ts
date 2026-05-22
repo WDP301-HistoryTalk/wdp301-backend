@@ -21,7 +21,7 @@ export async function up(db: Db): Promise<void> {
 
   const adminExists = await db.collection('users').findOne({ role: UserRole.SystemAdmin });
   if (!adminExists) {
-    const hashed = await bcrypt.hash('admin123456', 10);
+    const hashed = await bcrypt.hash('  ', 10);
     await db.collection('users').insertOne({
       userName: 'System Admin',
       email: 'admin@historytalk.dev',

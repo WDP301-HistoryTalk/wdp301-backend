@@ -3,12 +3,9 @@ import { logger } from '../utils/logger';
 
 export const apiLogger = (req: Request, res: Response, next: NextFunction): void => {
   const start = Date.now();
-  const { method, originalUrl, body } = req;
+  const { method, originalUrl } = req;
 
-  // Log request
-  logger.api.request(method, originalUrl, body);
-
-  // Capture response finish
+  // Capture response finish - only log errors
   res.on('finish', () => {
     const duration = Date.now() - start;
     const statusCode = res.statusCode;
@@ -16,9 +13,6 @@ export const apiLogger = (req: Request, res: Response, next: NextFunction): void
     if (statusCode >= 400) {
       // Error response
       logger.api.error(method, originalUrl, statusCode, res.locals.error || 'Request failed', duration);
-    } else {
-      // Success response
-      logger.api.response(method, originalUrl, statusCode, duration);
     }
   });
 
