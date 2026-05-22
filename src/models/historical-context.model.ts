@@ -7,13 +7,16 @@ export interface IHistoricalContext extends Document {
   description?: string;
   era: EventEra;
   year?: number;
-  isDC: boolean;
+  isBC: boolean;
   location?: string;
   imageUrl?: string;
   videoUrl?: string;
   characterIds: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
+  isPublished: boolean;
+  isActive: boolean;
+  deletedAt?: Date;
 }
 
 const historicalContextSchema = new Schema<IHistoricalContext>(
@@ -23,11 +26,14 @@ const historicalContextSchema = new Schema<IHistoricalContext>(
     description: { type: String },
     era: { type: String, enum: Object.values(EventEra), required: true },
     year: { type: Number },
-    isDC: { type: Boolean, default: false },
+    isBC: { type: Boolean, default: false },
     location: { type: String },
     imageUrl: { type: String },
     videoUrl: { type: String },
     characterIds: [{ type: Schema.Types.ObjectId, ref: 'Character' }],
+    isPublished: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
+    deletedAt: { type: Date }
   },
   { timestamps: true }
 );

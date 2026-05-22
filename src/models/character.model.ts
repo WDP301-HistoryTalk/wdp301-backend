@@ -11,6 +11,9 @@ export interface ICharacter extends Document {
   personality?: string;
   createdAt: Date;
   updatedAt: Date;
+  isPublished: boolean;
+  isActive: boolean;
+  deletedAt?: Date;
 }
 
 const characterSchema = new Schema<ICharacter>(
@@ -23,6 +26,9 @@ const characterSchema = new Schema<ICharacter>(
     bornDate: { type: Date },
     deathDate: { type: Date },
     personality: { type: String },
+    isPublished: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
+    deletedAt: { type: Date }
   },
   { timestamps: true }
 );
