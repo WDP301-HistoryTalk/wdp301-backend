@@ -1,4 +1,6 @@
-import chalk, { type ChalkInstance } from 'chalk';
+import chalk from 'chalk';
+
+type ChalkInstance = typeof chalk;
 
 const timestamp = () => chalk.gray(`[${new Date().toLocaleTimeString()}]`);
 
