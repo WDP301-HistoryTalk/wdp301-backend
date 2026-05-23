@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, optionalAuth } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/authorize.middleware';
 import { CharacterController } from '../controllers/character.controller';
 import { UserRole } from '../types/enums';
@@ -7,14 +7,14 @@ import { UserRole } from '../types/enums';
 const router = Router();
 const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
 
-// GET /api/v1/characters?search&page&limit&era
-router.get('/', CharacterController.list);
+// GET /api/v1/characters?search&page&limit&era  [public, optional auth]
+router.get('/', optionalAuth, CharacterController.list);
 
-// GET /api/v1/characters/context/:contextId  — must be before /:id
-router.get('/context/:contextId', CharacterController.listByContext);
+// GET /api/v1/characters/context/:contextId  — must be before /:id  [public, optional auth]
+router.get('/context/:contextId', optionalAuth, CharacterController.listByContext);
 
-// GET /api/v1/characters/:id
-router.get('/:id', CharacterController.getById);
+// GET /api/v1/characters/:id  [public, optional auth]
+router.get('/:id', optionalAuth, CharacterController.getById);
 
 // POST /api/v1/characters  [STAFF | ADMIN]
 router.post('/', authenticate, authorize(...staffOrAdmin), CharacterController.create);

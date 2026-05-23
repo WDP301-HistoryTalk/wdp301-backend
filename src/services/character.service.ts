@@ -25,6 +25,7 @@ export interface ListCharactersQuery {
   limit?: number;
   era?: EventEra;
   includeUnpublished?: boolean; // For admin/staff only
+  includeInactive?: boolean; // For admin/staff to see trashed items
 }
 
 export interface PaginationResult<T> {
@@ -46,12 +47,16 @@ export class CharacterService {
     return character;
   }
 
-  static async findById(id: string, includeUnpublished = false): Promise<ICharacter> {
-    const filter: Record<string, unknown> = { deletedAt: { $exists: false } };
+  static async findById(id: string, includeUnpublished = false, includeInactive = false): Promise<ICharacter> {
+    const filter: Record<string, unknown> = {};
+    
+    if (!includeInactive) {
+      filter.deletedAt = { $exists: false };
+      filter.isActive = true;
+    }
     
     if (!includeUnpublished) {
       filter.isPublished = true;
-      filter.isActive = true;
     }
     
     // Try characterId first, then _id
@@ -62,20 +67,33 @@ export class CharacterService {
     if (!character) {
       throw new AppError('Character not found', 404);
     }
+    
+    // Populate linked context if exists
+    if (character.contextId) {
+      await character.populate({
+        path: 'contextId',
+        model: 'HistoricalContext',
+        select: 'contextId name description era',
+      });
+    }
+    
     return character;
   }
 
-  static async list(query: ListCharactersQuery): Promise<PaginationResult<ICharacter>> {
-    const { search, era, page = 1, limit = 8, includeUnpublished } = query;
+  static async list(query: ListCharactersQuery): Promise<PaginationResult<any>> {
+    const { search, era, page = 1, limit = 8, includeUnpublished, includeInactive } = query;
     // FE sends 1-indexed, convert to 0-indexed for DB
     const currentPage = Math.max(0, page - 1);
     const pageSize = limit;
     const skip = currentPage * pageSize;
 
-    // Default: customer view (only published & active)
-    const filter: Record<string, unknown> = { deletedAt: { $exists: false }, isActive: true };
+    const filter: Record<string, unknown> = {};
     
-    // If not including unpublished, filter for published only (customer view)
+    if (!includeInactive) {
+      filter.deletedAt = { $exists: false };
+      filter.isActive = true;
+    }
+    
     if (!includeUnpublished) {
       filter.isPublished = true;
     }
@@ -134,16 +152,28 @@ export class CharacterService {
   }
 
   static async update(id: string, data: UpdateCharacterInput): Promise<ICharacter> {
+    const updateFields: any = { ...data, updatedAt: new Date() };
+    const updateQuery: any = {};
+    
+    if (data.isActive !== undefined) {
+      if (data.isActive === false) {
+        updateFields.deletedAt = new Date();
+      } else {
+        updateQuery.$unset = { deletedAt: 1 };
+      }
+    }
+    updateQuery.$set = updateFields;
+
     // Try update by characterId first, then _id
     let character = await Character.findOneAndUpdate(
-      { characterId: id, deletedAt: { $exists: false } },
-      { ...data, updatedAt: new Date() },
+      { characterId: id },
+      updateQuery,
       { returnDocument: 'after', runValidators: true }
     );
     if (!character && mongoose.isValidObjectId(id)) {
       character = await Character.findOneAndUpdate(
-        { _id: id, deletedAt: { $exists: false } },
-        { ...data, updatedAt: new Date() },
+        { _id: id },
+        updateQuery,
         { returnDocument: 'after', runValidators: true }
       );
     }
@@ -159,12 +189,10 @@ export class CharacterService {
     // Try delete by characterId first, then _id
     let character = await Character.findOneAndDelete({
       characterId: id,
-      deletedAt: { $exists: false },
     });
     if (!character && mongoose.isValidObjectId(id)) {
       character = await Character.findOneAndDelete({
         _id: id,
-        deletedAt: { $exists: false },
       });
     }
 
@@ -182,13 +210,13 @@ export class CharacterService {
   static async softDelete(id: string): Promise<ICharacter> {
     // Try soft delete by characterId first, then _id
     let character = await Character.findOneAndUpdate(
-      { characterId: id, deletedAt: { $exists: false } },
+      { characterId: id },
       { deletedAt: new Date(), isActive: false },
       { returnDocument: 'after' }
     );
     if (!character && mongoose.isValidObjectId(id)) {
       character = await Character.findOneAndUpdate(
-        { _id: id, deletedAt: { $exists: false } },
+        { _id: id },
         { deletedAt: new Date(), isActive: false },
         { returnDocument: 'after' }
       );
@@ -202,20 +230,30 @@ export class CharacterService {
   }
 
   static async toggleActive(id: string): Promise<ICharacter> {
-    // Find by characterId or _id
-    let character = await Character.findOne({ characterId: id, deletedAt: { $exists: false } });
+    // Find by characterId or _id (allowing soft-deleted items to be found)
+    let character = await Character.findOne({ characterId: id });
     if (!character && mongoose.isValidObjectId(id)) {
-      character = await Character.findOne({ _id: id, deletedAt: { $exists: false } });
+      character = await Character.findOne({ _id: id });
     }
     if (!character) {
       throw new AppError('Character not found', 404);
     }
 
     // Toggle isActive
+    const newActiveState = !character.isActive;
+    const updateQuery: any = {
+      $set: { isActive: newActiveState, updatedAt: new Date() }
+    };
+    if (newActiveState) {
+      updateQuery.$unset = { deletedAt: 1 };
+    } else {
+      updateQuery.$set.deletedAt = new Date();
+    }
+
     const query = character.characterId ? { characterId: character.characterId } : { _id: character._id };
     const updated = await Character.findOneAndUpdate(
       query,
-      { isActive: !character.isActive },
+      updateQuery,
       { returnDocument: 'after' }
     );
 

@@ -27,6 +27,7 @@ export interface ListHistoricalContextsQuery {
   limit?: number;
   era?: EventEra;
   includeUnpublished?: boolean; // For admin/staff only
+  includeInactive?: boolean; // For admin/staff only
 }
 
 export class HistoricalContextService {
@@ -39,12 +40,16 @@ export class HistoricalContextService {
     return context;
   }
 
-  static async findById(id: string, includeUnpublished = false): Promise<IHistoricalContext> {
-    const filter: Record<string, unknown> = { deletedAt: { $exists: false } };
+  static async findById(id: string, includeUnpublished = false, includeInactive = false): Promise<IHistoricalContext> {
+    const filter: Record<string, unknown> = {};
+    
+    if (!includeInactive) {
+      filter.deletedAt = { $exists: false };
+      filter.isActive = true;
+    }
     
     if (!includeUnpublished) {
       filter.isPublished = true;
-      filter.isActive = true;
     }
     
     // Try contextId first, then _id
@@ -58,15 +63,19 @@ export class HistoricalContextService {
     return context;
   }
 
-  static async list(query: ListHistoricalContextsQuery): Promise<PaginationResult<IHistoricalContext>> {
-    const { search, era, page = 1, limit = 6, includeUnpublished } = query;
+  static async list(query: ListHistoricalContextsQuery): Promise<PaginationResult<any>> {
+    const { search, era, page = 1, limit = 6, includeUnpublished, includeInactive } = query;
     // FE sends 1-indexed, convert to 0-indexed for DB
     const currentPage = Math.max(0, page - 1);
     const pageSize = limit;
     const skip = currentPage * pageSize;
 
-    // Default: customer view (only published & active)
-    const filter: Record<string, unknown> = { deletedAt: { $exists: false }, isActive: true };
+    const filter: Record<string, unknown> = {};
+    
+    if (!includeInactive) {
+      filter.deletedAt = { $exists: false };
+      filter.isActive = true;
+    }
     
     if (!includeUnpublished) {
       filter.isPublished = true;
@@ -109,16 +118,28 @@ export class HistoricalContextService {
   }
 
   static async update(id: string, data: UpdateHistoricalContextInput): Promise<IHistoricalContext> {
+    const updateFields: any = { ...data, updatedAt: new Date() };
+    const updateQuery: any = {};
+    
+    if (data.isActive !== undefined) {
+      if (data.isActive === false) {
+        updateFields.deletedAt = new Date();
+      } else {
+        updateQuery.$unset = { deletedAt: 1 };
+      }
+    }
+    updateQuery.$set = updateFields;
+
     // Try update by contextId first, then _id
     let context = await HistoricalContext.findOneAndUpdate(
-      { contextId: id, deletedAt: { $exists: false } },
-      { ...data, updatedAt: new Date() },
+      { contextId: id },
+      updateQuery,
       { returnDocument: 'after', runValidators: true }
     ).populate('characterIds');
     if (!context && mongoose.isValidObjectId(id)) {
       context = await HistoricalContext.findOneAndUpdate(
-        { _id: id, deletedAt: { $exists: false } },
-        { ...data, updatedAt: new Date() },
+        { _id: id },
+        updateQuery,
         { returnDocument: 'after', runValidators: true }
       ).populate('characterIds');
     }
@@ -134,12 +155,10 @@ export class HistoricalContextService {
     // Try delete by contextId first, then _id
     let context = await HistoricalContext.findOneAndDelete({
       contextId: id,
-      deletedAt: { $exists: false },
     });
     if (!context && mongoose.isValidObjectId(id)) {
       context = await HistoricalContext.findOneAndDelete({
         _id: id,
-        deletedAt: { $exists: false },
       });
     }
 
@@ -171,20 +190,30 @@ export class HistoricalContextService {
   }
 
   static async toggleActive(id: string): Promise<IHistoricalContext> {
-    // Find by contextId or _id
-    let context = await HistoricalContext.findOne({ contextId: id, deletedAt: { $exists: false } });
+    // Find by contextId or _id (allowing soft-deleted items to be found)
+    let context = await HistoricalContext.findOne({ contextId: id });
     if (!context && mongoose.isValidObjectId(id)) {
-      context = await HistoricalContext.findOne({ _id: id, deletedAt: { $exists: false } });
+      context = await HistoricalContext.findOne({ _id: id });
     }
     if (!context) {
       throw new AppError('Historical context not found', 404);
     }
 
     // Toggle isActive
+    const newActiveState = !context.isActive;
+    const updateQuery: any = {
+      $set: { isActive: newActiveState, updatedAt: new Date() }
+    };
+    if (newActiveState) {
+      updateQuery.$unset = { deletedAt: 1 };
+    } else {
+      updateQuery.$set.deletedAt = new Date();
+    }
+
     const query = context.contextId ? { contextId: context.contextId } : { _id: context._id };
     const updated = await HistoricalContext.findOneAndUpdate(
       query,
-      { isActive: !context.isActive },
+      updateQuery,
       { returnDocument: 'after' }
     );
 

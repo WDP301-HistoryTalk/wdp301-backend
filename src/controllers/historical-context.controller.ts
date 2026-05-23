@@ -7,9 +7,11 @@ export class HistoricalContextController {
   static async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { search, page = '1', limit = '10', era } = req.query;
-      // Check if user is admin/staff to include unpublished contexts
+      // Check if user is admin/staff to include unpublished and inactive contexts
       const userRole = req.user?.role;
-      const includeUnpublished = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      const isAdmin = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      const includeUnpublished = isAdmin;
+      const includeInactive = isAdmin;
       
       const result = await HistoricalContextService.list({
         search: search as string,
@@ -17,6 +19,7 @@ export class HistoricalContextController {
         limit: parseInt(limit as string, 10),
         era: era as EventEra,
         includeUnpublished,
+        includeInactive,
       });
       sendSuccess(res, result, 'Historical contexts fetched successfully');
     } catch (error) {
@@ -27,11 +30,13 @@ export class HistoricalContextController {
   static async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      // Check if user is admin/staff to include unpublished contexts
+      // Check if user is admin/staff to include unpublished and inactive contexts
       const userRole = req.user?.role;
-      const includeUnpublished = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      const isAdmin = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      const includeUnpublished = isAdmin;
+      const includeInactive = isAdmin;
       
-      const context = await HistoricalContextService.findById(id as string, includeUnpublished);
+      const context = await HistoricalContextService.findById(id as string, includeUnpublished, includeInactive);
       const responseData = {
         ...context.toObject(),
         id: context._id.toString(),

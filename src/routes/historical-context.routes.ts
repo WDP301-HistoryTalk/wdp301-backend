@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, optionalAuth } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/authorize.middleware';
 import { HistoricalContextController } from '../controllers/historical-context.controller';
 import { UserRole } from '../types/enums';
@@ -8,10 +8,10 @@ const router = Router();
 const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
 
 // GET /api/v1/historical-contexts?search&page&limit&era&category
-router.get('/', HistoricalContextController.list);
+router.get('/', optionalAuth, HistoricalContextController.list);
 
 // GET /api/v1/historical-contexts/:id
-router.get('/:id', HistoricalContextController.getById);
+router.get('/:id', optionalAuth, HistoricalContextController.getById);
 
 // POST /api/v1/historical-contexts  [STAFF | ADMIN]
 router.post('/', authenticate, authorize(...staffOrAdmin), HistoricalContextController.create);

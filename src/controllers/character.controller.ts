@@ -7,28 +7,29 @@ export class CharacterController {
   static async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { search, page = '1', limit = '10', era } = req.query;
-      // Check if user is admin/staff to include unpublished characters
+      // Check if user is admin/staff
       const userRole = req.user?.role;
-      const includeUnpublished = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
-      
+      const isAdmin = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      const includeUnpublished = isAdmin;
+      const includeInactive = isAdmin; // Admin can see trashed (isActive: false) items
+
       const result = await CharacterService.list({
         search: search as string,
         page: parseInt(page as string, 10),
         limit: parseInt(limit as string, 10),
         era: era as EventEra,
         includeUnpublished,
+        includeInactive,
       });
-      
+
       // Transform contextId to nested context object in response
       const transformedContent = result.content.map(char => {
-        const charObj = char.toObject();
         return {
-          ...charObj,
-          id: char._id.toString(),
-          context: charObj.contextId ? { contextId: charObj.contextId } : undefined,
+          ...char,
+          context: char.contextId ? { contextId: char.contextId } : undefined,
         };
       });
-      
+
       sendSuccess(res, { ...result, content: transformedContent }, 'Characters fetched successfully');
     } catch (error) {
       next(error);
@@ -41,9 +42,9 @@ export class CharacterController {
       // Check if user is admin/staff to include unpublished characters
       const userRole = req.user?.role;
       const includeUnpublished = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
-      
+
       const characters = await CharacterService.listByContextId(contextId as string, includeUnpublished);
-      
+
       // Transform contextId to nested context object in response
       const transformedCharacters = characters.map(char => {
         const charObj = char.toObject();
@@ -53,7 +54,7 @@ export class CharacterController {
           context: charObj.contextId ? { contextId: charObj.contextId } : undefined,
         };
       });
-      
+
       sendSuccess(res, { characters: transformedCharacters }, 'Characters fetched successfully');
     } catch (error) {
       next(error);
@@ -63,11 +64,13 @@ export class CharacterController {
   static async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      // Check if user is admin/staff to include unpublished characters
+      // Check if user is admin/staff
       const userRole = req.user?.role;
-      const includeUnpublished = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
-      
-      const character = await CharacterService.findById(id as string, includeUnpublished);
+      const isAdmin = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      const includeUnpublished = isAdmin;
+      const includeInactive = isAdmin; // Admin can see trashed (isActive: false) items
+
+      const character = await CharacterService.findById(id as string, includeUnpublished, includeInactive);
       const charObj = character.toObject();
       const responseData = {
         ...charObj,
