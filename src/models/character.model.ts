@@ -13,6 +13,7 @@ export interface ICharacter extends Document {
   personality?: string;
   isPublished: boolean;
   isActive: boolean;
+  contextId?: string; // Linked historical context
   deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +41,7 @@ const characterSchema = new Schema<ICharacter>(
     personality: { type: String },
     isPublished: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    contextId: { type: String },
     deletedAt: { type: Date },
   },
   { timestamps: true }

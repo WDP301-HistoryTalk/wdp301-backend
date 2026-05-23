@@ -1,17 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { HistoricalContextService } from '../services/historical-context.service';
 import { sendSuccess } from '../utils/response';
-import { EventEra } from '../types/enums';
+import { EventEra, UserRole } from '../types/enums';
 
 export class HistoricalContextController {
   static async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { search, page = '1', limit = '10', era } = req.query;
+      // Check if user is admin/staff to include unpublished contexts
+      const userRole = req.user?.role;
+      const includeUnpublished = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      
       const result = await HistoricalContextService.list({
         search: search as string,
         page: parseInt(page as string, 10),
         limit: parseInt(limit as string, 10),
         era: era as EventEra,
+        includeUnpublished,
       });
       sendSuccess(res, result, 'Historical contexts fetched successfully');
     } catch (error) {
@@ -22,7 +27,11 @@ export class HistoricalContextController {
   static async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      const context = await HistoricalContextService.findById(id as string);
+      // Check if user is admin/staff to include unpublished contexts
+      const userRole = req.user?.role;
+      const includeUnpublished = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      
+      const context = await HistoricalContextService.findById(id as string, includeUnpublished);
       const responseData = {
         ...context.toObject(),
         id: context._id.toString(),

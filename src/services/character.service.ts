@@ -24,6 +24,7 @@ export interface ListCharactersQuery {
   page?: number;
   limit?: number;
   era?: EventEra;
+  includeUnpublished?: boolean; // For admin/staff only
 }
 
 export interface PaginationResult<T> {
@@ -45,11 +46,18 @@ export class CharacterService {
     return character;
   }
 
-  static async findById(id: string): Promise<ICharacter> {
+  static async findById(id: string, includeUnpublished = false): Promise<ICharacter> {
+    const filter: Record<string, unknown> = { deletedAt: { $exists: false } };
+    
+    if (!includeUnpublished) {
+      filter.isPublished = true;
+      filter.isActive = true;
+    }
+    
     // Try characterId first, then _id
-    let character = await Character.findOne({ characterId: id, deletedAt: { $exists: false } });
+    let character = await Character.findOne({ ...filter, characterId: id });
     if (!character && mongoose.isValidObjectId(id)) {
-      character = await Character.findOne({ _id: id, deletedAt: { $exists: false } });
+      character = await Character.findOne({ ...filter, _id: id });
     }
     if (!character) {
       throw new AppError('Character not found', 404);
@@ -58,13 +66,19 @@ export class CharacterService {
   }
 
   static async list(query: ListCharactersQuery): Promise<PaginationResult<ICharacter>> {
-    const { search, era, page = 1, limit = 8 } = query;
+    const { search, era, page = 1, limit = 8, includeUnpublished } = query;
     // FE sends 1-indexed, convert to 0-indexed for DB
     const currentPage = Math.max(0, page - 1);
     const pageSize = limit;
     const skip = currentPage * pageSize;
 
-    const filter: Record<string, unknown> = { deletedAt: { $exists: false } };
+    // Default: customer view (only published & active)
+    const filter: Record<string, unknown> = { deletedAt: { $exists: false }, isActive: true };
+    
+    // If not including unpublished, filter for published only (customer view)
+    if (!includeUnpublished) {
+      filter.isPublished = true;
+    }
 
     if (search) {
       filter.$text = { $search: search };
@@ -98,16 +112,23 @@ export class CharacterService {
     };
   }
 
-  static async listByContextId(contextId: string): Promise<ICharacter[]> {
+  static async listByContextId(contextId: string, includeUnpublished = false): Promise<ICharacter[]> {
     const context = await HistoricalContext.findOne({ contextId, deletedAt: { $exists: false } });
     if (!context) {
       throw new AppError('Historical context not found', 404);
     }
 
-    const characters = await Character.find({
+    const filter: Record<string, unknown> = {
       _id: { $in: context.characterIds },
       deletedAt: { $exists: false },
-    });
+      isActive: true,
+    };
+    
+    if (!includeUnpublished) {
+      filter.isPublished = true;
+    }
+
+    const characters = await Character.find(filter);
 
     return characters;
   }
@@ -226,6 +247,12 @@ export class CharacterService {
     await HistoricalContext.findOneAndUpdate(
       { contextId },
       { $push: { characterIds: character._id } }
+    );
+
+    // Also update character with contextId for reverse lookup
+    await Character.findOneAndUpdate(
+      { characterId },
+      { contextId: context.contextId }
     );
   }
 }

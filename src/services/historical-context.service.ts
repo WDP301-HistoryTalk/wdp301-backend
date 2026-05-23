@@ -26,6 +26,7 @@ export interface ListHistoricalContextsQuery {
   page?: number;
   limit?: number;
   era?: EventEra;
+  includeUnpublished?: boolean; // For admin/staff only
 }
 
 export class HistoricalContextService {
@@ -38,11 +39,18 @@ export class HistoricalContextService {
     return context;
   }
 
-  static async findById(id: string): Promise<IHistoricalContext> {
+  static async findById(id: string, includeUnpublished = false): Promise<IHistoricalContext> {
+    const filter: Record<string, unknown> = { deletedAt: { $exists: false } };
+    
+    if (!includeUnpublished) {
+      filter.isPublished = true;
+      filter.isActive = true;
+    }
+    
     // Try contextId first, then _id
-    let context = await HistoricalContext.findOne({ contextId: id, deletedAt: { $exists: false } }).populate('characterIds');
+    let context = await HistoricalContext.findOne({ ...filter, contextId: id }).populate('characterIds');
     if (!context && mongoose.isValidObjectId(id)) {
-      context = await HistoricalContext.findOne({ _id: id, deletedAt: { $exists: false } }).populate('characterIds');
+      context = await HistoricalContext.findOne({ ...filter, _id: id }).populate('characterIds');
     }
     if (!context) {
       throw new AppError('Historical context not found', 404);
@@ -51,13 +59,18 @@ export class HistoricalContextService {
   }
 
   static async list(query: ListHistoricalContextsQuery): Promise<PaginationResult<IHistoricalContext>> {
-    const { search, era, page = 1, limit = 6 } = query;
+    const { search, era, page = 1, limit = 6, includeUnpublished } = query;
     // FE sends 1-indexed, convert to 0-indexed for DB
     const currentPage = Math.max(0, page - 1);
     const pageSize = limit;
     const skip = currentPage * pageSize;
 
-    const filter: Record<string, unknown> = { deletedAt: { $exists: false } };
+    // Default: customer view (only published & active)
+    const filter: Record<string, unknown> = { deletedAt: { $exists: false }, isActive: true };
+    
+    if (!includeUnpublished) {
+      filter.isPublished = true;
+    }
 
     if (search) {
       filter.$text = { $search: search };
