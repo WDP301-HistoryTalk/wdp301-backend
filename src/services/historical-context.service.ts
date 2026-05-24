@@ -2,14 +2,18 @@ import mongoose from 'mongoose';
 import HistoricalContext, { IHistoricalContext } from '../models/historical-context.model';
 import Character from '../models/character.model';
 import { AppError } from '../utils/app-error';
-import { EventEra } from '../types/enums';
+import { EventEra, EventCategory } from '../types/enums';
 import { PaginationResult } from './character.service';
 
 export interface CreateHistoricalContextInput {
   name: string;
   description?: string;
   era: EventEra;
+  category?: EventCategory;
   year?: number;
+  startYear?: number;
+  endYear?: number;
+  isBC?: boolean;
   period?: string;
   location?: string;
   imageUrl?: string;

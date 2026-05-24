@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-type ChalkInstance = typeof chalk;
+// type ChalkInstance = typeof chalk;
 
 const timestamp = () => chalk.gray(`[${new Date().toLocaleTimeString()}]`);
 
@@ -98,7 +98,7 @@ export const logger = {
   }
 };
 
-function getMethodColor(method: string): ChalkInstance {
+function getMethodColor(method: string): any {
   switch (method.toUpperCase()) {
     case 'GET': return chalk.blue;
     case 'POST': return chalk.green;
@@ -109,7 +109,7 @@ function getMethodColor(method: string): ChalkInstance {
   }
 }
 
-function getStatusColor(statusCode: number): ChalkInstance {
+function getStatusColor(statusCode: number): any {
   if (statusCode >= 200 && statusCode < 300) return chalk.green.bold;
   if (statusCode >= 300 && statusCode < 400) return chalk.cyan.bold;
   if (statusCode >= 400 && statusCode < 500) return chalk.yellow.bold;

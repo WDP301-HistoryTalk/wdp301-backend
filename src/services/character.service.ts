@@ -68,10 +68,10 @@ export class CharacterService {
       throw new AppError('Character not found', 404);
     }
     
-    // Populate linked context if exists
-    if (character.contextId) {
+    // Populate linked contexts if exists
+    if (character.contextIds && character.contextIds.length > 0) {
       await character.populate({
-        path: 'contextId',
+        path: 'contextIds',
         model: 'HistoricalContext',
         select: 'contextId name description era',
       });
@@ -107,7 +107,7 @@ export class CharacterService {
     }
 
     const [characters, totalElements] = await Promise.all([
-      Character.find(filter).skip(skip).limit(pageSize).sort({ createdAt: -1 }),
+      Character.find(filter).populate('contextIds', 'contextId name').skip(skip).limit(pageSize).sort({ createdAt: -1 }),
       Character.countDocuments(filter),
     ]);
 
@@ -146,7 +146,7 @@ export class CharacterService {
       filter.isPublished = true;
     }
 
-    const characters = await Character.find(filter);
+    const characters = await Character.find(filter).populate('contextIds', 'contextId name');
 
     return characters;
   }
@@ -287,10 +287,39 @@ export class CharacterService {
       { $push: { characterIds: character._id } }
     );
 
-    // Also update character with contextId for reverse lookup
+    // Also update character with contextIds for reverse lookup
     await Character.findOneAndUpdate(
       { characterId },
-      { contextId: context.contextId }
+      { $push: { contextIds: context._id } }
     );
+  }
+
+  static async removeFromContext(characterId: string, contextId: string): Promise<void> {
+    const [character, context] = await Promise.all([
+      Character.findOne({ characterId, deletedAt: { $exists: false } }),
+      HistoricalContext.findOne({ contextId, deletedAt: { $exists: false } }),
+    ]);
+
+    if (!character) throw new AppError('Character not found', 404);
+    if (!context) throw new AppError('Historical context not found', 404);
+
+    await HistoricalContext.findOneAndUpdate(
+      { contextId },
+      { $pull: { characterIds: character._id } }
+    );
+
+    await Character.findOneAndUpdate(
+      { characterId },
+      { $pull: { contextIds: context._id } }
+    );
+  }
+
+  static async getContextsOfCharacter(characterId: string, includeUnpublished = false): Promise<any[]> {
+    const character = await Character.findOne({ characterId, deletedAt: { $exists: false } }).populate({
+      path: 'contextIds',
+      match: includeUnpublished ? { deletedAt: { $exists: false } } : { isPublished: true, isActive: true, deletedAt: { $exists: false } },
+    });
+    if (!character) throw new AppError('Character not found', 404);
+    return character.contextIds || [];
   }
 }

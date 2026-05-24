@@ -13,7 +13,7 @@ export interface ICharacter extends Document {
   personality?: string;
   isPublished: boolean;
   isActive: boolean;
-  contextId?: string; // Linked historical context
+  contextIds: mongoose.Types.ObjectId[]; // Linked historical contexts
   deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -41,7 +41,7 @@ const characterSchema = new Schema<ICharacter>(
     personality: { type: String },
     isPublished: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
-    contextId: { type: String },
+    contextIds: [{ type: Schema.Types.ObjectId, ref: 'HistoricalContext' }],
     deletedAt: { type: Date },
   },
   { timestamps: true }

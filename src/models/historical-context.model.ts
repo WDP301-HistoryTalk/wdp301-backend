@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { EventEra } from '../types/enums';
+import { EventEra, EventCategory } from '../types/enums';
 
 export interface IHistoricalContext extends Document {
   contextId: string;
@@ -7,7 +7,11 @@ export interface IHistoricalContext extends Document {
   name: string;
   description?: string;
   era: EventEra;
+  category?: EventCategory;
   year?: number;
+  startYear?: number;
+  endYear?: number;
+  isBC: boolean;
   period?: string;
   location?: string;
   imageUrl?: string;
@@ -36,7 +40,11 @@ const historicalContextSchema = new Schema<IHistoricalContext>(
     name: { type: String, required: true, trim: true },
     description: { type: String },
     era: { type: String, enum: Object.values(EventEra), required: true },
+    category: { type: String, enum: Object.values(EventCategory) },
     year: { type: Number },
+    startYear: { type: Number },
+    endYear: { type: Number },
+    isBC: { type: Boolean, default: false },
     period: { type: String },
     location: { type: String },
     imageUrl: { type: String },

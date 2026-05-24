@@ -25,10 +25,6 @@ export enum UserRole {
   SystemAdmin = 'SYSTEM_ADMIN',
 }
 
-export enum MessageRole {
-  User = 'USER',
-  Assistant = 'ASSISTANT',
-}
 
 export enum TierTitle {
   Free = 'free',

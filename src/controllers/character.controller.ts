@@ -21,16 +21,16 @@ export class CharacterController {
         includeUnpublished,
         includeInactive,
       });
-
-      // Transform contextId to nested context object in response
       const transformedContent = result.content.map(char => {
         return {
           ...char,
-          context: char.contextId ? { contextId: char.contextId } : undefined,
+          contexts: char.contextIds ? char.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
         };
       });
-
-      sendSuccess(res, { ...result, content: transformedContent }, 'Characters fetched successfully');
+      
+      const responseData = { ...result, content: transformedContent };
+      delete (responseData as any).contextIds;
+      sendSuccess(res, responseData, 'Characters fetched successfully');
     } catch (error) {
       next(error);
     }
@@ -45,14 +45,16 @@ export class CharacterController {
 
       const characters = await CharacterService.listByContextId(contextId as string, includeUnpublished);
 
-      // Transform contextId to nested context object in response
+      // Transform contextIds to nested contexts object in response
       const transformedCharacters = characters.map(char => {
         const charObj = char.toObject();
-        return {
+        const responseChar = {
           ...charObj,
           id: char._id.toString(),
-          context: charObj.contextId ? { contextId: charObj.contextId } : undefined,
+          contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
         };
+        delete (responseChar as any).contextIds;
+        return responseChar;
       });
 
       sendSuccess(res, { characters: transformedCharacters }, 'Characters fetched successfully');
@@ -75,9 +77,9 @@ export class CharacterController {
       const responseData = {
         ...charObj,
         id: character._id.toString(),
-        context: charObj.contextId ? { contextId: charObj.contextId } : undefined,
+        contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
-      delete (responseData as any).contextId;
+      delete (responseData as any).contextIds;
       sendSuccess(res, responseData, 'Character fetched successfully');
     } catch (error) {
       next(error);
@@ -93,9 +95,9 @@ export class CharacterController {
       const responseData = {
         ...charObj,
         id: character._id.toString(),
-        context: charObj.contextId ? { contextId: charObj.contextId } : undefined,
+        contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
-      delete (responseData as any).contextId;
+      delete (responseData as any).contextIds;
       sendSuccess(res, responseData, 'Character created successfully', 201);
     } catch (error) {
       next(error);
@@ -110,9 +112,9 @@ export class CharacterController {
       const responseData = {
         ...charObj,
         id: character._id.toString(),
-        context: charObj.contextId ? { contextId: charObj.contextId } : undefined,
+        contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
-      delete (responseData as any).contextId;
+      delete (responseData as any).contextIds;
       sendSuccess(res, responseData, 'Character updated successfully');
     } catch (error) {
       next(error);
@@ -137,9 +139,9 @@ export class CharacterController {
       const responseData = {
         ...charObj,
         id: character._id.toString(),
-        context: charObj.contextId ? { contextId: charObj.contextId } : undefined,
+        contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
-      delete (responseData as any).contextId;
+      delete (responseData as any).contextIds;
       sendSuccess(res, responseData, 'Character soft-deleted successfully');
     } catch (error) {
       next(error);
@@ -155,9 +157,9 @@ export class CharacterController {
         ...charObj,
         id: character._id.toString(),
         isActive: character.isActive,
-        context: charObj.contextId ? { contextId: charObj.contextId } : undefined,
+        contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
-      delete (responseData as any).contextId;
+      delete (responseData as any).contextIds;
       sendSuccess(res, responseData, 'Character active status toggled');
     } catch (error) {
       next(error);
@@ -169,6 +171,34 @@ export class CharacterController {
       const { characterId, contextId } = req.params;
       await CharacterService.attachToContext(characterId as string, contextId as string);
       sendSuccess(res, null, 'Character attached to context successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async removeFromContext(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { characterId, contextId } = req.params;
+      await CharacterService.removeFromContext(characterId as string, contextId as string);
+      sendSuccess(res, null, 'Character removed from context successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getContexts(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { characterId } = req.params;
+      const userRole = req.user?.role;
+      const includeUnpublished = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
+      
+      const contexts = await CharacterService.getContextsOfCharacter(characterId as string, includeUnpublished);
+      const transformedContexts = contexts.map((ctx: any) => ({
+        contextId: ctx.contextId || ctx,
+        name: ctx.name
+      }));
+      
+      sendSuccess(res, transformedContexts, 'Character contexts fetched successfully');
     } catch (error) {
       next(error);
     }

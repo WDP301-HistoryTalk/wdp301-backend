@@ -34,4 +34,10 @@ router.patch('/:id/toggle-active', authenticate, authorize(...staffOrAdmin), Cha
 // POST /api/v1/characters/:characterId/contexts/:contextId  [STAFF | ADMIN]
 router.post('/:characterId/contexts/:contextId', authenticate, authorize(...staffOrAdmin), CharacterController.attachToContext);
 
+// DELETE /api/v1/characters/:characterId/contexts/:contextId  [STAFF | ADMIN]
+router.delete('/:characterId/contexts/:contextId', authenticate, authorize(...staffOrAdmin), CharacterController.removeFromContext);
+
+// GET /api/v1/characters/:characterId/contexts  [public, optional auth]
+router.get('/:characterId/contexts', optionalAuth, CharacterController.getContexts);
+
 export default router;
