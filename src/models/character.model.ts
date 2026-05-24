@@ -8,7 +8,14 @@ export interface ICharacter extends Document {
   title?: string;
   background?: string;
   image?: string;
-  lifespan?: string;
+  bornYear?: number;
+  bornMonth?: number;
+  bornDay?: number;
+  isBornBc?: boolean;
+  deathYear?: number;
+  deathMonth?: number;
+  deathDay?: number;
+  isDeathBc?: boolean;
   era?: EventEra;
   personality?: string;
   isPublished: boolean;
@@ -36,7 +43,14 @@ const characterSchema = new Schema<ICharacter>(
     title: { type: String },
     background: { type: String },
     image: { type: String },
-    lifespan: { type: String },
+    bornYear: { type: Number },
+    bornMonth: { type: Number, min: 1, max: 12 },
+    bornDay: { type: Number, min: 1, max: 31 },
+    isBornBc: { type: Boolean },
+    deathYear: { type: Number },
+    deathMonth: { type: Number, min: 1, max: 12 },
+    deathDay: { type: Number, min: 1, max: 31 },
+    isDeathBc: { type: Boolean },
     era: { type: String, enum: Object.values(EventEra) },
     personality: { type: String },
     isPublished: { type: Boolean, default: false },
