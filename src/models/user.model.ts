@@ -9,10 +9,12 @@ export interface IUser extends Document {
   tierId?: mongoose.Types.ObjectId;
   token: number;
   lastActiveDate?: Date;
+  isActive: boolean;
   googleId?: string;
   refreshToken?: string;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,10 +39,12 @@ const userSchema = new Schema<IUser>(
     tierId: { type: Schema.Types.ObjectId, ref: 'Tier' },
     token: { type: Number, default: 0 },
     lastActiveDate: { type: Date },
+    isActive: { type: Boolean, default: true },
     googleId: { type: String, select: false },
     refreshToken: { type: String, select: false },
     passwordResetToken: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
+    deletedAt: { type: Date },
   },
   { timestamps: true }
 );
