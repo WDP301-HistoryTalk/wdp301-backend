@@ -42,7 +42,7 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction): 
 
     req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
     next();
-  } catch (error) {
+  } catch {
     next(new AppError('Invalid or expired token', 401));
   }
 };

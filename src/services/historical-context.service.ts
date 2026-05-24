@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import HistoricalContext, { IHistoricalContext } from '../models/historical-context.model';
-import Character from '../models/character.model';
+
 import { AppError } from '../utils/app-error';
 import { EventEra, EventCategory } from '../types/enums';
 import { PaginationResult } from './character.service';
