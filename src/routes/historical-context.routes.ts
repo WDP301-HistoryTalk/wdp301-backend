@@ -1,42 +1,31 @@
-import { Router, Request, Response } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
+import { Router } from 'express';
+import { authenticate, optionalAuth } from '../middlewares/auth.middleware';
+import { authorize } from '../middlewares/authorize.middleware';
+import { HistoricalContextController } from '../controllers/historical-context.controller';
+import { UserRole } from '../types/enums';
 
 const router = Router();
+const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
 
 // GET /api/v1/historical-contexts?search&page&limit&era&category
-router.get('/', (_req: Request, res: Response) => {
-  // TODO: implement — paginated list, filter by era + category
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.get('/', optionalAuth, HistoricalContextController.list);
 
 // GET /api/v1/historical-contexts/:id
-router.get('/:id', (_req: Request, res: Response) => {
-  // TODO: implement — get historical context detail
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.get('/:id', optionalAuth, HistoricalContextController.getById);
 
 // POST /api/v1/historical-contexts  [STAFF | ADMIN]
-router.post('/', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — create historical context
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.post('/', authenticate, authorize(...staffOrAdmin), HistoricalContextController.create);
 
 // PUT /api/v1/historical-contexts/:id  [STAFF | ADMIN]
-router.put('/:id', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — update historical context
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.put('/:id', authenticate, authorize(...staffOrAdmin), HistoricalContextController.update);
 
 // DELETE /api/v1/historical-contexts/:id  [STAFF | ADMIN]
-router.delete('/:id', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — permanent delete
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.delete('/:id', authenticate, authorize(...staffOrAdmin), HistoricalContextController.delete);
 
 // PATCH /api/v1/historical-contexts/:id/soft-delete  [STAFF | ADMIN]
-router.patch('/:id/soft-delete', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — set deletedAt
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.patch('/:id/soft-delete', authenticate, authorize(...staffOrAdmin), HistoricalContextController.softDelete);
+
+// PATCH /api/v1/historical-contexts/:id/toggle-active  [STAFF | ADMIN]
+router.patch('/:id/toggle-active', authenticate, authorize(...staffOrAdmin), HistoricalContextController.toggleActive);
 
 export default router;

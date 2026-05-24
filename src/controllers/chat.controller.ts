@@ -29,7 +29,16 @@ export class ChatController {
         return;
       }
 
-      res.status(200).json({ success: true, data });
+      const mappedMessages = data.messages.map(msg => {
+        const msgObj = msg.toObject ? msg.toObject() : msg;
+        return {
+          ...msgObj,
+          id: msgObj._id,
+          role: msgObj.isFromAi ? 'ASSISTANT' : 'USER'
+        };
+      });
+
+      res.status(200).json({ success: true, data: { session: data.session, messages: mappedMessages } });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -46,7 +55,14 @@ export class ChatController {
       }
 
       const aiMessage = await ChatService.processUserMessage(sessionId as string, message);
-      res.status(200).json({ success: true, data: aiMessage });
+      const msgObj = aiMessage.toObject ? aiMessage.toObject() : aiMessage;
+      const mappedAiMessage = {
+        ...msgObj,
+        id: msgObj._id,
+        role: msgObj.isFromAi ? 'ASSISTANT' : 'USER'
+      };
+      
+      res.status(200).json({ success: true, data: mappedAiMessage });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }

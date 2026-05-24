@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
+import chalk from 'chalk';
 import { ZodError } from 'zod';
 import { logger } from '../utils/logger';
 
 export const errorHandler: ErrorRequestHandler = (
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void => {
@@ -28,10 +29,21 @@ export const errorHandler: ErrorRequestHandler = (
     message = 'Your token has expired. Please log in again.';
   }
 
+  // Store error for apiLogger middleware
+  res.locals.error = err;
+
+  // Enhanced error logging with chalk
   if (statusCode === 500) {
-    logger.error(`[500] ${e.message}`, e.stack);
-  } else {
-    logger.warn(`[${statusCode}] ${message}`);
+    logger.error(
+      chalk.bgRed.white(` [${statusCode}] `) + ' ' + chalk.red(e.message),
+      e.stack,
+      chalk.gray(`→ ${req.method} ${req.originalUrl}`)
+    );
+  } else if (statusCode >= 400) {
+    logger.warn(
+      chalk.bgYellow.black(` [${statusCode}] `) + ' ' + chalk.yellow(message),
+      chalk.gray(`→ ${req.method} ${req.originalUrl}`)
+    );
   }
 
   const isProduction = process.env.NODE_ENV === 'production';

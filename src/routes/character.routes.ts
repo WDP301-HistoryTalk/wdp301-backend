@@ -1,54 +1,43 @@
-import { Router, Request, Response } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
+import { Router } from 'express';
+import { authenticate, optionalAuth } from '../middlewares/auth.middleware';
+import { authorize } from '../middlewares/authorize.middleware';
+import { CharacterController } from '../controllers/character.controller';
+import { UserRole } from '../types/enums';
 
 const router = Router();
+const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
 
-// GET /api/v1/characters?search&page&limit&era
-router.get('/', (_req: Request, res: Response) => {
-  // TODO: implement — paginated list, filter by era
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+// GET /api/v1/characters?search&page&limit&era  [public, optional auth]
+router.get('/', optionalAuth, CharacterController.list);
 
-// GET /api/v1/characters/context/:contextId  — must be before /:id
-router.get('/context/:contextId', (_req: Request, res: Response) => {
-  // TODO: implement — list characters belonging to a historical context
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+// GET /api/v1/characters/context/:contextId  — must be before /:id  [public, optional auth]
+router.get('/context/:contextId', optionalAuth, CharacterController.listByContext);
 
-// GET /api/v1/characters/:id
-router.get('/:id', (_req: Request, res: Response) => {
-  // TODO: implement — get character detail
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+// GET /api/v1/characters/:id  [public, optional auth]
+router.get('/:id', optionalAuth, CharacterController.getById);
 
 // POST /api/v1/characters  [STAFF | ADMIN]
-router.post('/', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — create character
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.post('/', authenticate, authorize(...staffOrAdmin), CharacterController.create);
 
 // PUT /api/v1/characters/:id  [STAFF | ADMIN]
-router.put('/:id', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — update character
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.put('/:id', authenticate, authorize(...staffOrAdmin), CharacterController.update);
 
 // DELETE /api/v1/characters/:id  [STAFF | ADMIN]
-router.delete('/:id', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — permanent delete
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.delete('/:id', authenticate, authorize(...staffOrAdmin), CharacterController.delete);
 
 // PATCH /api/v1/characters/:id/soft-delete  [STAFF | ADMIN]
-router.patch('/:id/soft-delete', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — set deletedAt
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.patch('/:id/soft-delete', authenticate, authorize(...staffOrAdmin), CharacterController.softDelete);
+
+// PATCH /api/v1/characters/:id/toggle-active  [STAFF | ADMIN]
+router.patch('/:id/toggle-active', authenticate, authorize(...staffOrAdmin), CharacterController.toggleActive);
 
 // POST /api/v1/characters/:characterId/contexts/:contextId  [STAFF | ADMIN]
-router.post('/:characterId/contexts/:contextId', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — attach character to a historical context
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.post('/:characterId/contexts/:contextId', authenticate, authorize(...staffOrAdmin), CharacterController.attachToContext);
+
+// DELETE /api/v1/characters/:characterId/contexts/:contextId  [STAFF | ADMIN]
+router.delete('/:characterId/contexts/:contextId', authenticate, authorize(...staffOrAdmin), CharacterController.removeFromContext);
+
+// GET /api/v1/characters/:characterId/contexts  [public, optional auth]
+router.get('/:characterId/contexts', optionalAuth, CharacterController.getContexts);
 
 export default router;

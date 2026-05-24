@@ -4,7 +4,7 @@ import ChatSession, { IChatSession } from '../models/chat-session.model';
 import Message, { IMessage } from '../models/message.model';
 import Character from '../models/character.model';
 import HistoricalContext from '../models/historical-context.model';
-import { MessageRole } from '../types/enums';
+
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
 
@@ -34,7 +34,6 @@ export class ChatService {
     // 1. Save user message to DB
     const userMsg = new Message({
       sessionId: session._id,
-      role: MessageRole.User,
       isFromAi: false,
       content: userMessage,
     });
@@ -93,7 +92,6 @@ export class ChatService {
     // 5. Save AI message to DB
     const aiMsg = new Message({
       sessionId: session._id,
-      role: MessageRole.Assistant,
       isFromAi: true,
       content: aiResponse.message || aiResponse.response || aiResponse.content || 'No response', // Adapt based on actual AI response format if needed
       suggestedQuestion: aiResponse.suggestedQuestions || [],
