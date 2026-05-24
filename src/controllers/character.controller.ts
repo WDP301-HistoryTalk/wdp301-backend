@@ -24,6 +24,7 @@ export class CharacterController {
       const transformedContent = result.content.map(char => {
         return {
           ...char,
+          context: (char.contextIds && char.contextIds.length > 0) ? { contextId: (char.contextIds[0] as any).contextId || char.contextIds[0] } : undefined,
           contexts: char.contextIds ? char.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
         };
       });
@@ -51,6 +52,7 @@ export class CharacterController {
         const responseChar = {
           ...charObj,
           id: char._id.toString(),
+          context: (charObj.contextIds && charObj.contextIds.length > 0) ? { contextId: (charObj.contextIds[0] as any).contextId || charObj.contextIds[0] } : undefined,
           contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
         };
         delete (responseChar as any).contextIds;
@@ -77,6 +79,7 @@ export class CharacterController {
       const responseData = {
         ...charObj,
         id: character._id.toString(),
+        context: (charObj.contextIds && charObj.contextIds.length > 0) ? { contextId: (charObj.contextIds[0] as any).contextId || charObj.contextIds[0] } : undefined,
         contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
       delete (responseData as any).contextIds;
@@ -95,6 +98,7 @@ export class CharacterController {
       const responseData = {
         ...charObj,
         id: character._id.toString(),
+        context: (charObj.contextIds && charObj.contextIds.length > 0) ? { contextId: (charObj.contextIds[0] as any).contextId || charObj.contextIds[0] } : undefined,
         contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
       delete (responseData as any).contextIds;
@@ -112,6 +116,7 @@ export class CharacterController {
       const responseData = {
         ...charObj,
         id: character._id.toString(),
+        context: (charObj.contextIds && charObj.contextIds.length > 0) ? { contextId: (charObj.contextIds[0] as any).contextId || charObj.contextIds[0] } : undefined,
         contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
       delete (responseData as any).contextIds;
@@ -139,6 +144,7 @@ export class CharacterController {
       const responseData = {
         ...charObj,
         id: character._id.toString(),
+        context: (charObj.contextIds && charObj.contextIds.length > 0) ? { contextId: (charObj.contextIds[0] as any).contextId || charObj.contextIds[0] } : undefined,
         contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
       delete (responseData as any).contextIds;
@@ -157,6 +163,7 @@ export class CharacterController {
         ...charObj,
         id: character._id.toString(),
         isActive: character.isActive,
+        context: (charObj.contextIds && charObj.contextIds.length > 0) ? { contextId: (charObj.contextIds[0] as any).contextId || charObj.contextIds[0] } : undefined,
         contexts: charObj.contextIds ? charObj.contextIds.map((ctx: any) => ({ contextId: ctx.contextId || ctx, name: ctx.name })) : [],
       };
       delete (responseData as any).contextIds;
