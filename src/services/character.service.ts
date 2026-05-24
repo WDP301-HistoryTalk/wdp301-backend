@@ -9,7 +9,14 @@ export interface CreateCharacterInput {
   title?: string;
   background?: string;
   image?: string;
-  lifespan?: string;
+  bornYear?: number;
+  bornMonth?: number;
+  bornDay?: number;
+  isBornBc?: boolean;
+  deathYear?: number;
+  deathMonth?: number;
+  deathDay?: number;
+  isDeathBc?: boolean;
   era?: EventEra;
   personality?: string;
 }
