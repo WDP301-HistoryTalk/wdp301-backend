@@ -22,8 +22,8 @@ export class ChatController {
   public async getSessionWithMessages(req: Request, res: Response): Promise<void> {
     try {
       const { sessionId } = req.params;
-      const data = await ChatService.getSessionMessages(sessionId);
-      
+      const data = await ChatService.getSessionMessages(sessionId as string);
+
       if (!data.session) {
         res.status(404).json({ success: false, message: 'Session not found' });
         return;
@@ -45,7 +45,7 @@ export class ChatController {
         return;
       }
 
-      const aiMessage = await ChatService.processUserMessage(sessionId, message);
+      const aiMessage = await ChatService.processUserMessage(sessionId as string, message);
       res.status(200).json({ success: true, data: aiMessage });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
