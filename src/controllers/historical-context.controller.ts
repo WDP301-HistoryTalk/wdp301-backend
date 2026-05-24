@@ -11,7 +11,7 @@ export class HistoricalContextController {
       const userRole = req.user?.role;
       const isAdmin = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
       const includeUnpublished = isAdmin;
-      const includeInactive = isAdmin;
+      const includeInactive = false;
       
       const result = await HistoricalContextService.list({
         search: search as string,
