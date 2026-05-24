@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { authenticate } from '../middlewares/auth.middleware';
 import ChatController from '../controllers/chat.controller';
 
@@ -11,24 +11,18 @@ const router = Router();
  *   description: Chat session and message management
  */
 
-// GET /api/v1/chat/history  — must be before /sessions to avoid param clash
-router.get('/history', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — user's chat history grouped by context
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+// GET /api/v1/chat/history — must be before /:sessionId routes
+router.get('/history', authenticate, ChatController.getHistory.bind(ChatController));
 
-// GET /api/v1/chat/sessions?contextId&characterId
-router.get('/sessions', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — sessions for a given context + character
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+// GET /api/v1/chat/sessions?contextId&characterId (TODO: filter)
+router.get('/sessions', authenticate, ChatController.getHistory.bind(ChatController));
 
 /**
  * @openapi
  * /chat/sessions:
  *   post:
  *     tags: [Chat]
- *     summary: Create a new chat session
+ *     summary: Create a new chat session (also returns AI greeting)
  *     security:
  *       - BearerAuth: []
  *     requestBody:
@@ -39,78 +33,87 @@ router.get('/sessions', authenticate, (_req: Request, res: Response) => {
  *             type: object
  *             required: [characterId, contextId]
  *             properties:
- *               characterId:
- *                 type: string
- *               contextId:
- *                 type: string
+ *               characterId: { type: string }
+ *               contextId: { type: string }
  *     responses:
  *       201:
- *         description: Chat session created successfully
- *       400:
- *         description: Missing required fields
+ *         description: Session created with greeting message
  */
-router.post('/sessions', authenticate, ChatController.createSession);
-
-// DELETE /api/v1/chat/sessions/:sessionId
-router.delete('/sessions/:sessionId', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — delete session and all its messages
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.post('/sessions', authenticate, ChatController.createSession.bind(ChatController));
 
 /**
  * @openapi
  * /chat/sessions/{sessionId}/messages:
  *   get:
  *     tags: [Chat]
- *     summary: Get session and all messages
+ *     summary: Get session info and all messages
  *     security:
  *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: sessionId
  *         required: true
- *         schema:
- *           type: string
+ *         schema: { type: string }
  *     responses:
  *       200:
- *         description: Session and message history retrieved
+ *         description: Session and message history
  *       404:
  *         description: Session not found
  */
-router.get('/sessions/:sessionId/messages', authenticate, ChatController.getSessionWithMessages);
+router.get('/sessions/:sessionId/messages', authenticate, ChatController.getSessionWithMessages.bind(ChatController));
 
 /**
  * @openapi
- * /chat/sessions/{sessionId}/chat:
- *   post:
+ * /chat/sessions/{sessionId}:
+ *   delete:
  *     tags: [Chat]
- *     summary: Send a message to the AI
+ *     summary: Soft-delete a chat session
  *     security:
  *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: sessionId
- *         required: true
- *         schema:
- *           type: string
+ */
+router.delete('/sessions/:sessionId', authenticate, ChatController.deleteSession.bind(ChatController));
+
+/**
+ * @openapi
+ * /chat/messages:
+ *   post:
+ *     tags: [Chat]
+ *     summary: Send a message (Java-style — sessionId in body)
+ *     description: |
+ *       Primary chat endpoint. Send a message and receive an AI response.
+ *       The sessionId is passed in the request body (same as Java BE).
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [message]
+ *             required: [sessionId, content]
  *             properties:
- *               message:
- *                 type: string
+ *               sessionId: { type: string }
+ *               content: { type: string }
  *     responses:
- *       200:
- *         description: AI responded successfully
- *       400:
- *         description: Message is required
- *       500:
- *         description: AI Service error
+ *       201:
+ *         description: Message sent and AI responded
+ *       404:
+ *         description: Session not found
+ *       502:
+ *         description: AI service unavailable
  */
-router.post('/sessions/:sessionId/chat', authenticate, ChatController.chat);
+router.post('/messages', authenticate, ChatController.sendMessage.bind(ChatController));
+
+/**
+ * @openapi
+ * /chat/sessions/{sessionId}/chat:
+ *   post:
+ *     tags: [Chat]
+ *     summary: Send a message (Legacy — sessionId in path)
+ *     description: Kept for backward compatibility. Prefer /chat/messages.
+ *     security:
+ *       - BearerAuth: []
+ */
+router.post('/sessions/:sessionId/chat', authenticate, ChatController.chat.bind(ChatController));
 
 export default router;
