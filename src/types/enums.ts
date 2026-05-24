@@ -1,6 +1,6 @@
 export enum EntityType {
-  Context = 'Context',
-  Character = 'Character',
+  Context = 'CONTEXT',
+  Character = 'CHARACTER',
 }
 
 export enum EventEra {

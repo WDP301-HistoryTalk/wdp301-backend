@@ -7,7 +7,7 @@ export interface ICharacter extends Document {
   name: string;
   title?: string;
   background?: string;
-  image?: string;
+  imageUrl?: string;
   bornYear?: number;
   bornMonth?: number;
   bornDay?: number;
@@ -42,7 +42,7 @@ const characterSchema = new Schema<ICharacter>(
     name: { type: String, required: true, trim: true },
     title: { type: String },
     background: { type: String },
-    image: { type: String },
+    imageUrl: { type: String },
     bornYear: { type: Number },
     bornMonth: { type: Number, min: 1, max: 12 },
     bornDay: { type: Number, min: 1, max: 31 },

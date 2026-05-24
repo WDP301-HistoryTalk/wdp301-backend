@@ -9,6 +9,9 @@ export interface IDocumentEntity extends Document {
   title: string;
   fileUrl?: string;
   content?: string;
+  documentType: string;
+  isActive: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +24,9 @@ const documentSchema = new Schema<IDocumentEntity>(
     title: { type: String, required: true },
     fileUrl: { type: String },
     content: { type: String },
+    documentType: { type: String, default: 'TEXT' },
+    isActive: { type: Boolean, default: true },
+    deletedAt: { type: Date },
   },
   { timestamps: true }
 );

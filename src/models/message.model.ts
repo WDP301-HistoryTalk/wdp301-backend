@@ -5,7 +5,9 @@ export interface IMessage extends Document {
   sessionId: mongoose.Types.ObjectId;
   isFromAi: boolean;
   content: string;
-  suggestedQuestion?: string[];
+  suggestedQuestions?: string[];
+  isActive: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,7 +17,9 @@ const messageSchema = new Schema<IMessage>(
     sessionId: { type: Schema.Types.ObjectId, ref: 'ChatSession', required: true, index: true },
     isFromAi: { type: Boolean, required: true },
     content: { type: String, required: true },
-    suggestedQuestion: { type: [String] },
+    suggestedQuestions: { type: [String] },
+    isActive: { type: Boolean, default: true },
+    deletedAt: { type: Date },
   },
   { timestamps: true }
 );

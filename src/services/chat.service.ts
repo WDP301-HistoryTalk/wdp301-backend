@@ -114,7 +114,7 @@ export class ChatService {
           sessionId: session._id,
           isFromAi: true,
           content: greetingContent,
-          suggestedQuestion: suggestedQuestions,
+          suggestedQuestions: suggestedQuestions,
         });
       }
     } catch (err: any) {
@@ -216,7 +216,7 @@ export class ChatService {
       sessionId: session._id,
       isFromAi: true,
       content: assistantContent,
-      suggestedQuestion: suggestedQuestions,
+      suggestedQuestions: suggestedQuestions,
     });
 
     // 6. Update session
