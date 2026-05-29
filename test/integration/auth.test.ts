@@ -119,7 +119,7 @@ describe('POST /api/v1/auth/logout', () => {
   });
 });
 
-describe('GET /api/v1/users/profile', () => {
+describe('GET /api/v1/users/me', () => {
   let accessToken: string;
 
   beforeEach(async () => {
@@ -132,7 +132,7 @@ describe('GET /api/v1/users/profile', () => {
 
   it('returns profile for authenticated user', async () => {
     const res = await request(app)
-      .get('/api/v1/users/profile')
+      .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${accessToken}`);
 
     expect(res.status).toBe(200);
@@ -141,7 +141,7 @@ describe('GET /api/v1/users/profile', () => {
   });
 
   it('returns 401 without token', async () => {
-    const res = await request(app).get('/api/v1/users/profile');
+    const res = await request(app).get('/api/v1/users/me');
     expect(res.status).toBe(401);
   });
 });
