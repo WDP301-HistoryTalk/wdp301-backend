@@ -146,6 +146,17 @@ export class ChatService {
     }).sort({ lastMessageAt: -1, updatedAt: -1 });
   }
 
+  public async getSessionsFiltered(uid: string, contextId: string, characterId: string): Promise<IChatSession[]> {
+    const filter: any = {
+      uid: new mongoose.Types.ObjectId(uid),
+      deletedAt: { $exists: false },
+    };
+    if (mongoose.isValidObjectId(contextId)) filter.contextId = new mongoose.Types.ObjectId(contextId);
+    if (mongoose.isValidObjectId(characterId)) filter.characterId = new mongoose.Types.ObjectId(characterId);
+
+    return ChatSession.find(filter).sort({ lastMessageAt: -1, updatedAt: -1 });
+  }
+
   /**
    * Send a user message and get AI response.
    * Supports both:

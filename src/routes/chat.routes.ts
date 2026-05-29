@@ -14,8 +14,8 @@ const router = Router();
 // GET /api/v1/chat/history — must be before /:sessionId routes
 router.get('/history', authenticate, ChatController.getHistory.bind(ChatController));
 
-// GET /api/v1/chat/sessions?contextId&characterId (TODO: filter)
-router.get('/sessions', authenticate, ChatController.getHistory.bind(ChatController));
+// GET /api/v1/chat/sessions?contextId&characterId
+router.get('/sessions', authenticate, ChatController.getSessions.bind(ChatController));
 
 /**
  * @openapi
@@ -72,6 +72,17 @@ router.get('/sessions/:sessionId/messages', authenticate, ChatController.getSess
  *       - BearerAuth: []
  */
 router.delete('/sessions/:sessionId', authenticate, ChatController.deleteSession.bind(ChatController));
+
+/**
+ * @openapi
+ * /chat/sessions/{sessionId}/soft-delete:
+ *   patch:
+ *     tags: [Chat]
+ *     summary: Soft-delete a chat session
+ *     security:
+ *       - BearerAuth: []
+ */
+router.patch('/sessions/:sessionId/soft-delete', authenticate, ChatController.softDeleteSession.bind(ChatController));
 
 /**
  * @openapi
