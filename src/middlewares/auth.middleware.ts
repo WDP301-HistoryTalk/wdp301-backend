@@ -46,3 +46,12 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction): 
     next(new AppError('Invalid or expired token', 401));
   }
 };
+
+export const authorizeRoles = (...roles: string[]) => {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return next(new AppError('Forbidden: Insufficient privileges', 403));
+    }
+    next();
+  };
+};

@@ -61,6 +61,7 @@ export class AuthService {
       role: UserRole.Customer,
       tierId: freeTier?._id,
       token: freeTier?.limitedToken ?? 10,
+      lastTokenResetAt: new Date(),
     });
 
     return { message: 'Account created successfully' };
@@ -141,6 +142,7 @@ export class AuthService {
         role: UserRole.Customer,
         tierId: freeTier?._id,
         token: freeTier?.limitedToken ?? 10,
+        lastTokenResetAt: new Date(),
       });
     } else if (!user.googleId) {
       await User.findByIdAndUpdate(user._id, { googleId });
@@ -219,6 +221,7 @@ export class AuthService {
       password: hashedPassword,
       role: data.roleName,
       token: 9999,
+      lastTokenResetAt: new Date(),
     });
 
     return { message: 'Staff account created successfully' };
