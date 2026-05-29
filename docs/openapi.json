@@ -699,12 +699,233 @@
         }
       }
     },
+    "/characters": {
+      "get": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "List characters"
+      },
+      "post": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Create a character",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/characters/context/{contextId}": {
+      "get": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "List characters by context ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contextId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/characters/{id}": {
+      "get": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Get character by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Update a character",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Delete a character",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/characters/{id}/soft-delete": {
+      "patch": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Soft-delete a character",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/characters/{id}/toggle-active": {
+      "patch": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Toggle character active status",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/characters/{characterId}/contexts/{contextId}": {
+      "post": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Attach a character to a historical context",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "characterId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "contextId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Remove a character from a historical context",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "characterId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "contextId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/characters/{characterId}/contexts": {
+      "get": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Get all contexts of a character",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "characterId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
     "/chat/sessions": {
       "post": {
         "tags": [
           "Chat"
         ],
-        "summary": "Create a new chat session",
+        "summary": "Create a new chat session (also returns AI greeting)",
         "security": [
           {
             "BearerAuth": []
@@ -734,10 +955,7 @@
         },
         "responses": {
           "201": {
-            "description": "Chat session created successfully"
-          },
-          "400": {
-            "description": "Missing required fields"
+            "description": "Session created with greeting message"
           }
         }
       }
@@ -747,7 +965,7 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Get session and all messages",
+        "summary": "Get session info and all messages",
         "security": [
           {
             "BearerAuth": []
@@ -765,7 +983,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Session and message history retrieved"
+            "description": "Session and message history"
           },
           "404": {
             "description": "Session not found"
@@ -773,25 +991,42 @@
         }
       }
     },
-    "/chat/sessions/{sessionId}/chat": {
-      "post": {
+    "/chat/sessions/{sessionId}": {
+      "delete": {
         "tags": [
           "Chat"
         ],
-        "summary": "Send a message to the AI",
+        "summary": "Soft-delete a chat session",
         "security": [
           {
             "BearerAuth": []
           }
+        ]
+      }
+    },
+    "/chat/sessions/{sessionId}/soft-delete": {
+      "patch": {
+        "tags": [
+          "Chat"
         ],
-        "parameters": [
+        "summary": "Soft-delete a chat session",
+        "security": [
           {
-            "in": "path",
-            "name": "sessionId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/chat/messages": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Send a message (Java-style — sessionId in body)",
+        "description": "Primary chat endpoint. Send a message and receive an AI response.\nThe sessionId is passed in the request body (same as Java BE).\n",
+        "security": [
+          {
+            "BearerAuth": []
           }
         ],
         "requestBody": {
@@ -801,10 +1036,14 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "message"
+                  "sessionId",
+                  "content"
                 ],
                 "properties": {
-                  "message": {
+                  "sessionId": {
+                    "type": "string"
+                  },
+                  "content": {
                     "type": "string"
                   }
                 }
@@ -813,19 +1052,789 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "AI responded successfully"
+          "201": {
+            "description": "Message sent and AI responded"
           },
-          "400": {
-            "description": "Message is required"
+          "404": {
+            "description": "Session not found"
           },
-          "500": {
-            "description": "AI Service error"
+          "502": {
+            "description": "AI service unavailable"
           }
         }
       }
     },
-    "/users/profile": {
+    "/chat/sessions/{sessionId}/chat": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Send a message (Legacy — sessionId in path)",
+        "description": "Kept for backward compatibility. Prefer /chat/messages.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/overview": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get dashboard overview",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/users": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get user analytics",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/content": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get content summary",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/chat-activity": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get chat activity metrics",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/system-health": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get system health metrics",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/revenue": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get revenue metrics",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/payments": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get payment transactions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/tiers": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get subscription tier analytics",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/quiz": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get quiz analytics",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/system-admin/dashboard/tokens": {
+      "get": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Get token usage analytics",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/historical-documents": {
+      "get": {
+        "tags": [
+          "Historical Context Documents"
+        ],
+        "summary": "Get all context documents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "entityType",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Historical Context Documents"
+        ],
+        "summary": "Upload a document for a Historical Context (Staff/Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "contextId",
+                  "title",
+                  "content"
+                ],
+                "properties": {
+                  "contextId": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "fileUrl": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "TEXT"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Document created and queued for AI processing"
+          }
+        }
+      }
+    },
+    "/historical-documents/context/{contextId}": {
+      "get": {
+        "tags": [
+          "Historical Context Documents"
+        ],
+        "summary": "Get all documents by contextId"
+      }
+    },
+    "/historical-documents/{docId}": {
+      "get": {
+        "tags": [
+          "Historical Context Documents"
+        ],
+        "summary": "Get a document by ID"
+      },
+      "put": {
+        "tags": [
+          "Historical Context Documents"
+        ],
+        "summary": "Update a document",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Historical Context Documents"
+        ],
+        "summary": "Delete a document (also removes from AI vector store)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/character-documents": {
+      "get": {
+        "tags": [
+          "Character Documents"
+        ],
+        "summary": "Get all character documents"
+      },
+      "post": {
+        "tags": [
+          "Character Documents"
+        ],
+        "summary": "Upload a document for a Character (Staff/Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "characterId",
+                  "title",
+                  "content"
+                ],
+                "properties": {
+                  "characterId": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "fileUrl": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "TEXT"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Document created and queued for AI processing"
+          }
+        }
+      }
+    },
+    "/character-documents/character/{characterId}": {
+      "get": {
+        "tags": [
+          "Character Documents"
+        ],
+        "summary": "Get all documents by characterId"
+      }
+    },
+    "/character-documents/{docId}": {
+      "get": {
+        "tags": [
+          "Character Documents"
+        ],
+        "summary": "Get a character document by ID"
+      },
+      "put": {
+        "tags": [
+          "Character Documents"
+        ],
+        "summary": "Update a character document",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Character Documents"
+        ],
+        "summary": "Delete a character document (also removes from AI vector store)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/historical-contexts": {
+      "get": {
+        "tags": [
+          "Historical Contexts"
+        ],
+        "summary": "List historical contexts"
+      },
+      "post": {
+        "tags": [
+          "Historical Contexts"
+        ],
+        "summary": "Create a historical context",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/historical-contexts/{id}": {
+      "get": {
+        "tags": [
+          "Historical Contexts"
+        ],
+        "summary": "Get historical context by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Historical Contexts"
+        ],
+        "summary": "Update a historical context",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Historical Contexts"
+        ],
+        "summary": "Delete a historical context",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/historical-contexts/{id}/soft-delete": {
+      "patch": {
+        "tags": [
+          "Historical Contexts"
+        ],
+        "summary": "Soft-delete a historical context",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/historical-contexts/{id}/toggle-active": {
+      "patch": {
+        "tags": [
+          "Historical Contexts"
+        ],
+        "summary": "Toggle historical context active status",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/quizzes/results/me": {
+      "get": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "Get my quiz results",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/quizzes/submit": {
+      "post": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "Submit quiz answers",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/quizzes": {
+      "get": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "List quizzes"
+      }
+    },
+    "/quizzes/{quizId}": {
+      "get": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "Get quiz by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/quizzes/{quizId}/start": {
+      "post": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "Start a quiz session",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/staff/quizzes": {
+      "get": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "List quizzes for staff",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Create a quiz",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/staff/quizzes/{quizId}": {
+      "get": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Get quiz detail with all questions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Update quiz metadata",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Delete a quiz",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/staff/quizzes/{quizId}/soft-delete": {
+      "patch": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Soft delete a quiz",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/staff/quizzes/{quizId}/restore": {
+      "patch": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Restore a soft-deleted quiz",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/staff/quizzes/{quizId}/questions": {
+      "post": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Add question to quiz",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/staff/quizzes/{quizId}/questions/{questionId}": {
+      "put": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Update a question",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "questionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Delete a question",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "questionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/users/me": {
       "get": {
         "tags": [
           "Users"
@@ -942,12 +1951,162 @@
           }
         }
       }
+    },
+    "/users/me/password": {
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Change the authenticated user's password",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "currentPassword": {
+                    "type": "string"
+                  },
+                  "newPassword": {
+                    "type": "string"
+                  },
+                  "confirmPassword": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Passwords do not match or incorrect current password"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List all users (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get a user by ID (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update a user (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/users/{id}/role": {
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update a user's role (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
     }
   },
   "tags": [
     {
+      "name": "Characters",
+      "description": "Character management"
+    },
+    {
       "name": "Chat",
       "description": "Chat session and message management"
+    },
+    {
+      "name": "System Admin Dashboard",
+      "description": "Administrative analytics and dashboard endpoints"
+    },
+    {
+      "name": "Historical Context Documents",
+      "description": "Documents attached to a Historical Context (for RAG)"
+    },
+    {
+      "name": "Character Documents",
+      "description": "Documents attached to a Character (for RAG)"
+    },
+    {
+      "name": "Historical Contexts",
+      "description": "Historical Context management"
+    },
+    {
+      "name": "Quizzes",
+      "description": "Quiz management and taking"
+    },
+    {
+      "name": "Staff Quizzes",
+      "description": "Staff quiz management"
     }
   ]
 }

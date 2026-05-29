@@ -146,9 +146,66 @@ router.patch('/me/password', UserController.changePassword);
 import { authorizeRoles } from '../middlewares/auth.middleware';
 import { UserRole } from '../types/enums';
 
+/**
+ * @openapi
+ * /users:
+ *   get:
+ *     tags: [Users]
+ *     summary: List all users (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ */
 router.get('/', authorizeRoles(UserRole.SystemAdmin), UserController.listUsers);
+
+/**
+ * @openapi
+ * /users/{id}:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get a user by ID (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.get('/:id', authorizeRoles(UserRole.SystemAdmin), UserController.getUserById);
+
+/**
+ * @openapi
+ * /users/{id}:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Update a user (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.patch('/:id', authorizeRoles(UserRole.SystemAdmin), UserController.adminUpdateUser);
+
+/**
+ * @openapi
+ * /users/{id}/role:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Update a user's role (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.patch('/:id/role', authorizeRoles(UserRole.SystemAdmin), UserController.updateUserRole);
 
 export default router;

@@ -7,37 +7,188 @@ import { UserRole } from '../types/enums';
 const router = Router();
 const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
 
-// GET /api/v1/characters?search&page&limit&era  [public, optional auth]
+/**
+ * @openapi
+ * tags:
+ *   name: Characters
+ *   description: Character management
+ */
+
+/**
+ * @openapi
+ * /characters:
+ *   get:
+ *     tags: [Characters]
+ *     summary: List characters
+ */
 router.get('/', optionalAuth, CharacterController.list);
 
-// GET /api/v1/characters/context/:contextId  — must be before /:id  [public, optional auth]
+/**
+ * @openapi
+ * /characters/context/{contextId}:
+ *   get:
+ *     tags: [Characters]
+ *     summary: List characters by context ID
+ *     parameters:
+ *       - in: path
+ *         name: contextId
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.get('/context/:contextId', optionalAuth, CharacterController.listByContext);
 
-// GET /api/v1/characters/:id  [public, optional auth]
+/**
+ * @openapi
+ * /characters/{id}:
+ *   get:
+ *     tags: [Characters]
+ *     summary: Get character by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.get('/:id', optionalAuth, CharacterController.getById);
 
-// POST /api/v1/characters  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /characters:
+ *   post:
+ *     tags: [Characters]
+ *     summary: Create a character
+ *     security:
+ *       - BearerAuth: []
+ */
 router.post('/', authenticate, authorize(...staffOrAdmin), CharacterController.create);
 
-// PUT /api/v1/characters/:id  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /characters/{id}:
+ *   put:
+ *     tags: [Characters]
+ *     summary: Update a character
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.put('/:id', authenticate, authorize(...staffOrAdmin), CharacterController.update);
 
-// DELETE /api/v1/characters/:id  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /characters/{id}:
+ *   delete:
+ *     tags: [Characters]
+ *     summary: Delete a character
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.delete('/:id', authenticate, authorize(...staffOrAdmin), CharacterController.delete);
 
-// PATCH /api/v1/characters/:id/soft-delete  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /characters/{id}/soft-delete:
+ *   patch:
+ *     tags: [Characters]
+ *     summary: Soft-delete a character
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.patch('/:id/soft-delete', authenticate, authorize(...staffOrAdmin), CharacterController.softDelete);
 
-// PATCH /api/v1/characters/:id/toggle-active  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /characters/{id}/toggle-active:
+ *   patch:
+ *     tags: [Characters]
+ *     summary: Toggle character active status
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.patch('/:id/toggle-active', authenticate, authorize(...staffOrAdmin), CharacterController.toggleActive);
 
-// POST /api/v1/characters/:characterId/contexts/:contextId  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /characters/{characterId}/contexts/{contextId}:
+ *   post:
+ *     tags: [Characters]
+ *     summary: Attach a character to a historical context
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: characterId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: contextId
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.post('/:characterId/contexts/:contextId', authenticate, authorize(...staffOrAdmin), CharacterController.attachToContext);
 
-// DELETE /api/v1/characters/:characterId/contexts/:contextId  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /characters/{characterId}/contexts/{contextId}:
+ *   delete:
+ *     tags: [Characters]
+ *     summary: Remove a character from a historical context
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: characterId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: contextId
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.delete('/:characterId/contexts/:contextId', authenticate, authorize(...staffOrAdmin), CharacterController.removeFromContext);
 
-// GET /api/v1/characters/:characterId/contexts  [public, optional auth]
+/**
+ * @openapi
+ * /characters/{characterId}/contexts:
+ *   get:
+ *     tags: [Characters]
+ *     summary: Get all contexts of a character
+ *     parameters:
+ *       - in: path
+ *         name: characterId
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.get('/:characterId/contexts', optionalAuth, CharacterController.getContexts);
 
 export default router;

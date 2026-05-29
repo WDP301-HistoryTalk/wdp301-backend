@@ -7,25 +7,114 @@ import { UserRole } from '../types/enums';
 const router = Router();
 const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
 
-// GET /api/v1/historical-contexts?search&page&limit&era&category
+/**
+ * @openapi
+ * tags:
+ *   name: Historical Contexts
+ *   description: Historical Context management
+ */
+
+/**
+ * @openapi
+ * /historical-contexts:
+ *   get:
+ *     tags: [Historical Contexts]
+ *     summary: List historical contexts
+ */
 router.get('/', optionalAuth, HistoricalContextController.list);
 
-// GET /api/v1/historical-contexts/:id
+/**
+ * @openapi
+ * /historical-contexts/{id}:
+ *   get:
+ *     tags: [Historical Contexts]
+ *     summary: Get historical context by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.get('/:id', optionalAuth, HistoricalContextController.getById);
 
-// POST /api/v1/historical-contexts  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /historical-contexts:
+ *   post:
+ *     tags: [Historical Contexts]
+ *     summary: Create a historical context
+ *     security:
+ *       - BearerAuth: []
+ */
 router.post('/', authenticate, authorize(...staffOrAdmin), HistoricalContextController.create);
 
-// PUT /api/v1/historical-contexts/:id  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /historical-contexts/{id}:
+ *   put:
+ *     tags: [Historical Contexts]
+ *     summary: Update a historical context
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.put('/:id', authenticate, authorize(...staffOrAdmin), HistoricalContextController.update);
 
-// DELETE /api/v1/historical-contexts/:id  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /historical-contexts/{id}:
+ *   delete:
+ *     tags: [Historical Contexts]
+ *     summary: Delete a historical context
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.delete('/:id', authenticate, authorize(...staffOrAdmin), HistoricalContextController.delete);
 
-// PATCH /api/v1/historical-contexts/:id/soft-delete  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /historical-contexts/{id}/soft-delete:
+ *   patch:
+ *     tags: [Historical Contexts]
+ *     summary: Soft-delete a historical context
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.patch('/:id/soft-delete', authenticate, authorize(...staffOrAdmin), HistoricalContextController.softDelete);
 
-// PATCH /api/v1/historical-contexts/:id/toggle-active  [STAFF | ADMIN]
+/**
+ * @openapi
+ * /historical-contexts/{id}/toggle-active:
+ *   patch:
+ *     tags: [Historical Contexts]
+ *     summary: Toggle historical context active status
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.patch('/:id/toggle-active', authenticate, authorize(...staffOrAdmin), HistoricalContextController.toggleActive);
 
 export default router;
