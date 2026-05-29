@@ -53,7 +53,7 @@ router.use(authenticate);
 
 /**
  * @openapi
- * /users/profile:
+ * /users/me:
  *   get:
  *     tags: [Users]
  *     summary: Get the authenticated user's profile
@@ -114,8 +114,41 @@ router.use(authenticate);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ * /users/me/password:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Change the authenticated user's password
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword: { type: string }
+ *               newPassword: { type: string }
+ *               confirmPassword: { type: string }
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       400:
+ *         description: Passwords do not match or incorrect current password
  */
-router.get('/profile', UserController.getProfile);
-router.patch('/profile', UserController.updateProfile);
+router.get('/me', UserController.getProfile);
+router.patch('/me', UserController.updateProfile);
+router.patch('/me/password', UserController.changePassword);
+
+// --- Admin Methods ---
+
+import { authorizeRoles } from '../middlewares/auth.middleware';
+import { UserRole } from '../types/enums';
+
+router.get('/', authorizeRoles(UserRole.SystemAdmin), UserController.listUsers);
+router.get('/:id', authorizeRoles(UserRole.SystemAdmin), UserController.getUserById);
+router.patch('/:id', authorizeRoles(UserRole.SystemAdmin), UserController.adminUpdateUser);
+router.patch('/:id/role', authorizeRoles(UserRole.SystemAdmin), UserController.updateUserRole);
 
 export default router;

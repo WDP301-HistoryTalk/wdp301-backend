@@ -5,10 +5,17 @@ export interface IUser extends Document {
   userName: string;
   email: string;
   password?: string;
+  fullName?: string;
+  dob?: Date;
+  gender?: string;
+  phoneNumber?: string;
+  address?: string;
+  avatarUrl?: string;
   role: UserRole;
   tierId?: mongoose.Types.ObjectId;
   token: number;
   lastActiveDate?: Date;
+  lastTokenResetAt?: Date;
   isActive: boolean;
   googleId?: string;
   refreshToken?: string;
@@ -31,6 +38,12 @@ const userSchema = new Schema<IUser>(
       index: true,
     },
     password: { type: String, select: false },
+    fullName: { type: String, trim: true },
+    dob: { type: Date },
+    gender: { type: String, enum: ['MALE', 'FEMALE', 'OTHER'] },
+    phoneNumber: { type: String, trim: true },
+    address: { type: String, trim: true },
+    avatarUrl: { type: String, trim: true },
     role: {
       type: String,
       enum: Object.values(UserRole),
@@ -39,6 +52,7 @@ const userSchema = new Schema<IUser>(
     tierId: { type: Schema.Types.ObjectId, ref: 'Tier' },
     token: { type: Number, default: 0 },
     lastActiveDate: { type: Date },
+    lastTokenResetAt: { type: Date },
     isActive: { type: Boolean, default: true },
     googleId: { type: String, select: false },
     refreshToken: { type: String, select: false },

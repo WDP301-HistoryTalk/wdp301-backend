@@ -4,6 +4,7 @@ import ChatSession, { IChatSession } from '../models/chat-session.model';
 import Message, { IMessage } from '../models/message.model';
 import Character from '../models/character.model';
 import HistoricalContext from '../models/historical-context.model';
+import User from '../models/user.model';
 import { AppError } from '../utils/app-error';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
@@ -162,6 +163,10 @@ export class ChatService {
     });
     if (!session) throw new AppError('Chat session not found', 404);
 
+    const user = await User.findById(uid);
+    if (!user) throw new AppError('User not found', 404);
+    if (user.token <= 0) throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+
     // 1. Save user message
     const userMsg = await Message.create({
       sessionId: session._id,
@@ -197,6 +202,9 @@ export class ChatService {
 
     let assistantContent = 'Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này.';
     let suggestedQuestions: string[] = [];
+    let promptToken = 0;
+    let completionToken = 0;
+    let totalToken = 0;
 
     try {
       const aiRes = await axios.post(`${AI_SERVICE_URL}/v1/ai/chat`, payload, {
@@ -206,10 +214,25 @@ export class ChatService {
       const data = aiRes.data?.data || aiRes.data;
       assistantContent = data?.message || data?.response || data?.content || assistantContent;
       suggestedQuestions = data?.suggestedQuestions || [];
+      if (data?.tokenUsage) {
+        promptToken = data.tokenUsage.promptTokens || 0;
+        completionToken = data.tokenUsage.completionTokens || 0;
+        totalToken = data.tokenUsage.totalTokens || 0;
+      }
     } catch (err: any) {
       console.error('[ChatService] AI call failed:', err.message);
       throw new AppError('Failed to communicate with AI Service', 502);
     }
+
+    // Deduct tokens
+    if (totalToken > 0) {
+      user.token = Math.max(0, user.token - totalToken);
+      await user.save();
+    }
+
+    // Update userMsg with prompt tokens (optional, if schema supports it)
+    userMsg.token = promptToken;
+    await userMsg.save();
 
     // 5. Save AI message
     const aiMsg = await Message.create({
@@ -217,6 +240,7 @@ export class ChatService {
       isFromAi: true,
       content: assistantContent,
       suggestedQuestions: suggestedQuestions,
+      token: completionToken,
     });
 
     // 6. Update session

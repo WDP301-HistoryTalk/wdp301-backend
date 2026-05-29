@@ -6,6 +6,7 @@ export interface IMessage extends Document {
   isFromAi: boolean;
   content: string;
   suggestedQuestions?: string[];
+  token?: number;
   isActive: boolean;
   deletedAt?: Date;
   createdAt: Date;
@@ -18,6 +19,7 @@ const messageSchema = new Schema<IMessage>(
     isFromAi: { type: Boolean, required: true },
     content: { type: String, required: true },
     suggestedQuestions: { type: [String] },
+    token: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     deletedAt: { type: Date },
   },

@@ -29,11 +29,11 @@ async function registerAndLogin() {
   return res.body.data.accessToken as string;
 }
 
-describe('GET /api/v1/users/profile', () => {
+describe('GET /api/v1/users/me', () => {
   it('returns profile for authenticated user', async () => {
     const token = await registerAndLogin();
     const res = await request(app)
-      .get('/api/v1/users/profile')
+      .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
@@ -44,14 +44,14 @@ describe('GET /api/v1/users/profile', () => {
   });
 
   it('returns 401 without token', async () => {
-    const res = await request(app).get('/api/v1/users/profile');
+    const res = await request(app).get('/api/v1/users/me');
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
   });
 
   it('returns 401 with invalid token', async () => {
     const res = await request(app)
-      .get('/api/v1/users/profile')
+      .get('/api/v1/users/me')
       .set('Authorization', 'Bearer invalid.jwt.token');
 
     expect(res.status).toBe(401);
@@ -59,11 +59,11 @@ describe('GET /api/v1/users/profile', () => {
   });
 });
 
-describe('PATCH /api/v1/users/profile', () => {
+describe('PATCH /api/v1/users/me', () => {
   it('updates userName and returns updated profile', async () => {
     const token = await registerAndLogin();
     const res = await request(app)
-      .patch('/api/v1/users/profile')
+      .patch('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({ userName: 'Updated Name' });
 
@@ -74,7 +74,7 @@ describe('PATCH /api/v1/users/profile', () => {
 
   it('returns 401 without token', async () => {
     const res = await request(app)
-      .patch('/api/v1/users/profile')
+      .patch('/api/v1/users/me')
       .send({ userName: 'No Auth' });
 
     expect(res.status).toBe(401);

@@ -14,6 +14,7 @@ const mockUser = {
   _id: 'user-id-123',
   userName: 'Test User',
   email: 'test@example.com',
+  save: vi.fn().mockResolvedValue(true),
 };
 
 describe('UserService', () => {
@@ -37,16 +38,17 @@ describe('UserService', () => {
   describe('updateProfile', () => {
     it('returns updated user', async () => {
       (User.findByIdAndUpdate as Mock).mockReturnValue({
-        exec: vi.fn().mockResolvedValue({ ...mockUser, userName: 'Updated' }),
+        populate: vi.fn().mockResolvedValue({ ...mockUser, userName: 'Updated' }),
       });
-      (User.findByIdAndUpdate as Mock).mockResolvedValue({ ...mockUser, userName: 'Updated' });
 
       const result = await UserService.updateProfile('user-id-123', { userName: 'Updated' });
       expect(result).toHaveProperty('userName', 'Updated');
     });
 
     it('throws 404 when user not found', async () => {
-      (User.findByIdAndUpdate as Mock).mockResolvedValue(null);
+      (User.findByIdAndUpdate as Mock).mockReturnValue({
+        populate: vi.fn().mockResolvedValue(null),
+      });
 
       await expect(UserService.updateProfile('bad-id', {})).rejects.toMatchObject({
         statusCode: 404,
