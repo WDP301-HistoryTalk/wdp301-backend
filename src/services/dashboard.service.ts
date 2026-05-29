@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+
 import User from '../models/user.model';
 import Character from '../models/character.model';
 import HistoricalContext from '../models/historical-context.model';
@@ -7,7 +7,7 @@ import Message from '../models/message.model';
 import Quiz from '../models/quiz.model';
 import QuizSession from '../models/quiz-session.model';
 import Order from '../models/order.model';
-import Tier from '../models/tier.model';
+
 
 export class DashboardService {
   static async getOverview() {
@@ -32,7 +32,7 @@ export class DashboardService {
     };
   }
 
-  static async getUserAnalytics(from?: string, to?: string, granularity: string = 'day') {
+  static async getUserAnalytics(_from?: string, _to?: string, _granularity: string = 'day') {
     // Basic implementation
     const totalUsers = await User.countDocuments({ deletedAt: { $exists: false } });
     const activeUsers = await User.countDocuments({ isActive: true, deletedAt: { $exists: false } });
@@ -60,7 +60,7 @@ export class DashboardService {
     };
   }
 
-  static async getChatActivity(from?: string, to?: string, granularity: string = 'day') {
+  static async getChatActivity(_from?: string, _to?: string, _granularity: string = 'day') {
     const totalSessions = await ChatSession.countDocuments({ deletedAt: { $exists: false } });
     const totalMessages = await Message.countDocuments({ deletedAt: { $exists: false } });
     
@@ -78,7 +78,7 @@ export class DashboardService {
     };
   }
 
-  static async getRevenue(from?: string, to?: string, granularity: string = 'day') {
+  static async getRevenue(_from?: string, _to?: string, _granularity: string = 'day') {
     const revenueAggr = await Order.aggregate([
       { $match: { status: 'PAID' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -91,7 +91,7 @@ export class DashboardService {
     };
   }
 
-  static async getPayments(from?: string, to?: string, granularity: string = 'day') {
+  static async getPayments(_from?: string, _to?: string, _granularity: string = 'day') {
     const statusCounts = await Order.aggregate([
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
@@ -101,7 +101,7 @@ export class DashboardService {
     };
   }
 
-  static async getTiers(from?: string, to?: string, granularity: string = 'day') {
+  static async getTiers(_from?: string, _to?: string, _granularity: string = 'day') {
     const tierDistribution = await User.aggregate([
       { $match: { deletedAt: { $exists: false } } },
       { $group: { _id: '$tierId', users: { $sum: 1 } } },
@@ -114,7 +114,7 @@ export class DashboardService {
     };
   }
 
-  static async getQuiz(from?: string, to?: string, granularity: string = 'day') {
+  static async getQuiz(_from?: string, _to?: string, _granularity: string = 'day') {
     const totalQuizzes = await Quiz.countDocuments({ deletedAt: { $exists: false } });
     const totalSessions = await QuizSession.countDocuments({ deletedAt: { $exists: false } });
     return {
@@ -122,7 +122,7 @@ export class DashboardService {
     };
   }
 
-  static async getTokens(from?: string, to?: string, granularity: string = 'day') {
+  static async getTokens(_from?: string, _to?: string, _granularity: string = 'day') {
     const totalTokenUsedAggr = await Message.aggregate([
       { $match: { deletedAt: { $exists: false }, token: { $gt: 0 } } },
       { $group: { _id: null, total: { $sum: '$token' } } }
