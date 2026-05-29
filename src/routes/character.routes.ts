@@ -57,10 +57,35 @@ router.get('/:id', optionalAuth, CharacterController.getById);
  * @openapi
  * /characters:
  *   post:
- *     tags: [Characters]
- *     summary: Create a character
+ *     tags: [Character]
+ *     summary: Create a new character (Admin/Staff only)
  *     security:
  *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               title:
+ *                 type: string
+ *               background:
+ *                 type: string
+ *               bornYear:
+ *                 type: number
+ *               deathYear:
+ *                 type: number
+ *               era:
+ *                 type: string
+ *               personality:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Character created successfully
  */
 router.post('/', authenticate, authorize(...staffOrAdmin), CharacterController.create);
 

@@ -11,6 +11,10 @@
       "description": "Local development"
     },
     {
+      "url": "https://historytalk.app/historytalkwdp/api/v1",
+      "description": "Production (Docker)"
+    },
+    {
       "url": "https://api.historytalk.dev/api/v1",
       "description": "Production"
     }
@@ -708,14 +712,55 @@
       },
       "post": {
         "tags": [
-          "Characters"
+          "Character"
         ],
-        "summary": "Create a character",
+        "summary": "Create a new character (Admin/Staff only)",
         "security": [
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "background": {
+                    "type": "string"
+                  },
+                  "bornYear": {
+                    "type": "number"
+                  },
+                  "deathYear": {
+                    "type": "number"
+                  },
+                  "era": {
+                    "type": "string"
+                  },
+                  "personality": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Character created successfully"
+          }
+        }
       }
     },
     "/characters/context/{contextId}": {
@@ -1425,14 +1470,56 @@
       },
       "post": {
         "tags": [
-          "Historical Contexts"
+          "Historical Context"
         ],
-        "summary": "Create a historical context",
+        "summary": "Create a historical context (Admin/Staff only)",
         "security": [
           {
             "BearerAuth": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "era"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "era": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "number"
+                  },
+                  "isBC": {
+                    "type": "boolean"
+                  },
+                  "location": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Context created successfully"
+          }
+        }
       }
     },
     "/historical-contexts/{id}": {

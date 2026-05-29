@@ -42,10 +42,35 @@ router.get('/:id', optionalAuth, HistoricalContextController.getById);
  * @openapi
  * /historical-contexts:
  *   post:
- *     tags: [Historical Contexts]
- *     summary: Create a historical context
+ *     tags: [Historical Context]
+ *     summary: Create a historical context (Admin/Staff only)
  *     security:
  *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, era]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               era:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *               year:
+ *                 type: number
+ *               isBC:
+ *                 type: boolean
+ *               location:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Context created successfully
  */
 router.post('/', authenticate, authorize(...staffOrAdmin), HistoricalContextController.create);
 

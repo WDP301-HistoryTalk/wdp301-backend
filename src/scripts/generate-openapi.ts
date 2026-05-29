@@ -12,6 +12,7 @@ const spec = swaggerJsdoc({
     },
     servers: [
       { url: 'http://localhost:5000/api/v1', description: 'Local development' },
+      { url: 'https://historytalk.app/historytalkwdp/api/v1', description: 'Production (Docker)' },
       { url: 'https://api.historytalk.dev/api/v1', description: 'Production' },
     ],
     components: {
