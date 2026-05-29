@@ -45,7 +45,7 @@ export class UserController {
 
   static async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const user = await UserService.findUserById(req.params.id);
+      const user = await UserService.findUserById(req.params.id as string);
       sendSuccess(res, { user }, 'User retrieved successfully');
     } catch (error) {
       next(error);
@@ -54,7 +54,7 @@ export class UserController {
 
   static async adminUpdateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const user = await UserService.adminUpdateUser(req.params.id, req.body);
+      const user = await UserService.adminUpdateUser(req.params.id as string, req.body);
       sendSuccess(res, { user }, 'User updated successfully');
     } catch (error) {
       next(error);
@@ -63,7 +63,7 @@ export class UserController {
 
   static async updateUserRole(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const user = await UserService.updateUserRole(req.params.id, req.body.role);
+      const user = await UserService.updateUserRole(req.params.id as string, req.body.role);
       sendSuccess(res, { user }, 'User role updated successfully');
     } catch (error) {
       next(error);
