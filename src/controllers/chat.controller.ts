@@ -77,7 +77,28 @@ export class ChatController {
       if (!uid) { res.status(401).json({ success: false, message: 'Unauthorized' }); return; }
 
       const sessions = await ChatService.getUserSessions(uid);
-      res.status(200).json({ success: true, data: sessions });
+      res.status(200).json({ success: true, message: 'Chat history retrieved successfully', data: sessions });
+    } catch (error: any) {
+      res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * GET /api/v1/chat/sessions?contextId=&characterId=
+   */
+  public async getSessions(req: Request, res: Response): Promise<void> {
+    try {
+      const uid = req.user?.id;
+      const { contextId, characterId } = req.query;
+      if (!uid) { res.status(401).json({ success: false, message: 'Unauthorized' }); return; }
+
+      if (!contextId || !characterId) {
+        res.status(400).json({ success: false, message: 'contextId and characterId are required' });
+        return;
+      }
+
+      const sessions = await ChatService.getSessionsFiltered(uid, contextId as string, characterId as string);
+      res.status(200).json({ success: true, message: 'Sessions retrieved successfully', data: sessions });
     } catch (error: any) {
       res.status(error.statusCode || 500).json({ success: false, message: error.message });
     }
@@ -163,6 +184,21 @@ export class ChatController {
 
       await ChatService.deleteSession(req.params.sessionId as string, uid as string);
       res.status(204).send();
+    } catch (error: any) {
+      res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * PATCH /api/v1/chat/sessions/:sessionId/soft-delete
+   */
+  public async softDeleteSession(req: Request, res: Response): Promise<void> {
+    try {
+      const uid = req.user?.id;
+      if (!uid) { res.status(401).json({ success: false, message: 'Unauthorized' }); return; }
+
+      await ChatService.deleteSession(req.params.sessionId as string, uid as string);
+      res.status(200).json({ success: true, message: 'Session soft-deleted successfully', data: null });
     } catch (error: any) {
       res.status(error.statusCode || 500).json({ success: false, message: error.message });
     }
