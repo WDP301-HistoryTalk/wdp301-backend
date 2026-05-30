@@ -9,6 +9,7 @@ export interface CreateCharacterInput {
   title?: string;
   background?: string;
   image?: string;
+  modelUrl?: string;
   bornYear?: number;
   bornMonth?: number;
   bornDay?: number;
