@@ -176,7 +176,8 @@ export class ChatService {
 
     const user = await User.findById(uid);
     if (!user) throw new AppError('User not found', 404);
-    if (user.token <= 0) throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+    const isCustomer = user.role === 'CUSTOMER';
+    if (isCustomer && user.token <= 0) throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
 
     // 1. Save user message
     const userMsg = await Message.create({
@@ -236,7 +237,7 @@ export class ChatService {
     }
 
     // Deduct tokens
-    if (totalToken > 0) {
+    if (isCustomer && totalToken > 0) {
       user.token = Math.max(0, user.token - totalToken);
       await user.save();
     }
