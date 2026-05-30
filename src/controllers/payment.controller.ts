@@ -11,7 +11,7 @@ export class PaymentController {
         const obj = t.toObject();
         return {
           ...obj,
-          id: obj.id || obj._id,
+          id: (obj as any).id || (obj as any)._id,
         };
       });
 
