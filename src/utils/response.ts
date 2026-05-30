@@ -11,5 +11,6 @@ export const sendSuccess = (
     message,
     data,
     timestamp: new Date().toISOString(),
+    errorCode: null,
   });
 };

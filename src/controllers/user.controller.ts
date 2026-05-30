@@ -6,7 +6,7 @@ export class UserController {
   static async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.findUserById(req.user!.id);
-      sendSuccess(res, { user });
+      sendSuccess(res, user, 'User profile retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -15,7 +15,7 @@ export class UserController {
   static async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.updateProfile(req.user!.id, req.body);
-      sendSuccess(res, { user }, 'Profile updated successfully');
+      sendSuccess(res, user, 'User profile updated successfully');
     } catch (error) {
       next(error);
     }
@@ -46,7 +46,7 @@ export class UserController {
   static async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.findUserById(req.params.id as string);
-      sendSuccess(res, { user }, 'User retrieved successfully');
+      sendSuccess(res, user, 'User retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -55,7 +55,7 @@ export class UserController {
   static async adminUpdateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.adminUpdateUser(req.params.id as string, req.body);
-      sendSuccess(res, { user }, 'User updated successfully');
+      sendSuccess(res, user, 'User updated successfully');
     } catch (error) {
       next(error);
     }
@@ -64,7 +64,7 @@ export class UserController {
   static async updateUserRole(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.updateUserRole(req.params.id as string, req.body.role);
-      sendSuccess(res, { user }, 'User role updated successfully');
+      sendSuccess(res, user, 'User role updated successfully');
     } catch (error) {
       next(error);
     }

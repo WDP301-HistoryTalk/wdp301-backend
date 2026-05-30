@@ -59,7 +59,7 @@ export class CharacterController {
         return responseChar;
       });
 
-      sendSuccess(res, { characters: transformedCharacters }, 'Characters fetched successfully');
+      sendSuccess(res, transformedCharacters, 'Characters fetched successfully');
     } catch (error) {
       next(error);
     }

@@ -137,7 +137,7 @@ describe('GET /api/v1/users/me', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.user.email).toBe(validUser.email);
+    expect(res.body.data.email).toBe(validUser.email);
   });
 
   it('returns 401 without token', async () => {
