@@ -8,14 +8,16 @@ export class AppError extends Error {
   public readonly status: string;
   public readonly isOperational: boolean;
   public readonly errors: unknown;
+  public readonly errorCode: string | null;
 
-  constructor(message: string, statusCode: number, errors: unknown = null) {
+  constructor(message: string, statusCode: number, errors: unknown = null, errorCode: string | null = null) {
     super(message);
 
     this.statusCode = statusCode;
     this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
     this.isOperational = true;
     this.errors = errors;
+    this.errorCode = errorCode;
 
     Error.captureStackTrace(this, this.constructor);
   }
