@@ -39,8 +39,8 @@ describe('GET /api/v1/users/me', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body).toHaveProperty('timestamp');
-    expect(res.body.data.user.email).toBe(validUser.email);
-    expect(res.body.data.user).not.toHaveProperty('password');
+    expect(res.body.data.email).toBe(validUser.email);
+    expect(res.body.data).not.toHaveProperty('password');
   });
 
   it('returns 401 without token', async () => {
@@ -69,7 +69,7 @@ describe('PATCH /api/v1/users/me', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.user.userName).toBe('Updated Name');
+    expect(res.body.data.userName).toBe('Updated Name');
   });
 
   it('returns 401 without token', async () => {
