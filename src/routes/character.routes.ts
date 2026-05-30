@@ -75,6 +75,10 @@ router.get('/:id', optionalAuth, CharacterController.getById);
  *                 type: string
  *               background:
  *                 type: string
+ *               imageUrl:
+ *                 type: string
+ *               modelUrl:
+ *                 type: string
  *               bornYear:
  *                 type: number
  *               deathYear:
