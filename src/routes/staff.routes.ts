@@ -1,9 +1,12 @@
-import { Router, Request, Response } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
+import { Router } from 'express';
+import { QuizController } from '../controllers/quiz.controller';
+import { authenticate, authorizeRoles } from '../middlewares/auth.middleware';
+import { UserRole } from '../types/enums';
 
 const router = Router();
 
-// All routes here require STAFF | ADMIN role (checked via authenticate + role guard — TODO)
+// All routes here require CONTENT_ADMIN or SYSTEM_ADMIN role
+router.use(authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAdmin));
 
 /**
  * @openapi
@@ -21,12 +24,7 @@ const router = Router();
  *     security:
  *       - BearerAuth: []
  */
-router.get('/quizzes', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — paginated quiz list for staff
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
-
-// Static sub-paths before /:quizId
+router.get('/quizzes', QuizController.staffListQuizzes);
 
 /**
  * @openapi
@@ -43,10 +41,7 @@ router.get('/quizzes', authenticate, (_req: Request, res: Response) => {
  *         schema:
  *           type: string
  */
-router.get('/quizzes/:quizId', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — quiz detail with all questions
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.get('/quizzes/:quizId', QuizController.staffGetQuizDetail);
 
 /**
  * @openapi
@@ -57,10 +52,7 @@ router.get('/quizzes/:quizId', authenticate, (_req: Request, res: Response) => {
  *     security:
  *       - BearerAuth: []
  */
-router.post('/quizzes', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — create quiz with questions
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.post('/quizzes', QuizController.staffCreateQuiz);
 
 /**
  * @openapi
@@ -77,10 +69,7 @@ router.post('/quizzes', authenticate, (_req: Request, res: Response) => {
  *         schema:
  *           type: string
  */
-router.put('/quizzes/:quizId', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — update quiz metadata (no questions)
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.put('/quizzes/:quizId', QuizController.staffUpdateQuiz);
 
 /**
  * @openapi
@@ -97,10 +86,7 @@ router.put('/quizzes/:quizId', authenticate, (_req: Request, res: Response) => {
  *         schema:
  *           type: string
  */
-router.delete('/quizzes/:quizId', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — permanent delete
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.delete('/quizzes/:quizId', QuizController.staffDeleteQuiz);
 
 /**
  * @openapi
@@ -117,10 +103,7 @@ router.delete('/quizzes/:quizId', authenticate, (_req: Request, res: Response) =
  *         schema:
  *           type: string
  */
-router.patch('/quizzes/:quizId/soft-delete', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — set deletedAt
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.patch('/quizzes/:quizId/soft-delete', QuizController.staffSoftDeleteQuiz);
 
 /**
  * @openapi
@@ -137,10 +120,7 @@ router.patch('/quizzes/:quizId/soft-delete', authenticate, (_req: Request, res: 
  *         schema:
  *           type: string
  */
-router.patch('/quizzes/:quizId/restore', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — clear deletedAt
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.patch('/quizzes/:quizId/restore', QuizController.staffRestoreQuiz);
 
 /**
  * @openapi
@@ -157,10 +137,7 @@ router.patch('/quizzes/:quizId/restore', authenticate, (_req: Request, res: Resp
  *         schema:
  *           type: string
  */
-router.post('/quizzes/:quizId/questions', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — add question to quiz
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.post('/quizzes/:quizId/questions', QuizController.staffAddQuestion);
 
 /**
  * @openapi
@@ -182,10 +159,7 @@ router.post('/quizzes/:quizId/questions', authenticate, (_req: Request, res: Res
  *         schema:
  *           type: string
  */
-router.put('/quizzes/:quizId/questions/:questionId', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — update question (partial)
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.put('/quizzes/:quizId/questions/:questionId', QuizController.staffUpdateQuestion);
 
 /**
  * @openapi
@@ -207,9 +181,6 @@ router.put('/quizzes/:quizId/questions/:questionId', authenticate, (_req: Reques
  *         schema:
  *           type: string
  */
-router.delete('/quizzes/:quizId/questions/:questionId', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — delete question
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.delete('/quizzes/:quizId/questions/:questionId', QuizController.staffDeleteQuestion);
 
 export default router;

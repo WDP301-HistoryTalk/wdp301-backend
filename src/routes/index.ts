@@ -9,6 +9,7 @@ import staffRoutes from './staff.routes';
 import documentRoutes from './document.routes';
 import dashboardRoutes from './dashboard.routes';
 import paymentRoutes from './payment.routes';
+import tierRoutes from './tier.routes';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use('/quizzes', quizRoutes);
 router.use('/staff', staffRoutes);
 router.use('/system-admin/dashboard', dashboardRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/tiers', tierRoutes);
 router.use('/', documentRoutes); // historical-documents & character-documents
 
 export default router;

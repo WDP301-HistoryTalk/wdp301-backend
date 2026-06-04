@@ -1,4 +1,5 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
+import { QuizController } from '../controllers/quiz.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -21,10 +22,7 @@ const router = Router();
  *     security:
  *       - BearerAuth: []
  */
-router.get('/results/me', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — paginated quiz results for the current user
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.get('/results/me', authenticate, QuizController.getMyResults);
 
 /**
  * @openapi
@@ -35,10 +33,7 @@ router.get('/results/me', authenticate, (_req: Request, res: Response) => {
  *     security:
  *       - BearerAuth: []
  */
-router.post('/submit', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — submit answers, return score + correctAnswers + wrongAnswers
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.post('/submit', authenticate, QuizController.submitSession);
 
 /**
  * @openapi
@@ -47,10 +42,7 @@ router.post('/submit', authenticate, (_req: Request, res: Response) => {
  *     tags: [Quizzes]
  *     summary: List quizzes
  */
-router.get('/', (_req: Request, res: Response) => {
-  // TODO: implement — flat array response (no pagination per contract)
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.get('/', QuizController.listQuizzes);
 
 /**
  * @openapi
@@ -65,10 +57,7 @@ router.get('/', (_req: Request, res: Response) => {
  *         schema:
  *           type: string
  */
-router.get('/:quizId', (_req: Request, res: Response) => {
-  // TODO: implement — get quiz metadata
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.get('/:quizId', QuizController.getQuizById);
 
 /**
  * @openapi
@@ -85,9 +74,6 @@ router.get('/:quizId', (_req: Request, res: Response) => {
  *         schema:
  *           type: string
  */
-router.post('/:quizId/start', authenticate, (_req: Request, res: Response) => {
-  // TODO: implement — create quiz session, return questions with correctAnswer
-  res.status(501).json({ success: false, message: 'Not implemented' });
-});
+router.post('/:quizId/start', authenticate, QuizController.startSession);
 
 export default router;
