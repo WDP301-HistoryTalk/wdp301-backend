@@ -74,7 +74,7 @@ export class UserService {
   }
 
   static async adminUpdateUser(id: string, data: any) {
-    const allowedFields = ['userName', 'fullName', 'dob', 'gender', 'phoneNumber', 'address', 'avatarUrl'];
+    const allowedFields = ['userName', 'fullName', 'dob', 'gender', 'phoneNumber', 'address', 'avatarUrl', 'tierId'];
     const updateData: any = {};
     for (const field of allowedFields) {
       if (data[field] !== undefined) updateData[field] = data[field];

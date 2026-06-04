@@ -5,6 +5,11 @@ export interface IQuiz extends Document {
   contextId: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
   title: string;
+  description?: string;
+  grade?: number;
+  chapterNumber?: number;
+  chapterTitle?: string;
+  durationSeconds?: number;
   era: EventEra;
   playCount: number;
   rating: number;
@@ -24,6 +29,11 @@ const quizSchema = new Schema<IQuiz>(
     },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
+    description: { type: String },
+    grade: { type: Number },
+    chapterNumber: { type: Number },
+    chapterTitle: { type: String },
+    durationSeconds: { type: Number, default: 0 },
     era: { type: String, enum: Object.values(EventEra), required: true },
     playCount: { type: Number, default: 0 },
     rating: { type: Number, default: 0 },
