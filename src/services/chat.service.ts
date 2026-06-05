@@ -23,7 +23,7 @@ function buildCharacterPayload(character: any) {
   };
 
   return {
-    characterId: character.characterId || character._id.toString(),
+    characterId: character._id.toString(),
     name: character.name,
     title: character.title || '',
     background: character.background || '',
@@ -39,7 +39,7 @@ function buildCharacterPayload(character: any) {
  */
 function buildContextPayload(context: any) {
   return {
-    contextId: context.contextId || context._id.toString(),
+    contextId: context._id.toString(),
     name: context.name,
     description: context.description || '',
     era: context.era || '',
@@ -93,8 +93,8 @@ export class ChatService {
 
     try {
       const payload = {
-        characterId: character.characterId || character._id.toString(),
-        contextId: context.contextId || context._id.toString(),
+        characterId: character._id.toString(),
+        contextId: context._id.toString(),
         userMessage: `Hãy chào người dùng bằng cách nhập vai là ${character.name} trong bối cảnh ${context.name}. Hãy giới thiệu bản thân ngắn gọn.`,
         messageHistory: [],
         characterData: buildCharacterPayload(character),
@@ -204,8 +204,8 @@ export class ChatService {
 
     // 4. Call AI Service
     const payload = {
-      characterId: character.characterId || character._id.toString(),
-      contextId: context.contextId || context._id.toString(),
+      characterId: character._id.toString(),
+      contextId: context._id.toString(),
       userMessage: userMessageText,
       messageHistory,
       characterData: buildCharacterPayload(character),
@@ -277,8 +277,8 @@ export class ChatService {
   ): Promise<void> {
     try {
       const payload = {
-        characterId: character.characterId || character._id.toString(),
-        contextId: context.contextId || context._id.toString(),
+        characterId: character._id.toString(),
+        contextId: context._id.toString(),
         firstUserMessage: firstUserMsg,
         firstAssistantMessage: firstAiMsg,
         characterData: buildCharacterPayload(character),

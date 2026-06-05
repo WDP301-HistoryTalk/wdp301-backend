@@ -62,7 +62,7 @@ export class DocumentService {
 
   static async createContextDocument(userId: string, data: CreateContextDocumentInput): Promise<IDocumentEntity> {
     const context = await HistoricalContext.findOne({
-      $or: [{ contextId: data.contextId }, ...(mongoose.isValidObjectId(data.contextId) ? [{ _id: data.contextId }] : [])],
+      _id: data.contextId,
       deletedAt: { $exists: false },
     });
     if (!context) throw new AppError('Historical context not found', 404);
@@ -77,7 +77,7 @@ export class DocumentService {
     });
 
     // Async AI processing — fire and forget
-    const entityIdStr = context.contextId || context._id.toString();
+    const entityIdStr = context._id.toString();
     setImmediate(() => triggerAiProcess(doc._id.toString(), entityIdStr, data.content));
 
     return doc;
@@ -85,7 +85,7 @@ export class DocumentService {
 
   static async getDocumentsByContext(contextId: string): Promise<IDocumentEntity[]> {
     const context = await HistoricalContext.findOne({
-      $or: [{ contextId }, ...(mongoose.isValidObjectId(contextId) ? [{ _id: contextId }] : [])],
+      _id: contextId,
     });
     if (!context) throw new AppError('Historical context not found', 404);
 
@@ -97,7 +97,7 @@ export class DocumentService {
 
   static async createCharacterDocument(userId: string, data: CreateCharacterDocumentInput): Promise<IDocumentEntity> {
     const character = await Character.findOne({
-      $or: [{ characterId: data.characterId }, ...(mongoose.isValidObjectId(data.characterId) ? [{ _id: data.characterId }] : [])],
+      _id: data.characterId,
       deletedAt: { $exists: false },
     });
     if (!character) throw new AppError('Character not found', 404);
@@ -111,7 +111,7 @@ export class DocumentService {
       fileUrl: data.fileUrl,
     });
 
-    const entityIdStr = character.characterId || character._id.toString();
+    const entityIdStr = character._id.toString();
     setImmediate(() => triggerAiProcess(doc._id.toString(), entityIdStr, data.content));
 
     return doc;
@@ -119,7 +119,7 @@ export class DocumentService {
 
   static async getDocumentsByCharacter(characterId: string): Promise<IDocumentEntity[]> {
     const character = await Character.findOne({
-      $or: [{ characterId }, ...(mongoose.isValidObjectId(characterId) ? [{ _id: characterId }] : [])],
+      _id: characterId,
     });
     if (!character) throw new AppError('Character not found', 404);
 
