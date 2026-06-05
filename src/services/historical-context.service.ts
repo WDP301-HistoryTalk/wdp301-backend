@@ -194,11 +194,8 @@ export class HistoricalContextService {
   }
 
   static async toggleActive(id: string): Promise<IHistoricalContext> {
-    // Find by contextId or _id (allowing soft-deleted items to be found)
-    let context = await HistoricalContext.findOne({ contextId: id });
-    if (!context && mongoose.isValidObjectId(id)) {
-      context = await HistoricalContext.findOne({ _id: id });
-    }
+    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    const context = await HistoricalContext.findOne({ _id: id });
     if (!context) {
       throw new AppError('Historical context not found', 404);
     }
@@ -214,9 +211,8 @@ export class HistoricalContextService {
       updateQuery.$set.deletedAt = new Date();
     }
 
-    const query = context.contextId ? { contextId: context.contextId } : { _id: context._id };
     const updated = await HistoricalContext.findOneAndUpdate(
-      query,
+      { _id: context._id },
       updateQuery,
       { returnDocument: 'after' }
     );

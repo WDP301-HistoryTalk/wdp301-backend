@@ -139,7 +139,7 @@ export class CharacterService {
   }
 
   static async listByContextId(contextId: string, includeUnpublished = false): Promise<ICharacter[]> {
-    const context = await HistoricalContext.findOne({ contextId, deletedAt: { $exists: false } });
+    const context = await HistoricalContext.findOne({ _id: contextId, deletedAt: { $exists: false } });
     if (!context) {
       throw new AppError('Historical context not found', 404);
     }
@@ -238,11 +238,8 @@ export class CharacterService {
   }
 
   static async toggleActive(id: string): Promise<ICharacter> {
-    // Find by characterId or _id (allowing soft-deleted items to be found)
-    let character = await Character.findOne({ characterId: id });
-    if (!character && mongoose.isValidObjectId(id)) {
-      character = await Character.findOne({ _id: id });
-    }
+    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    const character = await Character.findOne({ _id: id });
     if (!character) {
       throw new AppError('Character not found', 404);
     }
@@ -258,9 +255,8 @@ export class CharacterService {
       updateQuery.$set.deletedAt = new Date();
     }
 
-    const query = character.characterId ? { characterId: character.characterId } : { _id: character._id };
     const updated = await Character.findOneAndUpdate(
-      query,
+      { _id: character._id },
       updateQuery,
       { returnDocument: 'after' }
     );
@@ -274,8 +270,8 @@ export class CharacterService {
 
   static async attachToContext(characterId: string, contextId: string): Promise<void> {
     const [character, context] = await Promise.all([
-      Character.findOne({ characterId, deletedAt: { $exists: false } }),
-      HistoricalContext.findOne({ contextId, deletedAt: { $exists: false } }),
+      Character.findOne({ _id: characterId, deletedAt: { $exists: false } }),
+      HistoricalContext.findOne({ _id: contextId, deletedAt: { $exists: false } }),
     ]);
 
     if (!character) {
@@ -304,8 +300,8 @@ export class CharacterService {
 
   static async removeFromContext(characterId: string, contextId: string): Promise<void> {
     const [character, context] = await Promise.all([
-      Character.findOne({ characterId, deletedAt: { $exists: false } }),
-      HistoricalContext.findOne({ contextId, deletedAt: { $exists: false } }),
+      Character.findOne({ _id: characterId, deletedAt: { $exists: false } }),
+      HistoricalContext.findOne({ _id: contextId, deletedAt: { $exists: false } }),
     ]);
 
     if (!character) throw new AppError('Character not found', 404);
@@ -323,7 +319,7 @@ export class CharacterService {
   }
 
   static async getContextsOfCharacter(characterId: string, includeUnpublished = false): Promise<any[]> {
-    const character = await Character.findOne({ characterId, deletedAt: { $exists: false } }).populate({
+    const character = await Character.findOne({ _id: characterId, deletedAt: { $exists: false } }).populate({
       path: 'contextIds',
       match: includeUnpublished ? { deletedAt: { $exists: false } } : { isPublished: true, isActive: true, deletedAt: { $exists: false } },
     });
