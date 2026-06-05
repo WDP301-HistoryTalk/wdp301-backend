@@ -323,10 +323,15 @@ export class CharacterService {
   }
 
   static async getContextsOfCharacter(characterId: string, includeUnpublished = false): Promise<any[]> {
-    const character = await Character.findOne({ characterId, deletedAt: { $exists: false } }).populate({
+    const populateOpts = {
       path: 'contextIds',
       match: includeUnpublished ? { deletedAt: { $exists: false } } : { isPublished: true, isActive: true, deletedAt: { $exists: false } },
-    });
+    };
+
+    let character = await Character.findOne({ characterId, deletedAt: { $exists: false } }).populate(populateOpts);
+    if (!character && mongoose.isValidObjectId(characterId)) {
+      character = await Character.findOne({ _id: characterId, deletedAt: { $exists: false } }).populate(populateOpts);
+    }
     if (!character) throw new AppError('Character not found', 404);
     return character.contextIds || [];
   }
