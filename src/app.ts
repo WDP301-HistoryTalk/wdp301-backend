@@ -18,7 +18,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: config.corsOrigin,
+    origin: true,
     credentials: true,
   })
 );
