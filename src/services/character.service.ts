@@ -67,11 +67,8 @@ export class CharacterService {
       filter.isPublished = true;
     }
     
-    // Try characterId first, then _id
-    let character = await Character.findOne({ ...filter, characterId: id });
-    if (!character && mongoose.isValidObjectId(id)) {
-      character = await Character.findOne({ ...filter, _id: id });
-    }
+    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    const character = await Character.findOne({ ...filter, _id: id });
     if (!character) {
       throw new AppError('Character not found', 404);
     }
@@ -172,19 +169,12 @@ export class CharacterService {
     }
     updateQuery.$set = updateFields;
 
-    // Try update by characterId first, then _id
-    let character = await Character.findOneAndUpdate(
-      { characterId: id },
+    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    const character = await Character.findOneAndUpdate(
+      { _id: id },
       updateQuery,
       { returnDocument: 'after', runValidators: true }
     );
-    if (!character && mongoose.isValidObjectId(id)) {
-      character = await Character.findOneAndUpdate(
-        { _id: id },
-        updateQuery,
-        { returnDocument: 'after', runValidators: true }
-      );
-    }
 
     if (!character) {
       throw new AppError('Character not found', 404);
@@ -194,15 +184,10 @@ export class CharacterService {
   }
 
   static async delete(id: string): Promise<void> {
-    // Try delete by characterId first, then _id
-    let character = await Character.findOneAndDelete({
-      characterId: id,
+    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    const character = await Character.findOneAndDelete({
+      _id: id,
     });
-    if (!character && mongoose.isValidObjectId(id)) {
-      character = await Character.findOneAndDelete({
-        _id: id,
-      });
-    }
 
     if (!character) {
       throw new AppError('Character not found', 404);
@@ -216,19 +201,12 @@ export class CharacterService {
   }
 
   static async softDelete(id: string): Promise<ICharacter> {
-    // Try soft delete by characterId first, then _id
-    let character = await Character.findOneAndUpdate(
-      { characterId: id },
+    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    const character = await Character.findOneAndUpdate(
+      { _id: id },
       { deletedAt: new Date(), isActive: false },
       { returnDocument: 'after' }
     );
-    if (!character && mongoose.isValidObjectId(id)) {
-      character = await Character.findOneAndUpdate(
-        { _id: id },
-        { deletedAt: new Date(), isActive: false },
-        { returnDocument: 'after' }
-      );
-    }
 
     if (!character) {
       throw new AppError('Character not found', 404);
@@ -287,13 +265,13 @@ export class CharacterService {
     }
 
     await HistoricalContext.findOneAndUpdate(
-      { contextId },
+      { _id: contextId },
       { $push: { characterIds: character._id } }
     );
 
     // Also update character with contextIds for reverse lookup
     await Character.findOneAndUpdate(
-      { characterId },
+      { _id: characterId },
       { $push: { contextIds: context._id } }
     );
   }
@@ -308,12 +286,12 @@ export class CharacterService {
     if (!context) throw new AppError('Historical context not found', 404);
 
     await HistoricalContext.findOneAndUpdate(
-      { contextId },
+      { _id: contextId },
       { $pull: { characterIds: character._id } }
     );
 
     await Character.findOneAndUpdate(
-      { characterId },
+      { _id: characterId },
       { $pull: { contextIds: context._id } }
     );
   }
