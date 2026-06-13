@@ -78,7 +78,7 @@ export class CharacterService {
       await character.populate({
         path: 'contextIds',
         model: 'HistoricalContext',
-        select: 'contextId name description era',
+        select: 'name description era',
       });
     }
     
@@ -112,7 +112,7 @@ export class CharacterService {
     }
 
     const [characters, totalElements] = await Promise.all([
-      Character.find(filter).populate('contextIds', 'contextId name').skip(skip).limit(pageSize).sort({ createdAt: -1 }),
+      Character.find(filter).populate('contextIds', 'name').skip(skip).limit(pageSize).sort({ createdAt: -1 }),
       Character.countDocuments(filter),
     ]);
 
@@ -151,7 +151,7 @@ export class CharacterService {
       filter.isPublished = true;
     }
 
-    const characters = await Character.find(filter).populate('contextIds', 'contextId name');
+    const characters = await Character.find(filter).populate('contextIds', 'name');
 
     return characters;
   }
