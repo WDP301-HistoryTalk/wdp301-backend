@@ -65,7 +65,7 @@ export class DocumentService {
       _id: data.contextId,
       deletedAt: { $exists: false },
     });
-    if (!context) throw new AppError('Historical context not found', 404);
+    if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
     const doc = await DocumentModel.create({
       uploadedBy: new mongoose.Types.ObjectId(userId),
@@ -87,7 +87,7 @@ export class DocumentService {
     const context = await HistoricalContext.findOne({
       _id: contextId,
     });
-    if (!context) throw new AppError('Historical context not found', 404);
+    if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
     return DocumentModel.find({ entityId: context._id, entityType: EntityType.Context })
       .sort({ createdAt: -1 });
@@ -100,7 +100,7 @@ export class DocumentService {
       _id: data.characterId,
       deletedAt: { $exists: false },
     });
-    if (!character) throw new AppError('Character not found', 404);
+    if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
     const doc = await DocumentModel.create({
       uploadedBy: new mongoose.Types.ObjectId(userId),
@@ -121,7 +121,7 @@ export class DocumentService {
     const character = await Character.findOne({
       _id: characterId,
     });
-    if (!character) throw new AppError('Character not found', 404);
+    if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
     return DocumentModel.find({ entityId: character._id, entityType: EntityType.Character })
       .sort({ createdAt: -1 });
@@ -131,7 +131,7 @@ export class DocumentService {
 
   static async getDocumentById(docId: string): Promise<IDocumentEntity> {
     const doc = await DocumentModel.findById(docId);
-    if (!doc) throw new AppError('Document not found', 404);
+    if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
     return doc;
   }
 
@@ -141,7 +141,7 @@ export class DocumentService {
       { $set: data },
       { new: true, runValidators: true }
     );
-    if (!doc) throw new AppError('Document not found', 404);
+    if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
 
     // Re-process in AI if content changed
     if (data.content) {
@@ -153,7 +153,7 @@ export class DocumentService {
 
   static async deleteDocument(docId: string): Promise<void> {
     const doc = await DocumentModel.findByIdAndDelete(docId);
-    if (!doc) throw new AppError('Document not found', 404);
+    if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
     setImmediate(() => triggerAiDelete(docId));
   }
 

@@ -49,7 +49,7 @@ export class AuthService {
 
   static async register(data: { userName: string; email: string; password: string }) {
     const exists = await User.findOne({ email: data.email });
-    if (exists) throw new AppError('Email already registered', 409);
+    if (exists) throw new AppError('Email đã được đăng ký', 409);
 
     const freeTier = await Tier.findOne({ title: TierTitle.Free });
 
@@ -71,10 +71,10 @@ export class AuthService {
 
   static async login(data: { email: string; password: string }) {
     const user = await User.findOne({ email: data.email }).select('+password');
-    if (!user || !user.password) throw new AppError('Invalid email or password', 401);
+    if (!user || !user.password) throw new AppError('Email hoặc mật khẩu không chính xác', 401);
 
     const isMatch = await bcrypt.compare(data.password, user.password);
-    if (!isMatch) throw new AppError('Invalid email or password', 401);
+    if (!isMatch) throw new AppError('Email hoặc mật khẩu không chính xác', 401);
 
     await User.findByIdAndUpdate(user._id, { lastActiveDate: new Date() });
 
@@ -104,12 +104,12 @@ export class AuthService {
     try {
       decoded = jwt.verify(incomingRefreshToken, config.jwt.refreshSecret) as { id: string };
     } catch {
-      throw new AppError('Invalid or expired refresh token', 401);
+      throw new AppError('Refresh token không hợp lệ hoặc đã hết hạn', 401);
     }
 
     const user = await User.findById(decoded.id).select('+refreshToken');
     if (!user || user.refreshToken !== incomingRefreshToken) {
-      throw new AppError('Refresh token is invalid or has been revoked', 401);
+      throw new AppError('Refresh token không hợp lệ hoặc đã bị thu hồi', 401);
     }
 
     const tokens = this.generateTokens(user._id.toString(), user.email, user.role);
@@ -127,7 +127,7 @@ export class AuthService {
     });
 
     const payload = ticket.getPayload();
-    if (!payload?.email) throw new AppError('Invalid Google token', 400);
+    if (!payload?.email) throw new AppError('Google token không hợp lệ', 400);
 
     const { email, name, sub: googleId } = payload;
 
@@ -188,7 +188,7 @@ export class AuthService {
       passwordResetExpires: { $gt: new Date() },
     }).select('+passwordResetToken +passwordResetExpires');
 
-    if (!user) throw new AppError('Reset token is invalid or has expired', 400);
+    if (!user) throw new AppError('Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn', 400);
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await User.findByIdAndUpdate(user._id, {
@@ -212,7 +212,7 @@ export class AuthService {
     roleName: UserRole.ContentAdmin | UserRole.SystemAdmin;
   }) {
     const exists = await User.findOne({ email: data.email });
-    if (exists) throw new AppError('Email already registered', 409);
+    if (exists) throw new AppError('Email đã được đăng ký', 409);
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
     await User.create({

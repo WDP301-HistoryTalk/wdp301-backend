@@ -11,11 +11,11 @@ export class DocumentController {
   public async createContextDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user?.id;
-      if (!userId) { throw new AppError('Unauthorized', 401); }
+      if (!userId) { throw new AppError('Không có quyền truy cập', 401); }
 
       const { contextId, title, content, fileUrl, type } = req.body;
       if (!contextId || !title || !content) {
-        throw new AppError('contextId, title, and content are required', 400);
+        throw new AppError('Yêu cầu cung cấp contextId, title và content', 400);
       }
 
       const doc = await DocumentService.createContextDocument(userId, { contextId, title, content, fileUrl, type });
@@ -40,11 +40,11 @@ export class DocumentController {
   public async createCharacterDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user?.id;
-      if (!userId) { throw new AppError('Unauthorized', 401); }
+      if (!userId) { throw new AppError('Không có quyền truy cập', 401); }
 
       const { characterId, title, content, fileUrl, type } = req.body;
       if (!characterId || !title || !content) {
-        throw new AppError('characterId, title, and content are required', 400);
+        throw new AppError('Yêu cầu cung cấp characterId, title và content', 400);
       }
 
       const doc = await DocumentService.createCharacterDocument(userId, { characterId, title, content, fileUrl, type });

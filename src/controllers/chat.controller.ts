@@ -15,7 +15,7 @@ export class ChatController {
       const uid = req.user?.id;
 
       if (!characterId || !contextId || !uid) {
-        throw new AppError('Missing required fields: characterId, contextId', 400);
+        throw new AppError('Thiếu các trường bắt buộc: characterId, contextId', 400);
       }
 
       const { session, greetingMessage, suggestedQuestions } = await ChatService.createSession(uid as string, characterId as string, contextId as string);
@@ -73,7 +73,7 @@ export class ChatController {
   public async getHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const uid = req.user?.id;
-      if (!uid) { throw new AppError('Unauthorized', 401); }
+      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
 
       const sessions = await ChatService.getUserSessions(uid);
       sendSuccess(res, sessions, 'Chat history retrieved successfully');
@@ -89,10 +89,10 @@ export class ChatController {
     try {
       const uid = req.user?.id;
       const { contextId, characterId } = req.query;
-      if (!uid) { throw new AppError('Unauthorized', 401); }
+      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
 
       if (!contextId || !characterId) {
-        throw new AppError('contextId and characterId are required', 400);
+        throw new AppError('Yêu cầu cung cấp contextId và characterId', 400);
       }
 
       const sessions = await ChatService.getSessionsFiltered(uid, contextId as string, characterId as string);
@@ -111,9 +111,9 @@ export class ChatController {
       const { sessionId, content } = req.body;
 
       if (!sessionId || !content) {
-        throw new AppError('sessionId and content are required', 400);
+        throw new AppError('Yêu cầu cung cấp sessionId và content', 400);
       }
-      if (!uid) { throw new AppError('Unauthorized', 401); }
+      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
 
       const { userMessage, assistantMessage, suggestedQuestions } = await ChatService.sendMessage(sessionId as string, content as string, uid as string);
 
@@ -148,9 +148,9 @@ export class ChatController {
       const msgText = content || message;
 
       if (!msgText) {
-        throw new AppError('message or content is required', 400);
+        throw new AppError('Yêu cầu cung cấp message hoặc content', 400);
       }
-      if (!uid) { throw new AppError('Unauthorized', 401); }
+      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
 
       const { userMessage, assistantMessage, suggestedQuestions } = await ChatService.sendMessage(sessionId as string, msgText as string, uid as string);
 
@@ -172,7 +172,7 @@ export class ChatController {
   public async deleteSession(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const uid = req.user?.id;
-      if (!uid) { throw new AppError('Unauthorized', 401); }
+      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
 
       await ChatService.deleteSession(req.params.sessionId as string, uid as string);
       sendSuccess(res, null, 'Session deleted successfully');
@@ -187,7 +187,7 @@ export class ChatController {
   public async softDeleteSession(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const uid = req.user?.id;
-      if (!uid) { throw new AppError('Unauthorized', 401); }
+      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
 
       await ChatService.deleteSession(req.params.sessionId as string, uid as string);
       sendSuccess(res, null, 'Session soft-deleted successfully');
