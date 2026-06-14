@@ -69,7 +69,7 @@ export class ChatService {
       ],
       deletedAt: { $exists: false },
     });
-    if (!character) throw new AppError('Character not found', 404);
+    if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
     const context = await HistoricalContext.findOne({
       $or: [
@@ -78,7 +78,7 @@ export class ChatService {
       ],
       deletedAt: { $exists: false },
     });
-    if (!context) throw new AppError('Historical context not found', 404);
+    if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
     const session = await ChatSession.create({
       uid: new mongoose.Types.ObjectId(uid),
@@ -133,7 +133,7 @@ export class ChatService {
     if (uid) filter.uid = new mongoose.Types.ObjectId(uid);
 
     const session = await ChatSession.findOne(filter);
-    if (!session) throw new AppError('Chat session not found', 404);
+    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
 
     const messages = await Message.find({ sessionId: session._id }).sort({ createdAt: 1 });
     return { session, messages };
@@ -172,10 +172,10 @@ export class ChatService {
       _id: sessionId,
       uid: new mongoose.Types.ObjectId(uid),
     });
-    if (!session) throw new AppError('Chat session not found', 404);
+    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
 
     const user = await User.findById(uid);
-    if (!user) throw new AppError('User not found', 404);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
     const isCustomer = user.role === 'CUSTOMER';
     if (isCustomer && user.token <= 0) throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
 
@@ -189,7 +189,7 @@ export class ChatService {
     // 2. Fetch character + context
     const character = await Character.findById(session.characterId);
     const context = await HistoricalContext.findById(session.contextId);
-    if (!character || !context) throw new AppError('Character or Context not found', 404);
+    if (!character || !context) throw new AppError('Không tìm thấy nhân vật hoặc bối cảnh lịch sử', 404);
 
     // 3. Build message history (latest 10, ascending)
     const historyDocs = await Message.find({ sessionId: session._id })
@@ -233,7 +233,7 @@ export class ChatService {
       }
     } catch (err: any) {
       console.error('[ChatService] AI call failed:', err.message);
-      throw new AppError('Failed to communicate with AI Service', 502);
+      throw new AppError('Lỗi giao tiếp với AI Service', 502);
     }
 
     // Deduct tokens
@@ -300,7 +300,7 @@ export class ChatService {
       { $set: { deletedAt: new Date(), isActive: false } },
       { new: true }
     );
-    if (!session) throw new AppError('Chat session not found', 404);
+    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
   }
 }
 

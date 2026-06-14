@@ -67,10 +67,10 @@ export class CharacterService {
       filter.isPublished = true;
     }
     
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const character = await Character.findOne({ ...filter, _id: id });
     if (!character) {
-      throw new AppError('Character not found', 404);
+      throw new AppError('Không tìm thấy nhân vật', 404);
     }
     
     // Populate linked contexts if exists
@@ -138,7 +138,7 @@ export class CharacterService {
   static async listByContextId(contextId: string, includeUnpublished = false): Promise<ICharacter[]> {
     const context = await HistoricalContext.findOne({ _id: contextId, deletedAt: { $exists: false } });
     if (!context) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
     const filter: Record<string, unknown> = {
@@ -169,7 +169,7 @@ export class CharacterService {
     }
     updateQuery.$set = updateFields;
 
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const character = await Character.findOneAndUpdate(
       { _id: id },
       updateQuery,
@@ -177,20 +177,20 @@ export class CharacterService {
     );
 
     if (!character) {
-      throw new AppError('Character not found', 404);
+      throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
     return character;
   }
 
   static async delete(id: string): Promise<void> {
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const character = await Character.findOneAndDelete({
       _id: id,
     });
 
     if (!character) {
-      throw new AppError('Character not found', 404);
+      throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
     // Remove character reference from all contexts
@@ -201,7 +201,7 @@ export class CharacterService {
   }
 
   static async softDelete(id: string): Promise<ICharacter> {
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const character = await Character.findOneAndUpdate(
       { _id: id },
       { deletedAt: new Date(), isActive: false },
@@ -209,17 +209,17 @@ export class CharacterService {
     );
 
     if (!character) {
-      throw new AppError('Character not found', 404);
+      throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
     return character;
   }
 
   static async toggleActive(id: string): Promise<ICharacter> {
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const character = await Character.findOne({ _id: id });
     if (!character) {
-      throw new AppError('Character not found', 404);
+      throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
     // Toggle isActive
@@ -240,7 +240,7 @@ export class CharacterService {
     );
 
     if (!updated) {
-      throw new AppError('Character not found', 404);
+      throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
     return updated;
@@ -253,15 +253,15 @@ export class CharacterService {
     ]);
 
     if (!character) {
-      throw new AppError('Character not found', 404);
+      throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
     if (!context) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
     if (context.characterIds.some((id) => id.toString() === character._id.toString())) {
-      throw new AppError('Character is already attached to this context', 400);
+      throw new AppError('Nhân vật đã được liên kết với bối cảnh lịch sử này', 400);
     }
 
     await HistoricalContext.findOneAndUpdate(
@@ -282,8 +282,8 @@ export class CharacterService {
       HistoricalContext.findOne({ _id: contextId, deletedAt: { $exists: false } }),
     ]);
 
-    if (!character) throw new AppError('Character not found', 404);
-    if (!context) throw new AppError('Historical context not found', 404);
+    if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
+    if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
     await HistoricalContext.findOneAndUpdate(
       { _id: contextId },
@@ -301,7 +301,7 @@ export class CharacterService {
       path: 'contextIds',
       match: includeUnpublished ? { deletedAt: { $exists: false } } : { isPublished: true, isActive: true, deletedAt: { $exists: false } },
     });
-    if (!character) throw new AppError('Character not found', 404);
+    if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
     return character.contextIds || [];
   }
 }

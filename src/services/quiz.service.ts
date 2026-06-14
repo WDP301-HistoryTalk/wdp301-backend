@@ -47,7 +47,7 @@ export class QuizService {
     }).populate('contextId', 'name');
 
     if (!quiz) {
-      throw new AppError('Quiz not found', 404);
+      throw new AppError('Không tìm thấy quiz', 404);
     }
 
     return {
@@ -73,7 +73,7 @@ export class QuizService {
     });
 
     if (!quiz) {
-      throw new AppError('Quiz not found', 404);
+      throw new AppError('Không tìm thấy quiz', 404);
     }
 
     const session = await QuizSession.create({
@@ -116,11 +116,11 @@ export class QuizService {
     });
 
     if (!session) {
-      throw new AppError('Quiz session not found', 404);
+      throw new AppError('Không tìm thấy phiên làm bài', 404);
     }
 
     if (session.endTime) {
-      throw new AppError('Quiz session already submitted', 400);
+      throw new AppError('Phiên làm bài đã được nộp', 400);
     }
 
     const quizId = session.quizId;
@@ -291,7 +291,7 @@ export class QuizService {
       .populate('createdBy', 'userName');
 
     if (!quiz) {
-      throw new AppError('Quiz not found', 404);
+      throw new AppError('Không tìm thấy quiz', 404);
     }
 
     const questions = await Question.find({ quizId: quiz._id }).sort({ orderIndex: 1 });
@@ -330,7 +330,7 @@ export class QuizService {
     // Check context exists
     const context = await HistoricalContext.findById(contextId);
     if (!context) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
     const quiz = await Quiz.create({
@@ -370,7 +370,7 @@ export class QuizService {
   static async staffUpdateQuiz(quizId: string, data: any): Promise<any> {
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      throw new AppError('Quiz not found', 404);
+      throw new AppError('Không tìm thấy quiz', 404);
     }
 
     const allowedFields = ['title', 'description', 'contextId', 'grade', 'chapterNumber', 'chapterTitle', 'era', 'durationSeconds'];
@@ -391,7 +391,7 @@ export class QuizService {
   static async staffDeleteQuiz(quizId: string): Promise<void> {
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      throw new AppError('Quiz not found', 404);
+      throw new AppError('Không tìm thấy quiz', 404);
     }
 
     await Promise.all([
@@ -408,7 +408,7 @@ export class QuizService {
       { returnDocument: 'after' }
     );
     if (!quiz) {
-      throw new AppError('Quiz not found', 404);
+      throw new AppError('Không tìm thấy quiz', 404);
     }
     return this.staffGetQuizDetail(quizId);
   }
@@ -420,7 +420,7 @@ export class QuizService {
       { returnDocument: 'after' }
     );
     if (!quiz) {
-      throw new AppError('Quiz not found', 404);
+      throw new AppError('Không tìm thấy quiz', 404);
     }
     return this.staffGetQuizDetail(quizId);
   }
@@ -428,7 +428,7 @@ export class QuizService {
   static async staffAddQuestion(quizId: string, questionData: any): Promise<any> {
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      throw new AppError('Quiz not found', 404);
+      throw new AppError('Không tìm thấy quiz', 404);
     }
 
     const question = await Question.create({
@@ -453,7 +453,7 @@ export class QuizService {
   static async staffUpdateQuestion(quizId: string, questionId: string, questionData: any): Promise<void> {
     const question = await Question.findOne({ _id: questionId, quizId });
     if (!question) {
-      throw new AppError('Question not found in this quiz', 404);
+      throw new AppError('Câu hỏi không thuộc về quiz này', 404);
     }
 
     const allowedFields = ['content', 'options', 'correctAnswer', 'orderIndex', 'explanation'];
@@ -469,7 +469,7 @@ export class QuizService {
   static async staffDeleteQuestion(quizId: string, questionId: string): Promise<void> {
     const result = await Question.deleteOne({ _id: questionId, quizId });
     if (result.deletedCount === 0) {
-      throw new AppError('Question not found in this quiz', 404);
+      throw new AppError('Câu hỏi không thuộc về quiz này', 404);
     }
   }
 }

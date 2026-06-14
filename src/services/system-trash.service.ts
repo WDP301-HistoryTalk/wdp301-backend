@@ -68,7 +68,7 @@ export class SystemTrashService {
   static async restoreCharacters(ids: string[]): Promise<BulkTrashActionResponse> {
     return this.applyAction(ids, async (id) => {
       const character = await Character.findById(id);
-      if (!character) return this.result(id, NOT_FOUND, "Character not found");
+      if (!character) return this.result(id, NOT_FOUND, "Không tìm thấy nhân vật");
       if (!character.deletedAt) return this.result(id, NOT_TRASHED, "Character is not in trash");
       
       await Character.updateOne({ _id: id }, { $unset: { deletedAt: 1 }, $set: { isActive: true } });
@@ -79,7 +79,7 @@ export class SystemTrashService {
   static async restoreContexts(ids: string[]): Promise<BulkTrashActionResponse> {
     return this.applyAction(ids, async (id) => {
       const context = await HistoricalContext.findById(id);
-      if (!context) return this.result(id, NOT_FOUND, "Historical context not found");
+      if (!context) return this.result(id, NOT_FOUND, "Không tìm thấy bối cảnh lịch sử");
       if (!context.deletedAt) return this.result(id, NOT_TRASHED, "Historical context is not in trash");
       
       await HistoricalContext.updateOne({ _id: id }, { $unset: { deletedAt: 1 }, $set: { isActive: true } });
@@ -90,7 +90,7 @@ export class SystemTrashService {
   static async restoreQuizzes(ids: string[]): Promise<BulkTrashActionResponse> {
     return this.applyAction(ids, async (id) => {
       const quiz = await Quiz.findById(id);
-      if (!quiz) return this.result(id, NOT_FOUND, "Quiz not found");
+      if (!quiz) return this.result(id, NOT_FOUND, "Không tìm thấy quiz");
       if (!quiz.deletedAt) return this.result(id, NOT_TRASHED, "Quiz is not in trash");
       
       await Quiz.updateOne({ _id: id }, { $unset: { deletedAt: 1 }, $set: { isActive: true } });
@@ -101,7 +101,7 @@ export class SystemTrashService {
   static async hardDeleteCharacters(ids: string[]): Promise<BulkTrashActionResponse> {
     return this.applyAction(ids, async (id) => {
       const character = await Character.findById(id);
-      if (!character) return this.result(id, NOT_FOUND, "Character not found");
+      if (!character) return this.result(id, NOT_FOUND, "Không tìm thấy nhân vật");
       if (!character.deletedAt) return this.result(id, NOT_TRASHED, "Character is not in trash");
       
       await this.performHardDeleteCharacter(id);
@@ -112,7 +112,7 @@ export class SystemTrashService {
   static async hardDeleteContexts(ids: string[]): Promise<BulkTrashActionResponse> {
     return this.applyAction(ids, async (id) => {
       const context = await HistoricalContext.findById(id);
-      if (!context) return this.result(id, NOT_FOUND, "Historical context not found");
+      if (!context) return this.result(id, NOT_FOUND, "Không tìm thấy bối cảnh lịch sử");
       if (!context.deletedAt) return this.result(id, NOT_TRASHED, "Historical context is not in trash");
       
       await this.performHardDeleteContext(id);
@@ -123,7 +123,7 @@ export class SystemTrashService {
   static async hardDeleteQuizzes(ids: string[]): Promise<BulkTrashActionResponse> {
     return this.applyAction(ids, async (id) => {
       const quiz = await Quiz.findById(id);
-      if (!quiz) return this.result(id, NOT_FOUND, "Quiz not found");
+      if (!quiz) return this.result(id, NOT_FOUND, "Không tìm thấy quiz");
       if (!quiz.deletedAt) return this.result(id, NOT_TRASHED, "Quiz is not in trash");
       
       await Quiz.deleteOne({ _id: id });

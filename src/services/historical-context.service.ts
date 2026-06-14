@@ -56,10 +56,10 @@ export class HistoricalContextService {
       filter.isPublished = true;
     }
     
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const context = await HistoricalContext.findOne({ ...filter, _id: id }).populate('characterIds');
     if (!context) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
     return context;
   }
@@ -131,7 +131,7 @@ export class HistoricalContextService {
     }
     updateQuery.$set = updateFields;
 
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const context = await HistoricalContext.findOneAndUpdate(
       { _id: id },
       updateQuery,
@@ -139,25 +139,25 @@ export class HistoricalContextService {
     ).populate('characterIds');
 
     if (!context) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
     return context;
   }
 
   static async delete(id: string): Promise<void> {
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const context = await HistoricalContext.findOneAndDelete({
       _id: id,
     });
 
     if (!context) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
   }
 
   static async softDelete(id: string): Promise<IHistoricalContext> {
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const context = await HistoricalContext.findOneAndUpdate(
       { _id: id, deletedAt: { $exists: false } },
       { deletedAt: new Date(), isActive: false },
@@ -165,17 +165,17 @@ export class HistoricalContextService {
     );
 
     if (!context) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
     return context;
   }
 
   static async toggleActive(id: string): Promise<IHistoricalContext> {
-    if (!mongoose.isValidObjectId(id)) throw new AppError('Invalid ID', 400);
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const context = await HistoricalContext.findOne({ _id: id });
     if (!context) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
     // Toggle isActive
@@ -196,7 +196,7 @@ export class HistoricalContextService {
     );
 
     if (!updated) {
-      throw new AppError('Historical context not found', 404);
+      throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
     return updated;

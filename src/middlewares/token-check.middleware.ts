@@ -10,7 +10,7 @@ export const checkTokenBalance = async (
   const user = await User.findById(req.user!.id).select('token');
   if (!user || user.token <= 0) {
     return next(
-      new AppError('Insufficient tokens. Please upgrade your plan to continue.', 403)
+      new AppError('Không đủ token. Vui lòng nạp thêm để tiếp tục.', 403)
     );
   }
   next();

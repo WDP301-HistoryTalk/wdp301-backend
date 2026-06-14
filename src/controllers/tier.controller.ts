@@ -30,7 +30,7 @@ export class TierController {
       const { id } = req.params;
       const tier = await Tier.findById(id);
       if (!tier) {
-        throw new AppError('Tier not found', 404);
+        throw new AppError('Không tìm thấy gói dịch vụ', 404);
       }
       const tierObj = tier.toObject();
       sendSuccess(res, { ...tierObj, id: tierObj._id }, 'Tier retrieved successfully');
@@ -55,7 +55,7 @@ export class TierController {
       const { id } = req.params;
       const tier = await Tier.findByIdAndUpdate(id, req.body, { returnDocument: 'after', runValidators: true });
       if (!tier) {
-        throw new AppError('Tier not found', 404);
+        throw new AppError('Không tìm thấy gói dịch vụ', 404);
       }
       const tierObj = tier.toObject();
       sendSuccess(res, { ...tierObj, id: tierObj._id }, 'Tier updated successfully');
@@ -69,7 +69,7 @@ export class TierController {
       const { id } = req.params;
       const tier = await Tier.findByIdAndUpdate(id, { isActive: false }, { returnDocument: 'after' });
       if (!tier) {
-        throw new AppError('Tier not found', 404);
+        throw new AppError('Không tìm thấy gói dịch vụ', 404);
       }
       sendSuccess(res, null, 'Tier deactivated successfully');
     } catch (error) {

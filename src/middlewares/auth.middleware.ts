@@ -15,7 +15,7 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction): 
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
-      throw new AppError('No token provided', 401);
+      throw new AppError('Không có token nào được cung cấp', 401);
     }
 
     const token = authHeader.split(' ')[1];
@@ -25,7 +25,7 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction): 
     next();
   } catch (error) {
     if (error instanceof AppError) return next(error);
-    next(new AppError('Invalid or expired token', 401));
+    next(new AppError('Token không hợp lệ hoặc đã hết hạn', 401));
   }
 };
 
@@ -43,14 +43,14 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction): 
     req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
     next();
   } catch {
-    next(new AppError('Invalid or expired token', 401));
+    next(new AppError('Token không hợp lệ hoặc đã hết hạn', 401));
   }
 };
 
 export const authorizeRoles = (...roles: string[]) => {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return next(new AppError('Forbidden: Insufficient privileges', 403));
+      return next(new AppError('Bị từ chối: Không đủ quyền truy cập', 403));
     }
     next();
   };

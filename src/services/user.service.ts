@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 export class UserService {
   static async findUserById(id: string) {
     const user = await User.findById(id).populate('tierId');
-    if (!user) throw new AppError('User not found', 404);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
 
     // Daily Token Reset Logic
     const today = new Date();
@@ -36,21 +36,21 @@ export class UserService {
     }
 
     const user = await User.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true }).populate('tierId');
-    if (!user) throw new AppError('User not found', 404);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
     return user;
   }
 
   static async changePassword(id: string, data: any) {
     const { currentPassword, newPassword, confirmPassword } = data;
     if (newPassword !== confirmPassword) {
-      throw new AppError('New password and confirmation password do not match', 400);
+      throw new AppError('Mật khẩu mới và mật khẩu xác nhận không khớp', 400);
     }
 
     const user = await User.findById(id).select('+password');
-    if (!user || !user.password) throw new AppError('User not found', 404);
+    if (!user || !user.password) throw new AppError('Không tìm thấy người dùng', 404);
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) throw new AppError('Current password is incorrect', 400);
+    if (!isMatch) throw new AppError('Mật khẩu hiện tại không chính xác', 400);
 
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
@@ -80,13 +80,13 @@ export class UserService {
       if (data[field] !== undefined) updateData[field] = data[field];
     }
     const user = await User.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true });
-    if (!user) throw new AppError('User not found', 404);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
     return user;
   }
 
   static async updateUserRole(id: string, role: string) {
     const user = await User.findByIdAndUpdate(id, { role }, { returnDocument: 'after', runValidators: true });
-    if (!user) throw new AppError('User not found', 404);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
     return user;
   }
 }
