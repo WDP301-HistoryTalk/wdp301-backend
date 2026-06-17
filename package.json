@@ -19,6 +19,7 @@
     "db:migrate": "tsx src/scripts/migrate.ts",
     "db:rollback": "tsx src/scripts/rollback.ts",
     "db:status": "tsx src/scripts/migrate-status.ts",
+    "subscriptions:downgrade": "tsx src/scripts/downgrade-expired.ts",
     "generate:openapi": "tsx src/scripts/generate-openapi.ts"
   },
   "repository": {

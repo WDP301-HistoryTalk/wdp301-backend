@@ -3,11 +3,13 @@ import app from './app';
 import { config } from './config';
 import { logger } from './utils/logger';
 import { connectDB } from './config/db';
+import { startSchedulers } from './utils/scheduler';
 
 const server = http.createServer(app);
 
 const startServer = async () => {
   await connectDB();
+  startSchedulers();
   server.listen(config.port, () => {
     logger.info(`=================================`);
     logger.info(`  Server running in [${config.nodeEnv}] mode`);

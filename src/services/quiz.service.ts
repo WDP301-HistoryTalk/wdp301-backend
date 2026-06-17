@@ -190,20 +190,24 @@ export class QuizService {
 
     const total = await QuizSession.countDocuments({ uid: userId, endTime: { $exists: true } });
 
-    const content = sessions.map(s => {
-      const quiz: any = s.quizId;
-      const duration = s.endTime ? Math.round((s.endTime.getTime() - s.startTime.getTime()) / 1000) : 0;
-      return {
-        resultId: s._id.toString(),
-        quizId: quiz?._id?.toString() || '',
-        quizTitle: quiz?.title || 'Unknown Quiz',
-        score: s.score || 0,
-        totalQuestions: 0, // This is fine or we can count questions if populated
-        percentage: 0,
-        durationSeconds: duration,
-        completedAt: s.endTime?.toISOString() || s.updatedAt.toISOString(),
-      };
-    });
+    const content = await Promise.all(
+      sessions.map(async s => {
+        const quiz: any = s.quizId;
+        const duration = s.endTime ? Math.round((s.endTime.getTime() - s.startTime.getTime()) / 1000) : 0;
+        const totalQuestions = quiz?._id ? await Question.countDocuments({ quizId: quiz._id }) : 0;
+        const percentage = Math.round((s.score || 0) * 10); // score is out of 10
+        return {
+          resultId: s._id.toString(),
+          quizId: quiz?._id?.toString() || '',
+          quizTitle: quiz?.title || 'Unknown Quiz',
+          score: s.score || 0,
+          totalQuestions,
+          percentage,
+          durationSeconds: duration,
+          completedAt: s.endTime?.toISOString() || s.updatedAt.toISOString(),
+        };
+      })
+    );
 
     return {
       content,
