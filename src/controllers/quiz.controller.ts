@@ -17,7 +17,7 @@ export class QuizController {
 
   static async getQuizById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const data = await QuizService.getQuizById(req.params.quizId as string);
+      const data = await QuizService.getQuizById(req.params.quizId as string, req.user?.id);
       sendSuccess(res, data, 'Quiz retrieved successfully');
     } catch (error) {
       next(error);
@@ -26,7 +26,10 @@ export class QuizController {
 
   static async startSession(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const data = await QuizService.startSession(req.user!.id, req.params.quizId as string);
+      const limitedTime = req.query.limitedTime === undefined
+        ? undefined
+        : Number(req.query.limitedTime);
+      const data = await QuizService.startSession(req.user!.id, req.params.quizId as string, limitedTime);
       sendSuccess(res, data, 'Quiz session started successfully');
     } catch (error) {
       next(error);
@@ -48,6 +51,15 @@ export class QuizController {
       const size = parseInt(req.query.size as string) || 10;
       const data = await QuizService.getMyResults(req.user!.id, page, size);
       sendSuccess(res, data, 'Quiz results retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMyResultDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await QuizService.getMyResultDetail(req.user!.id, req.params.sessionId as string);
+      sendSuccess(res, data, 'Quiz result detail retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -79,6 +91,27 @@ export class QuizController {
     }
   }
 
+  static async staffListSessions(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.query.userId as string | undefined;
+      const page = parseInt(req.query.page as string) || 0;
+      const size = parseInt(req.query.size as string) || 10;
+      const data = await QuizService.staffListSessions({ userId, page, size });
+      sendSuccess(res, data, 'Quiz sessions retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async staffGetSessionDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await QuizService.staffGetSessionDetail(req.params.sessionId as string);
+      sendSuccess(res, data, 'Quiz session detail retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async staffCreateQuiz(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = await QuizService.staffCreateQuiz(req.user!.id, req.body);
@@ -100,7 +133,7 @@ export class QuizController {
   static async staffDeleteQuiz(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       await QuizService.staffDeleteQuiz(req.params.quizId as string);
-      sendSuccess(res, null, 'Quiz permanently deleted successfully');
+      sendSuccess(res, {}, 'Quiz permanently deleted successfully');
     } catch (error) {
       next(error);
     }
@@ -108,8 +141,8 @@ export class QuizController {
 
   static async staffSoftDeleteQuiz(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const data = await QuizService.staffSoftDeleteQuiz(req.params.quizId as string);
-      sendSuccess(res, data, 'Quiz soft deleted successfully');
+      await QuizService.staffSoftDeleteQuiz(req.params.quizId as string);
+      sendSuccess(res, {}, 'Quiz soft deleted successfully');
     } catch (error) {
       next(error);
     }
@@ -136,7 +169,7 @@ export class QuizController {
   static async staffUpdateQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       await QuizService.staffUpdateQuestion(req.params.quizId as string, req.params.questionId as string, req.body);
-      sendSuccess(res, null, 'Question updated successfully');
+      sendSuccess(res, {}, 'Question updated successfully');
     } catch (error) {
       next(error);
     }
@@ -145,7 +178,7 @@ export class QuizController {
   static async staffDeleteQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       await QuizService.staffDeleteQuestion(req.params.quizId as string, req.params.questionId as string);
-      sendSuccess(res, null, 'Question deleted successfully');
+      sendSuccess(res, {}, 'Question deleted successfully');
     } catch (error) {
       next(error);
     }

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { QuizController } from '../controllers/quiz.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, optionalAuth } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -23,6 +23,23 @@ const router = Router();
  *       - BearerAuth: []
  */
 router.get('/results/me', authenticate, QuizController.getMyResults);
+
+/**
+ * @openapi
+ * /quizzes/results/me/{sessionId}:
+ *   get:
+ *     tags: [Quizzes]
+ *     summary: Get one of the current user's completed quiz sessions
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/results/me/:sessionId', authenticate, QuizController.getMyResultDetail);
 
 /**
  * @openapi
@@ -57,7 +74,7 @@ router.get('/', QuizController.listQuizzes);
  *         schema:
  *           type: string
  */
-router.get('/:quizId', QuizController.getQuizById);
+router.get('/:quizId', optionalAuth, QuizController.getQuizById);
 
 /**
  * @openapi
@@ -73,6 +90,12 @@ router.get('/:quizId', QuizController.getQuizById);
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: limitedTime
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
  */
 router.post('/:quizId/start', authenticate, QuizController.startSession);
 

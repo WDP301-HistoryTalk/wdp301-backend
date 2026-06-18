@@ -28,6 +28,49 @@ router.get('/quizzes', QuizController.staffListQuizzes);
 
 /**
  * @openapi
+ * /staff/quizzes/sessions:
+ *   get:
+ *     tags: [Staff Quizzes]
+ *     summary: Get completed quiz sessions
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: integer
+ *           default: 10
+ */
+router.get('/quizzes/sessions', QuizController.staffListSessions);
+
+/**
+ * @openapi
+ * /staff/quizzes/sessions/{sessionId}:
+ *   get:
+ *     tags: [Staff Quizzes]
+ *     summary: Get completed quiz session detail
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/quizzes/sessions/:sessionId', QuizController.staffGetSessionDetail);
+
+/**
+ * @openapi
  * /staff/quizzes/{quizId}:
  *   get:
  *     tags: [Staff Quizzes]
