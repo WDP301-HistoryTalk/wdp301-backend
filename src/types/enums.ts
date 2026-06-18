@@ -25,6 +25,17 @@ export enum UserRole {
   SystemAdmin = 'SYSTEM_ADMIN',
 }
 
+export enum QuizLevel {
+  Easy = 'EASY',
+  Medium = 'MEDIUM',
+  Hard = 'HARD',
+}
+
+export enum QuizStatus {
+  Active = 'ACTIVE',
+  Draft = 'DRAFT',
+  Deleted = 'DELETED',
+}
 
 export enum TierTitle {
   Free = 'free',

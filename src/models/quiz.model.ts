@@ -1,11 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { EventEra } from '../types/enums';
+import { EventEra, QuizLevel } from '../types/enums';
 
 export interface IQuiz extends Document {
   contextId: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
   title: string;
   description?: string;
+  level: QuizLevel;
   grade?: number;
   chapterNumber?: number;
   chapterTitle?: string;
@@ -14,6 +15,7 @@ export interface IQuiz extends Document {
   playCount: number;
   rating: number;
   isActive: boolean;
+  isPublished: boolean;
   deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +32,12 @@ const quizSchema = new Schema<IQuiz>(
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
     description: { type: String },
+    level: {
+      type: String,
+      enum: Object.values(QuizLevel),
+      required: true,
+      default: QuizLevel.Medium,
+    },
     grade: { type: Number },
     chapterNumber: { type: Number },
     chapterTitle: { type: String },
@@ -38,6 +46,7 @@ const quizSchema = new Schema<IQuiz>(
     playCount: { type: Number, default: 0 },
     rating: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    isPublished: { type: Boolean, default: true },
     deletedAt: { type: Date },
   },
   { timestamps: true }

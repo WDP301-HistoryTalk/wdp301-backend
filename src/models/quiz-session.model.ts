@@ -7,6 +7,8 @@ export interface IQuizSession extends Document {
   startTime: Date;
   endTime?: Date;
   score?: number;
+  totalQuestions?: number;
+  percentage?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +21,8 @@ const quizSessionSchema = new Schema<IQuizSession>(
     startTime: { type: Date, required: true },
     endTime: { type: Date },
     score: { type: Number },
+    totalQuestions: { type: Number },
+    percentage: { type: Number },
   },
   { timestamps: true }
 );
