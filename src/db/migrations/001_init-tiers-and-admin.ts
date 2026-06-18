@@ -3,9 +3,9 @@ import bcrypt from 'bcryptjs';
 import { TierTitle, UserRole } from '../../types/enums';
 
 const TIERS = [
-  { title: TierTitle.Free, amount: 0, limitedToken: 10 },
-  { title: TierTitle.Plus, amount: 99000, limitedToken: 100 },
-  { title: TierTitle.Pro, amount: 299000, limitedToken: 500 },
+  { title: TierTitle.Free, amount: 0, noMonth: 1, limitedToken: 10, isActive: true },
+  { title: TierTitle.Plus, amount: 99000, noMonth: 1, limitedToken: 100, isActive: true },
+  { title: TierTitle.Pro, amount: 299000, noMonth: 1, limitedToken: 500, isActive: true },
 ];
 
 export async function up(db: Db): Promise<void> {

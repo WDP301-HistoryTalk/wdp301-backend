@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -28,6 +28,6 @@ export const paymentLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTest,
-  keyGenerator: (req) => req.user?.id || req.ip || 'anonymous',
+  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip || 'anonymous'),
   message: { status: 'error', message: 'Too many payment requests, please slow down.' },
 });

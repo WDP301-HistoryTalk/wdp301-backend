@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 
@@ -29,7 +30,7 @@ async function main() {
   }
 
   const { name } = last[0];
-  const mod: MigrationModule = await import(path.join(MIGRATIONS_DIR, name));
+  const mod: MigrationModule = await import(pathToFileURL(path.join(MIGRATIONS_DIR, name)).href);
   await mod.down(db);
   await db.collection(CHANGELOG).deleteOne({ name });
   logger.info(`Rolled back: ${name}`);
