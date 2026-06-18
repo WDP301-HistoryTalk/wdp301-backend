@@ -13,6 +13,7 @@ export interface IUser extends Document {
   avatarUrl?: string;
   role: UserRole;
   tierId?: mongoose.Types.ObjectId;
+  tierExpiresAt?: Date;
   token: number;
   lastActiveDate?: Date;
   lastTokenResetAt?: Date;
@@ -50,6 +51,7 @@ const userSchema = new Schema<IUser>(
       default: UserRole.Customer,
     },
     tierId: { type: Schema.Types.ObjectId, ref: 'Tier' },
+    tierExpiresAt: { type: Date },
     token: { type: Number, default: 0 },
     lastActiveDate: { type: Date },
     lastTokenResetAt: { type: Date },

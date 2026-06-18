@@ -1,0 +1,2259 @@
+{
+  "metadata": {
+    "projectName": "wdp301-backend",
+    "analyzedAt": "2026-06-17T00:00:00.000Z",
+    "gitCommitHash": "latest",
+    "totalFiles": 74,
+    "totalNodes": 120,
+    "totalEdges": 166,
+    "languages": [
+      "typescript"
+    ],
+    "frameworks": [
+      "express"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "src/app.ts",
+      "type": "file",
+      "name": "app.ts",
+      "filePath": "src/app.ts",
+      "summary": "Configures the Express application, applies global middlewares, and mounts root routers.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 65,
+      "children": []
+    },
+    {
+      "id": "src/config/db.ts",
+      "type": "file",
+      "name": "db.ts",
+      "filePath": "src/config/db.ts",
+      "summary": "Application configuration and setup for db.",
+      "tags": [
+        "config"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 44,
+      "children": [
+        "src/config/db.ts::connectDB"
+      ]
+    },
+    {
+      "id": "src/config/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/config/index.ts",
+      "summary": "Application configuration and setup for index.",
+      "tags": [
+        "config"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 22,
+      "children": []
+    },
+    {
+      "id": "src/config/swagger.ts",
+      "type": "file",
+      "name": "swagger.ts",
+      "filePath": "src/config/swagger.ts",
+      "summary": "Application configuration and setup for swagger.",
+      "tags": [
+        "config"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 6,
+      "children": []
+    },
+    {
+      "id": "src/controllers/auth.controller.ts",
+      "type": "file",
+      "name": "auth.controller.ts",
+      "filePath": "src/controllers/auth.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for auth domain, delegating business logic to services.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 82,
+      "children": [
+        "src/controllers/auth.controller.ts::AuthController"
+      ]
+    },
+    {
+      "id": "src/controllers/character.controller.ts",
+      "type": "file",
+      "name": "character.controller.ts",
+      "filePath": "src/controllers/character.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for character domain, delegating business logic to services.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 214,
+      "children": [
+        "src/controllers/character.controller.ts::CharacterController"
+      ]
+    },
+    {
+      "id": "src/controllers/chat.controller.ts",
+      "type": "file",
+      "name": "chat.controller.ts",
+      "filePath": "src/controllers/chat.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for chat domain, delegating business logic to services.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 201,
+      "children": [
+        "src/controllers/chat.controller.ts::ChatController",
+        "src/controllers/chat.controller.ts::mapMsg"
+      ]
+    },
+    {
+      "id": "src/controllers/dashboard.controller.ts",
+      "type": "file",
+      "name": "dashboard.controller.ts",
+      "filePath": "src/controllers/dashboard.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for dashboard domain, delegating business logic to services.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 103,
+      "children": [
+        "src/controllers/dashboard.controller.ts::DashboardController"
+      ]
+    },
+    {
+      "id": "src/controllers/document.controller.ts",
+      "type": "file",
+      "name": "document.controller.ts",
+      "filePath": "src/controllers/document.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for document domain, delegating business logic to services.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 112,
+      "children": [
+        "src/controllers/document.controller.ts::DocumentController"
+      ]
+    },
+    {
+      "id": "src/controllers/historical-context.controller.ts",
+      "type": "file",
+      "name": "historical-context.controller.ts",
+      "filePath": "src/controllers/historical-context.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for historical-context domain, delegating business logic to services.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 117,
+      "children": [
+        "src/controllers/historical-context.controller.ts::HistoricalContextController"
+      ]
+    },
+    {
+      "id": "src/controllers/payment.controller.ts",
+      "type": "file",
+      "name": "payment.controller.ts",
+      "filePath": "src/controllers/payment.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for payment domain, delegating business logic to services.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 24,
+      "children": [
+        "src/controllers/payment.controller.ts::PaymentController"
+      ]
+    },
+    {
+      "id": "src/controllers/user.controller.ts",
+      "type": "file",
+      "name": "user.controller.ts",
+      "filePath": "src/controllers/user.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for user domain, delegating business logic to services.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 73,
+      "children": [
+        "src/controllers/user.controller.ts::UserController"
+      ]
+    },
+    {
+      "id": "src/db/migrations/001_init-tiers-and-admin.ts",
+      "type": "file",
+      "name": "001_init-tiers-and-admin.ts",
+      "filePath": "src/db/migrations/001_init-tiers-and-admin.ts",
+      "summary": "Provides functionality for 001_init-tiers-and-admin.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 41,
+      "children": [
+        "src/db/migrations/001_init-tiers-and-admin.ts::up",
+        "src/db/migrations/001_init-tiers-and-admin.ts::down"
+      ]
+    },
+    {
+      "id": "src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/index.ts",
+      "summary": "Application entry point. Initializes the server and connects to external dependencies.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 50,
+      "children": [
+        "src/index.ts::startServer"
+      ]
+    },
+    {
+      "id": "src/middlewares/api-logger.middleware.ts",
+      "type": "file",
+      "name": "api-logger.middleware.ts",
+      "filePath": "src/middlewares/api-logger.middleware.ts",
+      "summary": "Express middleware for intercepting requests to handle api-logger (e.g., validation, auth).",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 27,
+      "children": [
+        "src/middlewares/api-logger.middleware.ts::apiLogger"
+      ]
+    },
+    {
+      "id": "src/middlewares/auth.middleware.ts",
+      "type": "file",
+      "name": "auth.middleware.ts",
+      "filePath": "src/middlewares/auth.middleware.ts",
+      "summary": "Express middleware for intercepting requests to handle auth (e.g., validation, auth).",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 58,
+      "children": [
+        "src/middlewares/auth.middleware.ts::authenticate",
+        "src/middlewares/auth.middleware.ts::optionalAuth",
+        "src/middlewares/auth.middleware.ts::authorizeRoles"
+      ]
+    },
+    {
+      "id": "src/middlewares/authorize.middleware.ts",
+      "type": "file",
+      "name": "authorize.middleware.ts",
+      "filePath": "src/middlewares/authorize.middleware.ts",
+      "summary": "Express middleware for intercepting requests to handle authorize (e.g., validation, auth).",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 16,
+      "children": [
+        "src/middlewares/authorize.middleware.ts::authorize"
+      ]
+    },
+    {
+      "id": "src/middlewares/error.middleware.ts",
+      "type": "file",
+      "name": "error.middleware.ts",
+      "filePath": "src/middlewares/error.middleware.ts",
+      "summary": "Express middleware for intercepting requests to handle error (e.g., validation, auth).",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 78,
+      "children": []
+    },
+    {
+      "id": "src/middlewares/rate-limit.middleware.ts",
+      "type": "file",
+      "name": "rate-limit.middleware.ts",
+      "filePath": "src/middlewares/rate-limit.middleware.ts",
+      "summary": "Express middleware for intercepting requests to handle rate-limit (e.g., validation, auth).",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 22,
+      "children": []
+    },
+    {
+      "id": "src/middlewares/token-check.middleware.ts",
+      "type": "file",
+      "name": "token-check.middleware.ts",
+      "filePath": "src/middlewares/token-check.middleware.ts",
+      "summary": "Express middleware for intercepting requests to handle token-check (e.g., validation, auth).",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 18,
+      "children": [
+        "src/middlewares/token-check.middleware.ts::checkTokenBalance"
+      ]
+    },
+    {
+      "id": "src/middlewares/validate.middleware.ts",
+      "type": "file",
+      "name": "validate.middleware.ts",
+      "filePath": "src/middlewares/validate.middleware.ts",
+      "summary": "Express middleware for intercepting requests to handle validate (e.g., validation, auth).",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 23,
+      "children": [
+        "src/middlewares/validate.middleware.ts::validate",
+        "src/middlewares/validate.middleware.ts::parsed"
+      ]
+    },
+    {
+      "id": "src/models/answer-detail.model.ts",
+      "type": "file",
+      "name": "answer-detail.model.ts",
+      "filePath": "src/models/answer-detail.model.ts",
+      "summary": "Defines the database schema and ORM mappings for answer-detail entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 25,
+      "children": []
+    },
+    {
+      "id": "src/models/character.model.ts",
+      "type": "file",
+      "name": "character.model.ts",
+      "filePath": "src/models/character.model.ts",
+      "summary": "Defines the database schema and ORM mappings for character entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 70,
+      "children": [
+        "src/models/character.model.ts::generateCharacterId"
+      ]
+    },
+    {
+      "id": "src/models/chat-session.model.ts",
+      "type": "file",
+      "name": "chat-session.model.ts",
+      "filePath": "src/models/chat-session.model.ts",
+      "summary": "Defines the database schema and ORM mappings for chat-session entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 29,
+      "children": []
+    },
+    {
+      "id": "src/models/document.model.ts",
+      "type": "file",
+      "name": "document.model.ts",
+      "filePath": "src/models/document.model.ts",
+      "summary": "Defines the database schema and ORM mappings for document entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 37,
+      "children": []
+    },
+    {
+      "id": "src/models/historical-context.model.ts",
+      "type": "file",
+      "name": "historical-context.model.ts",
+      "filePath": "src/models/historical-context.model.ts",
+      "summary": "Defines the database schema and ORM mappings for historical-context entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 73,
+      "children": [
+        "src/models/historical-context.model.ts::generateContextId"
+      ]
+    },
+    {
+      "id": "src/models/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/models/index.ts",
+      "summary": "Defines the database schema and ORM mappings for index entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 30,
+      "children": []
+    },
+    {
+      "id": "src/models/message.model.ts",
+      "type": "file",
+      "name": "message.model.ts",
+      "filePath": "src/models/message.model.ts",
+      "summary": "Defines the database schema and ORM mappings for message entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 30,
+      "children": []
+    },
+    {
+      "id": "src/models/order.model.ts",
+      "type": "file",
+      "name": "order.model.ts",
+      "filePath": "src/models/order.model.ts",
+      "summary": "Defines the database schema and ORM mappings for order entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 38,
+      "children": []
+    },
+    {
+      "id": "src/models/question.model.ts",
+      "type": "file",
+      "name": "question.model.ts",
+      "filePath": "src/models/question.model.ts",
+      "summary": "Defines the database schema and ORM mappings for question entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 29,
+      "children": []
+    },
+    {
+      "id": "src/models/quiz-session.model.ts",
+      "type": "file",
+      "name": "quiz-session.model.ts",
+      "filePath": "src/models/quiz-session.model.ts",
+      "summary": "Defines the database schema and ORM mappings for quiz-session entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 27,
+      "children": []
+    },
+    {
+      "id": "src/models/quiz.model.ts",
+      "type": "file",
+      "name": "quiz.model.ts",
+      "filePath": "src/models/quiz.model.ts",
+      "summary": "Defines the database schema and ORM mappings for quiz entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 37,
+      "children": []
+    },
+    {
+      "id": "src/models/tier.model.ts",
+      "type": "file",
+      "name": "tier.model.ts",
+      "filePath": "src/models/tier.model.ts",
+      "summary": "Defines the database schema and ORM mappings for tier entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 31,
+      "children": []
+    },
+    {
+      "id": "src/models/transaction.model.ts",
+      "type": "file",
+      "name": "transaction.model.ts",
+      "filePath": "src/models/transaction.model.ts",
+      "summary": "Defines the database schema and ORM mappings for transaction entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 32,
+      "children": []
+    },
+    {
+      "id": "src/models/user.model.ts",
+      "type": "file",
+      "name": "user.model.ts",
+      "filePath": "src/models/user.model.ts",
+      "summary": "Defines the database schema and ORM mappings for user entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 67,
+      "children": []
+    },
+    {
+      "id": "src/models/vector-chunk.model.ts",
+      "type": "file",
+      "name": "vector-chunk.model.ts",
+      "filePath": "src/models/vector-chunk.model.ts",
+      "summary": "Defines the database schema and ORM mappings for vector-chunk entities.",
+      "tags": [
+        "model",
+        "database"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 28,
+      "children": []
+    },
+    {
+      "id": "src/routes/auth.routes.ts",
+      "type": "file",
+      "name": "auth.routes.ts",
+      "filePath": "src/routes/auth.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the auth feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 426,
+      "children": []
+    },
+    {
+      "id": "src/routes/character.routes.ts",
+      "type": "file",
+      "name": "character.routes.ts",
+      "filePath": "src/routes/character.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the character feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 224,
+      "children": []
+    },
+    {
+      "id": "src/routes/chat.routes.ts",
+      "type": "file",
+      "name": "chat.routes.ts",
+      "filePath": "src/routes/chat.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the chat feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 131,
+      "children": []
+    },
+    {
+      "id": "src/routes/dashboard.routes.ts",
+      "type": "file",
+      "name": "dashboard.routes.ts",
+      "filePath": "src/routes/dashboard.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the dashboard feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 129,
+      "children": []
+    },
+    {
+      "id": "src/routes/document.routes.ts",
+      "type": "file",
+      "name": "document.routes.ts",
+      "filePath": "src/routes/document.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the document feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 180,
+      "children": []
+    },
+    {
+      "id": "src/routes/historical-context.routes.ts",
+      "type": "file",
+      "name": "historical-context.routes.ts",
+      "filePath": "src/routes/historical-context.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the historical-context feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 146,
+      "children": []
+    },
+    {
+      "id": "src/routes/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/routes/index.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the index feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 27,
+      "children": []
+    },
+    {
+      "id": "src/routes/payment.routes.ts",
+      "type": "file",
+      "name": "payment.routes.ts",
+      "filePath": "src/routes/payment.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the payment feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 26,
+      "children": []
+    },
+    {
+      "id": "src/routes/quiz.routes.ts",
+      "type": "file",
+      "name": "quiz.routes.ts",
+      "filePath": "src/routes/quiz.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the quiz feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 94,
+      "children": []
+    },
+    {
+      "id": "src/routes/staff.routes.ts",
+      "type": "file",
+      "name": "staff.routes.ts",
+      "filePath": "src/routes/staff.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the staff feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 216,
+      "children": []
+    },
+    {
+      "id": "src/routes/user.routes.ts",
+      "type": "file",
+      "name": "user.routes.ts",
+      "filePath": "src/routes/user.routes.ts",
+      "summary": "Maps API endpoints (URLs) to their corresponding controller handlers for the user feature.",
+      "tags": [
+        "route",
+        "api"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 212,
+      "children": []
+    },
+    {
+      "id": "src/scripts/check-db.ts",
+      "type": "file",
+      "name": "check-db.ts",
+      "filePath": "src/scripts/check-db.ts",
+      "summary": "Provides functionality for check-db.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 23,
+      "children": [
+        "src/scripts/check-db.ts::run"
+      ]
+    },
+    {
+      "id": "src/scripts/generate-openapi.ts",
+      "type": "file",
+      "name": "generate-openapi.ts",
+      "filePath": "src/scripts/generate-openapi.ts",
+      "summary": "Provides functionality for generate-openapi.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 32,
+      "children": []
+    },
+    {
+      "id": "src/scripts/migrate-status.ts",
+      "type": "file",
+      "name": "migrate-status.ts",
+      "filePath": "src/scripts/migrate-status.ts",
+      "summary": "Provides functionality for migrate-status.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 39,
+      "children": [
+        "src/scripts/migrate-status.ts::main"
+      ]
+    },
+    {
+      "id": "src/scripts/migrate.ts",
+      "type": "file",
+      "name": "migrate.ts",
+      "filePath": "src/scripts/migrate.ts",
+      "summary": "Provides functionality for migrate.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 47,
+      "children": [
+        "src/scripts/migrate.ts::main"
+      ]
+    },
+    {
+      "id": "src/scripts/rollback.ts",
+      "type": "file",
+      "name": "rollback.ts",
+      "filePath": "src/scripts/rollback.ts",
+      "summary": "Provides functionality for rollback.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 44,
+      "children": [
+        "src/scripts/rollback.ts::main"
+      ]
+    },
+    {
+      "id": "src/scripts/test-api.ts",
+      "type": "file",
+      "name": "test-api.ts",
+      "filePath": "src/scripts/test-api.ts",
+      "summary": "Provides functionality for test-api.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 41,
+      "children": [
+        "src/scripts/test-api.ts::run"
+      ]
+    },
+    {
+      "id": "src/services/auth.service.ts",
+      "type": "file",
+      "name": "auth.service.ts",
+      "filePath": "src/services/auth.service.ts",
+      "summary": "Encapsulates core business logic and database interactions for the auth domain.",
+      "tags": [
+        "service"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 230,
+      "children": [
+        "src/services/auth.service.ts::AuthService",
+        "src/services/auth.service.ts::parseExpiresInToSeconds"
+      ]
+    },
+    {
+      "id": "src/services/character.service.ts",
+      "type": "file",
+      "name": "character.service.ts",
+      "filePath": "src/services/character.service.ts",
+      "summary": "Encapsulates core business logic and database interactions for the character domain.",
+      "tags": [
+        "service"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 334,
+      "children": [
+        "src/services/character.service.ts::CharacterService"
+      ]
+    },
+    {
+      "id": "src/services/chat.service.ts",
+      "type": "file",
+      "name": "chat.service.ts",
+      "filePath": "src/services/chat.service.ts",
+      "summary": "Encapsulates core business logic and database interactions for the chat domain.",
+      "tags": [
+        "service"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 308,
+      "children": [
+        "src/services/chat.service.ts::ChatService",
+        "src/services/chat.service.ts::buildCharacterPayload",
+        "src/services/chat.service.ts::fmtDate",
+        "src/services/chat.service.ts::buildContextPayload"
+      ]
+    },
+    {
+      "id": "src/services/dashboard.service.ts",
+      "type": "file",
+      "name": "dashboard.service.ts",
+      "filePath": "src/services/dashboard.service.ts",
+      "summary": "Encapsulates core business logic and database interactions for the dashboard domain.",
+      "tags": [
+        "service"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 138,
+      "children": [
+        "src/services/dashboard.service.ts::DashboardService"
+      ]
+    },
+    {
+      "id": "src/services/document.service.ts",
+      "type": "file",
+      "name": "document.service.ts",
+      "filePath": "src/services/document.service.ts",
+      "summary": "Encapsulates core business logic and database interactions for the document domain.",
+      "tags": [
+        "service"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 167,
+      "children": [
+        "src/services/document.service.ts::DocumentService",
+        "src/services/document.service.ts::triggerAiProcess",
+        "src/services/document.service.ts::triggerAiDelete"
+      ]
+    },
+    {
+      "id": "src/services/historical-context.service.ts",
+      "type": "file",
+      "name": "historical-context.service.ts",
+      "filePath": "src/services/historical-context.service.ts",
+      "summary": "Encapsulates core business logic and database interactions for the historical-context domain.",
+      "tags": [
+        "service"
+      ],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 231,
+      "children": [
+        "src/services/historical-context.service.ts::HistoricalContextService"
+      ]
+    },
+    {
+      "id": "src/services/user.service.ts",
+      "type": "file",
+      "name": "user.service.ts",
+      "filePath": "src/services/user.service.ts",
+      "summary": "Encapsulates core business logic and database interactions for the user domain.",
+      "tags": [
+        "service"
+      ],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 93,
+      "children": [
+        "src/services/user.service.ts::UserService"
+      ]
+    },
+    {
+      "id": "src/types/enums.ts",
+      "type": "file",
+      "name": "enums.ts",
+      "filePath": "src/types/enums.ts",
+      "summary": "Provides functionality for enums.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 47,
+      "children": []
+    },
+    {
+      "id": "src/types/index.d.ts",
+      "type": "file",
+      "name": "index.d.ts",
+      "filePath": "src/types/index.d.ts",
+      "summary": "Provides functionality for index.d.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 16,
+      "children": []
+    },
+    {
+      "id": "src/utils/app-error.ts",
+      "type": "file",
+      "name": "app-error.ts",
+      "filePath": "src/utils/app-error.ts",
+      "summary": "Provides functionality for app-error.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 25,
+      "children": [
+        "src/utils/app-error.ts::AppError"
+      ]
+    },
+    {
+      "id": "src/utils/logger.ts",
+      "type": "file",
+      "name": "logger.ts",
+      "filePath": "src/utils/logger.ts",
+      "summary": "Provides functionality for logger.",
+      "tags": [],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 118,
+      "children": [
+        "src/utils/logger.ts::timestamp",
+        "src/utils/logger.ts::getMethodColor",
+        "src/utils/logger.ts::getStatusColor"
+      ]
+    },
+    {
+      "id": "src/utils/response.ts",
+      "type": "file",
+      "name": "response.ts",
+      "filePath": "src/utils/response.ts",
+      "summary": "Provides functionality for response.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 17,
+      "children": [
+        "src/utils/response.ts::sendSuccess"
+      ]
+    },
+    {
+      "id": "src/validations/auth.validation.ts",
+      "type": "file",
+      "name": "auth.validation.ts",
+      "filePath": "src/validations/auth.validation.ts",
+      "summary": "Provides functionality for auth.validation.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 67,
+      "children": []
+    },
+    {
+      "id": "src/validations/user.validation.ts",
+      "type": "file",
+      "name": "user.validation.ts",
+      "filePath": "src/validations/user.validation.ts",
+      "summary": "Provides functionality for user.validation.",
+      "tags": [],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 33,
+      "children": []
+    },
+    {
+      "id": "src/controllers/quiz.controller.ts",
+      "type": "file",
+      "name": "quiz.controller.ts",
+      "filePath": "src/controllers/quiz.controller.ts",
+      "summary": "Handles incoming HTTP requests and responses for quiz domain — customer-facing list/start/submit/results and staff CRUD with question management.",
+      "tags": ["controller"],
+      "complexity": "medium",
+      "language": "typescript",
+      "lineCount": 154,
+      "children": ["src/controllers/quiz.controller.ts::QuizController"]
+    },
+    {
+      "id": "src/controllers/tier.controller.ts",
+      "type": "file",
+      "name": "tier.controller.ts",
+      "filePath": "src/controllers/tier.controller.ts",
+      "summary": "Handles HTTP requests for subscription tier management (list, get, create, update, deactivate).",
+      "tags": ["controller"],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 79,
+      "children": ["src/controllers/tier.controller.ts::TierController"]
+    },
+    {
+      "id": "src/controllers/system-trash.controller.ts",
+      "type": "file",
+      "name": "system-trash.controller.ts",
+      "filePath": "src/controllers/system-trash.controller.ts",
+      "summary": "Handles HTTP requests for the system trash bin — list, restore, and hard-delete soft-deleted characters/contexts/quizzes.",
+      "tags": ["controller"],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 92,
+      "children": ["src/controllers/system-trash.controller.ts::SystemTrashController"]
+    },
+    {
+      "id": "src/services/quiz.service.ts",
+      "type": "file",
+      "name": "quiz.service.ts",
+      "filePath": "src/services/quiz.service.ts",
+      "summary": "Business logic for quizzes: customer browse/start/submit session flow, staff CRUD, question management. Tracks play counts, scores, answer details.",
+      "tags": ["service"],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 475,
+      "children": ["src/services/quiz.service.ts::QuizService"]
+    },
+    {
+      "id": "src/services/system-trash.service.ts",
+      "type": "file",
+      "name": "system-trash.service.ts",
+      "filePath": "src/services/system-trash.service.ts",
+      "summary": "System trash bin service — bulk restore and hard-delete for soft-deleted characters, historical contexts, and quizzes. Hard delete cascades to documents and chat sessions.",
+      "tags": ["service"],
+      "complexity": "high",
+      "language": "typescript",
+      "lineCount": 186,
+      "children": ["src/services/system-trash.service.ts::SystemTrashService"]
+    },
+    {
+      "id": "src/routes/tier.routes.ts",
+      "type": "file",
+      "name": "tier.routes.ts",
+      "filePath": "src/routes/tier.routes.ts",
+      "summary": "Maps /tiers endpoints — public GET, SYSTEM_ADMIN-only POST/PUT/DELETE. Includes @openapi JSDoc.",
+      "tags": ["route", "api"],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 68,
+      "children": []
+    },
+    {
+      "id": "src/routes/system-trash.routes.ts",
+      "type": "file",
+      "name": "system-trash.routes.ts",
+      "filePath": "src/routes/system-trash.routes.ts",
+      "summary": "Maps /system/trash endpoints for CONTENT_ADMIN/SYSTEM_ADMIN — list, restore, and hard-delete trashed items.",
+      "tags": ["route", "api"],
+      "complexity": "low",
+      "language": "typescript",
+      "lineCount": 27,
+      "children": []
+    }
+  ],
+  "edges": [
+    {
+      "source": "src/app.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/app.ts",
+      "target": "src/config/swagger.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/app.ts",
+      "target": "src/routes/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/app.ts",
+      "target": "src/middlewares/error.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/app.ts",
+      "target": "src/middlewares/rate-limit.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/app.ts",
+      "target": "src/middlewares/api-logger.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/app.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/config/db.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/config/db.ts",
+      "target": "src/utils/logger.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/auth.controller.ts",
+      "target": "src/services/auth.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/auth.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/character.controller.ts",
+      "target": "src/services/character.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/character.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/character.controller.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/chat.controller.ts",
+      "target": "src/services/chat.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/chat.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/chat.controller.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/dashboard.controller.ts",
+      "target": "src/services/dashboard.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/dashboard.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/document.controller.ts",
+      "target": "src/services/document.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/document.controller.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/document.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/document.controller.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/historical-context.controller.ts",
+      "target": "src/services/historical-context.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/historical-context.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/historical-context.controller.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/payment.controller.ts",
+      "target": "src/models/tier.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/payment.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/user.controller.ts",
+      "target": "src/services/user.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/user.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/db/migrations/001_init-tiers-and-admin.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/index.ts",
+      "target": "src/app.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/index.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/index.ts",
+      "target": "src/utils/logger.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/index.ts",
+      "target": "src/config/db.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/middlewares/api-logger.middleware.ts",
+      "target": "src/utils/logger.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/middlewares/auth.middleware.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/middlewares/auth.middleware.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/middlewares/authorize.middleware.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/middlewares/authorize.middleware.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/middlewares/error.middleware.ts",
+      "target": "src/utils/logger.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/middlewares/token-check.middleware.ts",
+      "target": "src/models/user.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/middlewares/token-check.middleware.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/models/character.model.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/models/document.model.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/models/historical-context.model.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/models/order.model.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/models/quiz.model.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/models/tier.model.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/models/transaction.model.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/models/user.model.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/auth.routes.ts",
+      "target": "src/controllers/auth.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/auth.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/auth.routes.ts",
+      "target": "src/middlewares/authorize.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/auth.routes.ts",
+      "target": "src/middlewares/rate-limit.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/auth.routes.ts",
+      "target": "src/middlewares/validate.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/auth.routes.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/character.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/character.routes.ts",
+      "target": "src/middlewares/authorize.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/character.routes.ts",
+      "target": "src/controllers/character.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/character.routes.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/chat.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/chat.routes.ts",
+      "target": "src/controllers/chat.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/dashboard.routes.ts",
+      "target": "src/controllers/dashboard.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/dashboard.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/dashboard.routes.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/document.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/document.routes.ts",
+      "target": "src/controllers/document.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/historical-context.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/historical-context.routes.ts",
+      "target": "src/middlewares/authorize.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/historical-context.routes.ts",
+      "target": "src/controllers/historical-context.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/historical-context.routes.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/auth.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/user.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/character.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/historical-context.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/chat.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/quiz.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/staff.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/document.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/dashboard.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/payment.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/payment.routes.ts",
+      "target": "src/controllers/payment.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/quiz.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/staff.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/user.routes.ts",
+      "target": "src/controllers/user.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/user.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/user.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/user.routes.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/check-db.ts",
+      "target": "src/models/character.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/check-db.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/migrate-status.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/migrate-status.ts",
+      "target": "src/utils/logger.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/migrate.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/migrate.ts",
+      "target": "src/utils/logger.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/rollback.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/rollback.ts",
+      "target": "src/utils/logger.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/test-api.ts",
+      "target": "src/services/character.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/scripts/test-api.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/auth.service.ts",
+      "target": "src/config/index.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/auth.service.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/auth.service.ts",
+      "target": "src/models/user.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/auth.service.ts",
+      "target": "src/models/tier.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/auth.service.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/character.service.ts",
+      "target": "src/models/character.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/character.service.ts",
+      "target": "src/models/historical-context.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/character.service.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/character.service.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/chat.service.ts",
+      "target": "src/models/chat-session.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/chat.service.ts",
+      "target": "src/models/message.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/chat.service.ts",
+      "target": "src/models/character.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/chat.service.ts",
+      "target": "src/models/historical-context.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/chat.service.ts",
+      "target": "src/models/user.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/chat.service.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/dashboard.service.ts",
+      "target": "src/models/user.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/dashboard.service.ts",
+      "target": "src/models/character.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/dashboard.service.ts",
+      "target": "src/models/historical-context.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/dashboard.service.ts",
+      "target": "src/models/chat-session.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/dashboard.service.ts",
+      "target": "src/models/message.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/dashboard.service.ts",
+      "target": "src/models/quiz.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/dashboard.service.ts",
+      "target": "src/models/quiz-session.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/dashboard.service.ts",
+      "target": "src/models/order.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/document.service.ts",
+      "target": "src/models/document.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/document.service.ts",
+      "target": "src/models/historical-context.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/document.service.ts",
+      "target": "src/models/character.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/document.service.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/document.service.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/historical-context.service.ts",
+      "target": "src/models/historical-context.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/historical-context.service.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/historical-context.service.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/historical-context.service.ts",
+      "target": "src/services/character.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/user.service.ts",
+      "target": "src/models/user.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/user.service.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/validations/auth.validation.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/quiz.routes.ts",
+      "target": "src/controllers/quiz.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/staff.routes.ts",
+      "target": "src/controllers/quiz.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/staff.routes.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/quiz.controller.ts",
+      "target": "src/services/quiz.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/quiz.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/quiz.service.ts",
+      "target": "src/models/quiz.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/quiz.service.ts",
+      "target": "src/models/question.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/quiz.service.ts",
+      "target": "src/models/quiz-session.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/quiz.service.ts",
+      "target": "src/models/answer-detail.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/quiz.service.ts",
+      "target": "src/models/historical-context.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/quiz.service.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/tier.routes.ts",
+      "target": "src/controllers/tier.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/tier.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/tier.routes.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/tier.controller.ts",
+      "target": "src/models/tier.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/tier.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/tier.controller.ts",
+      "target": "src/utils/app-error.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/system-trash.routes.ts",
+      "target": "src/controllers/system-trash.controller.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/system-trash.routes.ts",
+      "target": "src/middlewares/auth.middleware.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/system-trash.routes.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/system-trash.controller.ts",
+      "target": "src/services/system-trash.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/controllers/system-trash.controller.ts",
+      "target": "src/utils/response.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/models/character.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/models/historical-context.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/models/quiz.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/models/document.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/models/chat-session.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/models/quiz-session.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/models/question.model.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/types/enums.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/services/system-trash.service.ts",
+      "target": "src/services/document.service.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/tier.routes.ts",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "src/routes/index.ts",
+      "target": "src/routes/system-trash.routes.ts",
+      "type": "imports",
+      "weight": 1
+    }
+  ],
+  "layers": [
+    {
+      "name": "API / Routes",
+      "description": "Defines REST API endpoints and routes requests to controllers.",
+      "files": [
+        "src/routes/auth.routes.ts",
+        "src/routes/character.routes.ts",
+        "src/routes/chat.routes.ts",
+        "src/routes/dashboard.routes.ts",
+        "src/routes/document.routes.ts",
+        "src/routes/historical-context.routes.ts",
+        "src/routes/index.ts",
+        "src/routes/payment.routes.ts",
+        "src/routes/quiz.routes.ts",
+        "src/routes/staff.routes.ts",
+        "src/routes/system-trash.routes.ts",
+        "src/routes/tier.routes.ts",
+        "src/routes/user.routes.ts"
+      ]
+    },
+    {
+      "name": "Controllers",
+      "description": "Handles HTTP request/response lifecycle and input validation.",
+      "files": [
+        "src/controllers/auth.controller.ts",
+        "src/controllers/character.controller.ts",
+        "src/controllers/chat.controller.ts",
+        "src/controllers/dashboard.controller.ts",
+        "src/controllers/document.controller.ts",
+        "src/controllers/historical-context.controller.ts",
+        "src/controllers/payment.controller.ts",
+        "src/controllers/quiz.controller.ts",
+        "src/controllers/system-trash.controller.ts",
+        "src/controllers/tier.controller.ts",
+        "src/controllers/user.controller.ts"
+      ]
+    },
+    {
+      "name": "Services",
+      "description": "Contains business logic and orchestrates data access.",
+      "files": [
+        "src/services/auth.service.ts",
+        "src/services/character.service.ts",
+        "src/services/chat.service.ts",
+        "src/services/dashboard.service.ts",
+        "src/services/document.service.ts",
+        "src/services/historical-context.service.ts",
+        "src/services/quiz.service.ts",
+        "src/services/system-trash.service.ts",
+        "src/services/user.service.ts"
+      ]
+    },
+    {
+      "name": "Models",
+      "description": "Data schemas and database interaction layer (ORM).",
+      "files": [
+        "src/models/answer-detail.model.ts",
+        "src/models/character.model.ts",
+        "src/models/chat-session.model.ts",
+        "src/models/document.model.ts",
+        "src/models/historical-context.model.ts",
+        "src/models/index.ts",
+        "src/models/message.model.ts",
+        "src/models/order.model.ts",
+        "src/models/question.model.ts",
+        "src/models/quiz-session.model.ts",
+        "src/models/quiz.model.ts",
+        "src/models/tier.model.ts",
+        "src/models/transaction.model.ts",
+        "src/models/user.model.ts",
+        "src/models/vector-chunk.model.ts"
+      ]
+    },
+    {
+      "name": "Middlewares",
+      "description": "Cross-cutting concerns like Authentication, Error Handling, and Logging.",
+      "files": [
+        "src/middlewares/api-logger.middleware.ts",
+        "src/middlewares/auth.middleware.ts",
+        "src/middlewares/authorize.middleware.ts",
+        "src/middlewares/error.middleware.ts",
+        "src/middlewares/rate-limit.middleware.ts",
+        "src/middlewares/token-check.middleware.ts",
+        "src/middlewares/validate.middleware.ts"
+      ]
+    },
+    {
+      "name": "Configuration & Setup",
+      "description": "Application bootstrapping, DB connection setup, and environment config.",
+      "files": [
+        "src/app.ts",
+        "src/config/db.ts",
+        "src/config/index.ts",
+        "src/config/swagger.ts",
+        "src/index.ts"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "step": 1,
+      "nodeId": "src/index.ts",
+      "title": "Application Entry Point",
+      "description": "The application starts here. It initializes the environment, establishes database connections, and starts the Express HTTP server."
+    },
+    {
+      "step": 2,
+      "nodeId": "src/app.ts",
+      "title": "Express Configuration",
+      "description": "Configures the Express app instance, sets up global middlewares (CORS, body parsing, rate limiting), and mounts the main API router."
+    },
+    {
+      "step": 3,
+      "nodeId": "src/routes/index.ts",
+      "title": "Master API Router",
+      "description": "Aggregates all domain-specific routes (e.g., users, chat, documents) into a single API version prefix (like /api/v1)."
+    },
+    {
+      "step": 4,
+      "nodeId": "src/middlewares/auth.middleware.ts",
+      "title": "Authentication Middleware",
+      "description": "A crucial security layer that intercepts protected routes to verify JWT tokens and ensure the user is authenticated before reaching the controller."
+    },
+    {
+      "step": 5,
+      "nodeId": "src/controllers/chat.controller.ts",
+      "title": "Chat Controller",
+      "description": "As an example of the Controller layer, this file handles incoming requests for chat operations. It extracts parameters and calls the ChatService."
+    },
+    {
+      "step": 6,
+      "nodeId": "src/services/chat.service.ts",
+      "title": "Chat Service",
+      "description": "The core business logic for the chat domain lives here. It handles complex operations, orchestrates multiple models, and prepares data for the controller."
+    },
+    {
+      "step": 7,
+      "nodeId": "src/models/chat-session.model.ts",
+      "title": "Chat Session Model",
+      "description": "At the bottom of the stack, the Model layer defines the database schema for chat sessions and provides the interface to query or mutate the underlying database."
+    }
+  ]
+}
