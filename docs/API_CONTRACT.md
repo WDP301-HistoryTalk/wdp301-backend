@@ -677,6 +677,7 @@ Lấy lịch sử chat của user đang auth, **đã group theo context**.
 {
   quizId: string
   title: string
+  level: "EASY" | "MEDIUM" | "HARD"
   description: string
   era: "ALL" | "ANCIENT" | "MEDIEVAL" | "MODERN" | "CONTEMPORARY"
   durationSeconds: number
@@ -723,6 +724,7 @@ Lấy lịch sử chat của user đang auth, **đã group theo context**.
     {
       "quizId": "string",
       "title": "string",
+      "level": "MEDIUM",
       "description": "string",
       "grade": 12,
       "chapterNumber": 1,
@@ -743,9 +745,15 @@ Lấy lịch sử chat của user đang auth, **đã group theo context**.
 
 **Response `200`:** `{ "success": true, "data": QuizSet }`
 
+`playCount` is the current user's completed-session count for this quiz.
+It is `0` when the request is unauthenticated.
+
 ---
 
 ### `POST /quizzes/:quizId/start`
+
+Optional query: `limitedTime` is a positive integer in seconds. When omitted,
+the backend uses the quiz duration.
 
 Bắt đầu phiên làm bài. Không cần body.
 
@@ -757,6 +765,7 @@ Bắt đầu phiên làm bài. Không cần body.
     "sessionId": "string",
     "quizId": "string",
     "title": "string",
+    "limitedTime": 900,
     "durationSeconds": 900,
     "questions": [
       {
@@ -785,8 +794,7 @@ Bắt đầu phiên làm bài. Không cần body.
   "sessionId": "string",
   "answers": [
     { "questionId": "string", "selectedAnswer": 0 }
-  ],
-  "durationSeconds": 480
+  ]
 }
 ```
 
@@ -799,6 +807,8 @@ Bắt đầu phiên làm bài. Không cần body.
     "score": 8,
     "totalQuestions": 10,
     "percentage": 80,
+    "startTime": "ISO8601",
+    "endTime": "ISO8601",
     "correctAnswers": [0, 1, 2],
     "wrongAnswers": [3, 4]
   }
@@ -825,13 +835,12 @@ Bắt đầu phiên làm bài. Không cần body.
   "data": {
     "content": [
       {
-        "resultId": "string",
+        "sessionId": "string",
         "quizId": "string",
         "quizTitle": "string",
         "score": 8,
         "totalQuestions": 10,
         "percentage": 80,
-        "durationSeconds": 480,
         "completedAt": "ISO8601"
       }
     ],
@@ -841,6 +850,41 @@ Bắt đầu phiên làm bài. Không cần body.
     "pageSize": 10,
     "hasNext": true,
     "hasPrevious": false
+  }
+}
+```
+
+---
+
+### `GET /quizzes/results/me/:sessionId`
+
+Returns a completed session owned by the current user with the per-question
+answer breakdown.
+
+```json
+{
+  "success": true,
+  "data": {
+    "sessionId": "string",
+    "quizId": "string",
+    "quizTitle": "string",
+    "score": 8,
+    "totalQuestions": 10,
+    "percentage": 80,
+    "limitedTime": 900,
+    "startedAt": "ISO8601",
+    "completedAt": "ISO8601",
+    "questions": [
+      {
+        "questionId": "string",
+        "content": "string",
+        "options": ["A", "B", "C", "D"],
+        "correctAnswer": 0,
+        "selectedAnswer": 1,
+        "explanation": "string",
+        "correct": false
+      }
+    ]
   }
 }
 ```
@@ -857,6 +901,9 @@ Bắt đầu phiên làm bài. Không cần body.
 {
   quizId: string
   title: string
+  level: "EASY" | "MEDIUM" | "HARD"
+  isPublished: boolean
+  status: "ACTIVE" | "DRAFT" | "DELETED"
   description: string
   grade: number            // 10 | 11 | 12
   chapterNumber: number
@@ -884,7 +931,6 @@ Bắt đầu phiên làm bài. Không cần body.
 | Param | Type | Mô tả |
 |---|---|---|
 | `search` | string | Tìm theo title |
-| `grade` | number | 10 \| 11 \| 12 |
 | `era` | string | Era enum |
 | `page` | number | 0-indexed |
 | `size` | number | Số item/trang |
@@ -923,10 +969,11 @@ Chi tiết quiz kèm toàn bộ câu hỏi.
   "title": "string",
   "description": "string",
   "contextId": "string",
+  "level": "MEDIUM",
+  "isPublished": true,
   "grade": 12,
   "chapterNumber": 1,
   "chapterTitle": "string",
-  "era": "CONTEMPORARY",
   "durationSeconds": 900,
   "questions": [
     {
@@ -954,10 +1001,11 @@ Cập nhật metadata (không bao gồm questions).
   "title": "string",
   "description": "string",
   "contextId": "string",
+  "level": "HARD",
+  "isPublished": false,
   "grade": 12,
   "chapterNumber": 1,
   "chapterTitle": "string",
-  "era": "CONTEMPORARY",
   "durationSeconds": 900
 }
 ```
@@ -1014,6 +1062,23 @@ Sửa câu hỏi. **Request:** Partial của POST body — tất cả optional.
 ### `DELETE /staff/quizzes/:quizId/questions/:questionId`
 
 Xóa câu hỏi. Response `200`.
+
+---
+
+### `GET /staff/quizzes/sessions`
+
+Returns completed quiz sessions. Use the optional `userId` query parameter to
+filter sessions for one user. Pagination uses `page` and `size`.
+
+Each item contains `sessionId`, `quizId`, `quizTitle`, `score`,
+`totalQuestions`, `percentage`, and `completedAt`.
+
+---
+
+### `GET /staff/quizzes/sessions/:sessionId`
+
+Returns the full answer breakdown for any completed quiz session. The response
+has the same shape as `GET /quizzes/results/me/:sessionId`.
 
 ---
 

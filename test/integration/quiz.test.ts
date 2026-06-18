@@ -2,7 +2,7 @@ import request from 'supertest';
 import app from '../../src/app';
 import * as dbHandler from '../db-handler';
 import { User, Quiz, Question, QuizSession, AnswerDetail, HistoricalContext } from '../../src/models';
-import { UserRole, EventEra, EventCategory } from '../../src/types/enums';
+import { UserRole, EventEra, EventCategory, QuizLevel } from '../../src/types/enums';
 
 beforeAll(async () => {
   await dbHandler.connect();
@@ -83,11 +83,13 @@ describe('Quiz API Operations (Staff & Customer)', () => {
           title: 'Quiz 938 Battle',
           description: 'Test your knowledge on Bach Dang 938 victory',
           contextId,
+          level: QuizLevel.Hard,
           grade: 12,
           chapterNumber: 1,
           chapterTitle: 'Historical Wars',
           era: EventEra.Medieval,
           durationSeconds: 900,
+          isPublished: false,
           questions: [
             {
               content: 'Ai la nguoi chi huy tran Bach Dang 938?',
@@ -102,6 +104,9 @@ describe('Quiz API Operations (Staff & Customer)', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.title).toBe('Quiz 938 Battle');
+      expect(res.body.data.level).toBe(QuizLevel.Hard);
+      expect(res.body.data.isPublished).toBe(false);
+      expect(res.body.data.status).toBe('DRAFT');
       expect(res.body.data.questions.length).toBe(1);
       expect(res.body.data.questions[0].content).toContain('Ai la nguoi chi huy');
     });
@@ -113,6 +118,7 @@ describe('Quiz API Operations (Staff & Customer)', () => {
         createdBy: staffUserDoc!._id,
         title: 'Quiz 1',
         era: EventEra.Medieval,
+        level: QuizLevel.Easy,
         grade: 12,
       });
 
@@ -124,6 +130,8 @@ describe('Quiz API Operations (Staff & Customer)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.content.length).toBe(1);
       expect(res.body.data.content[0].title).toBe('Quiz 1');
+      expect(res.body.data.content[0].level).toBe(QuizLevel.Easy);
+      expect(res.body.data.content[0].status).toBe('ACTIVE');
     });
 
     it('updates quiz metadata', async () => {
@@ -141,11 +149,16 @@ describe('Quiz API Operations (Staff & Customer)', () => {
         .set('Authorization', `Bearer ${staffToken}`)
         .send({
           title: 'Updated Title',
+          level: QuizLevel.Hard,
+          isPublished: false,
         });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.title).toBe('Updated Title');
+      expect(res.body.data.level).toBe(QuizLevel.Hard);
+      expect(res.body.data.isPublished).toBe(false);
+      expect(res.body.data.status).toBe('DRAFT');
     });
   });
 
@@ -165,6 +178,7 @@ describe('Quiz API Operations (Staff & Customer)', () => {
         chapterNumber: 1,
         chapterTitle: 'Vietnamese History',
         era: EventEra.Medieval,
+        level: QuizLevel.Medium,
         durationSeconds: 900,
         isActive: true,
       });
@@ -187,18 +201,20 @@ describe('Quiz API Operations (Staff & Customer)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBe(1);
       expect(res.body.data[0].title).toBe('Bach Dang Battle Quiz');
+      expect(res.body.data[0].level).toBe(QuizLevel.Medium);
     });
 
     it('starts and submits a quiz session successfully', async () => {
       // 1. Start session
       const startRes = await request(app)
-        .post(`/api/v1/quizzes/${quizId}/start`)
+        .post(`/api/v1/quizzes/${quizId}/start?limitedTime=600`)
         .set('Authorization', `Bearer ${customerToken}`);
 
       expect(startRes.status).toBe(200);
       expect(startRes.body.success).toBe(true);
       expect(startRes.body.data).toHaveProperty('sessionId');
       expect(startRes.body.data.questions.length).toBe(1);
+      expect(startRes.body.data.limitedTime).toBe(600);
       
       const sessionId = startRes.body.data.sessionId;
 
@@ -211,7 +227,7 @@ describe('Quiz API Operations (Staff & Customer)', () => {
           answers: [
             {
               questionId,
-              selectedOption: 0, // Correct answer
+              selectedAnswer: 0,
             },
           ],
         });
@@ -220,7 +236,9 @@ describe('Quiz API Operations (Staff & Customer)', () => {
       expect(submitRes.body.success).toBe(true);
       expect(submitRes.body.data.score).toBe(10);
       expect(submitRes.body.data.percentage).toBe(100);
-      expect(submitRes.body.data.correctAnswers).toContain(0); // first question is correct
+      expect(submitRes.body.data.correctAnswers).toContain(0);
+      expect(submitRes.body.data.startTime).toBeTruthy();
+      expect(submitRes.body.data.endTime).toBeTruthy();
     });
 
     it('lists user quiz results', async () => {
@@ -235,7 +253,7 @@ describe('Quiz API Operations (Staff & Customer)', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .send({
           sessionId,
-          answers: [{ questionId, selectedOption: 0 }],
+          answers: [{ questionId, selectedAnswer: 0 }],
         });
 
       const res = await request(app)
@@ -247,6 +265,125 @@ describe('Quiz API Operations (Staff & Customer)', () => {
       expect(res.body.data.content.length).toBe(1);
       expect(res.body.data.content[0].quizTitle).toBe('Bach Dang Battle Quiz');
       expect(res.body.data.content[0].score).toBe(10);
+      expect(res.body.data.content[0].sessionId).toBe(sessionId);
+      expect(res.body.data.content[0].totalQuestions).toBe(1);
+      expect(res.body.data.content[0].percentage).toBe(100);
+    });
+
+    it('gets the completed quiz session detail', async () => {
+      const startRes = await request(app)
+        .post(`/api/v1/quizzes/${quizId}/start`)
+        .set('Authorization', `Bearer ${customerToken}`);
+      const sessionId = startRes.body.data.sessionId;
+
+      await request(app)
+        .post('/api/v1/quizzes/submit')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          sessionId,
+          answers: [{ questionId, selectedAnswer: 0 }],
+        });
+
+      const res = await request(app)
+        .get(`/api/v1/quizzes/results/me/${sessionId}`)
+        .set('Authorization', `Bearer ${customerToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.sessionId).toBe(sessionId);
+      expect(res.body.data.totalQuestions).toBe(1);
+      expect(res.body.data.questions[0]).toMatchObject({
+        questionId,
+        selectedAnswer: 0,
+        correctAnswer: 0,
+        correct: true,
+      });
+    });
+
+    it('rejects submission after the session time limit expires', async () => {
+      const startRes = await request(app)
+        .post(`/api/v1/quizzes/${quizId}/start?limitedTime=1`)
+        .set('Authorization', `Bearer ${customerToken}`);
+      const sessionId = startRes.body.data.sessionId;
+
+      await QuizSession.findByIdAndUpdate(sessionId, {
+        startTime: new Date(Date.now() - 2000),
+      });
+
+      const res = await request(app)
+        .post('/api/v1/quizzes/submit')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          sessionId,
+          answers: [{ questionId, selectedAnswer: 0 }],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Quiz session time limit expired');
+      expect(await AnswerDetail.countDocuments({ sessionId })).toBe(0);
+    });
+
+    it('returns the current user completion count in quiz detail', async () => {
+      const initialRes = await request(app).get(`/api/v1/quizzes/${quizId}`);
+      expect(initialRes.body.data.playCount).toBe(0);
+
+      const startRes = await request(app)
+        .post(`/api/v1/quizzes/${quizId}/start`)
+        .set('Authorization', `Bearer ${customerToken}`);
+
+      await request(app)
+        .post('/api/v1/quizzes/submit')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          sessionId: startRes.body.data.sessionId,
+          answers: [{ questionId, selectedAnswer: 0 }],
+        });
+
+      const completedRes = await request(app)
+        .get(`/api/v1/quizzes/${quizId}`)
+        .set('Authorization', `Bearer ${customerToken}`);
+
+      expect(completedRes.status).toBe(200);
+      expect(completedRes.body.data.playCount).toBe(1);
+    });
+
+    it('allows staff to list and inspect completed sessions', async () => {
+      const startRes = await request(app)
+        .post(`/api/v1/quizzes/${quizId}/start`)
+        .set('Authorization', `Bearer ${customerToken}`);
+      const sessionId = startRes.body.data.sessionId;
+
+      await request(app)
+        .post('/api/v1/quizzes/submit')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          sessionId,
+          answers: [{ questionId, selectedAnswer: 0 }],
+        });
+
+      const customer = await User.findOne({ email: customerUser.email });
+      const listRes = await request(app)
+        .get(`/api/v1/staff/quizzes/sessions?userId=${customer!._id}`)
+        .set('Authorization', `Bearer ${staffToken}`);
+
+      expect(listRes.status).toBe(200);
+      expect(listRes.body.data.content).toHaveLength(1);
+      expect(listRes.body.data.content[0]).toMatchObject({
+        sessionId,
+        quizId,
+        totalQuestions: 1,
+        percentage: 100,
+      });
+
+      const detailRes = await request(app)
+        .get(`/api/v1/staff/quizzes/sessions/${sessionId}`)
+        .set('Authorization', `Bearer ${staffToken}`);
+
+      expect(detailRes.status).toBe(200);
+      expect(detailRes.body.data.questions[0]).toMatchObject({
+        questionId,
+        selectedAnswer: 0,
+        correct: true,
+      });
     });
   });
 });
