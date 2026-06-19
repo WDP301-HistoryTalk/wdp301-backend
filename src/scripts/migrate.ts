@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import path from 'path';
 import fs from 'fs';
+import { pathToFileURL } from 'url';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 
@@ -29,7 +30,8 @@ async function main() {
     logger.info('No pending migrations.');
   } else {
     for (const file of pending) {
-      const mod: MigrationModule = await import(path.join(MIGRATIONS_DIR, file));
+      const migrationUrl = pathToFileURL(path.join(MIGRATIONS_DIR, file)).href;
+      const mod: MigrationModule = await import(migrationUrl);
       await mod.up(db);
       await db.collection(CHANGELOG).insertOne({ name: file, appliedAt: new Date() });
       logger.info(`Applied: ${file}`);
