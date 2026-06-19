@@ -5,6 +5,7 @@ export interface IMessage extends Document {
   sessionId: mongoose.Types.ObjectId;
   isFromAi: boolean;
   content: string;
+  messageType?: string;
   suggestedQuestions?: string[];
   token?: number;
   isActive: boolean;
@@ -18,6 +19,7 @@ const messageSchema = new Schema<IMessage>(
     sessionId: { type: Schema.Types.ObjectId, ref: 'ChatSession', required: true, index: true },
     isFromAi: { type: Boolean, required: true },
     content: { type: String, required: true },
+    messageType: { type: String, default: 'TEXT' },
     suggestedQuestions: { type: [String] },
     token: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },

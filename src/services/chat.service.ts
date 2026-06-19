@@ -22,14 +22,28 @@ function buildCharacterPayload(character: any) {
     return isBC ? `${parts} TCN` : parts;
   };
 
+  let enhancedBackground = character.background || '';
+  const contexts: any[] = [];
+
+  if (character.contextIds && character.contextIds.length > 0) {
+    enhancedBackground += "\n\nCác sự kiện/bối cảnh lịch sử đã tham gia:\n";
+    for (const ctx of character.contextIds) {
+      if (ctx.name) { // Ensure populated
+        enhancedBackground += `- ${ctx.name}: ${ctx.description || ''}\n`;
+        contexts.push({ contextId: ctx._id.toString(), name: ctx.name });
+      }
+    }
+  }
+
   return {
     characterId: character._id.toString(),
     name: character.name,
     title: character.title || '',
-    background: character.background || '',
+    background: enhancedBackground,
     personality: character.personality || '',
     born: fmtDate(character.bornYear, character.bornMonth, character.bornDay, character.isBornBc),
     death: fmtDate(character.deathYear, character.deathMonth, character.deathDay, character.isDeathBc),
+    contexts: contexts.length > 0 ? contexts : undefined
   };
 }
 
@@ -68,7 +82,7 @@ export class ChatService {
         ...(mongoose.isValidObjectId(characterId) ? [{ _id: characterId }] : []),
       ],
       deletedAt: { $exists: false },
-    });
+    }).populate('contextIds');
     if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
     const context = await HistoricalContext.findOne({
@@ -163,7 +177,7 @@ export class ChatService {
    *   - Java-style: POST /chat/messages { sessionId, content }
    *   - Old style:  POST /chat/sessions/:sessionId/chat { message }
    */
-  public async sendMessage(sessionId: string, userMessageText: string, uid: string): Promise<{
+  public async sendMessage(sessionId: string, userMessageText: string, uid: string, messageType: string = 'TEXT'): Promise<{
     userMessage: IMessage;
     assistantMessage: IMessage;
     suggestedQuestions: string[];
@@ -184,10 +198,11 @@ export class ChatService {
       sessionId: session._id,
       isFromAi: false,
       content: userMessageText,
+      messageType: messageType || 'TEXT',
     });
 
     // 2. Fetch character + context
-    const character = await Character.findById(session.characterId);
+    const character = await Character.findById(session.characterId).populate('contextIds');
     const context = await HistoricalContext.findById(session.contextId);
     if (!character || !context) throw new AppError('Không tìm thấy nhân vật hoặc bối cảnh lịch sử', 404);
 
@@ -210,6 +225,7 @@ export class ChatService {
       messageHistory,
       characterData: buildCharacterPayload(character),
       contextData: buildContextPayload(context),
+      skipSuggestions: messageType.toUpperCase() === 'VOICE',
     };
 
     let assistantContent = 'Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này.';
@@ -253,6 +269,7 @@ export class ChatService {
       content: assistantContent,
       suggestedQuestions: suggestedQuestions,
       token: completionToken,
+      messageType: messageType || 'TEXT',
     });
 
     // 6. Update session
@@ -301,6 +318,150 @@ export class ChatService {
       { new: true }
     );
     if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+  }
+
+  public async hardDeleteSession(sessionId: string, uid: string): Promise<void> {
+    const session = await ChatSession.findOneAndDelete({
+      _id: sessionId,
+      uid: new mongoose.Types.ObjectId(uid),
+    });
+    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+    await Message.deleteMany({ sessionId: session._id });
+  }
+
+  public async sendMessageStream(
+    sessionId: string,
+    userMessageText: string,
+    uid: string,
+    messageType: string = 'TEXT',
+    onData: (data: string) => void,
+    onComplete: (remainingTokens: number) => void,
+    onError: (err: any) => void
+  ): Promise<void> {
+    try {
+      const session = await ChatSession.findOne({
+        _id: sessionId,
+        uid: new mongoose.Types.ObjectId(uid),
+      });
+      if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+
+      const user = await User.findById(uid);
+      if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+      const isCustomer = user.role === 'CUSTOMER';
+      if (isCustomer && user.token <= 0) throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+
+      const userMsg = await Message.create({
+        sessionId: session._id,
+        isFromAi: false,
+        content: userMessageText,
+        messageType: messageType || 'TEXT'
+      });
+
+      const character = await Character.findById(session.characterId).populate('contextIds');
+      const context = await HistoricalContext.findById(session.contextId);
+      if (!character || !context) throw new AppError('Không tìm thấy nhân vật hoặc bối cảnh lịch sử', 404);
+
+      const historyDocs = await Message.find({ sessionId: session._id })
+        .sort({ createdAt: -1 })
+        .limit(5); 
+      historyDocs.reverse();
+
+      const messageHistory = historyDocs.slice(0, -1).map((m) => ({
+        role: m.isFromAi ? 'assistant' : 'user',
+        content: m.content,
+      }));
+
+      const skipSuggestions = messageType.toUpperCase() === 'VOICE';
+
+      const payload = {
+        characterId: character._id.toString(),
+        contextId: context._id.toString(),
+        userMessage: userMessageText,
+        messageHistory,
+        characterData: buildCharacterPayload(character),
+        contextData: buildContextPayload(context),
+        skipSuggestions
+      };
+
+      let fullMessage = '';
+      let promptToken = 0;
+      let completionToken = 0;
+      let suggestedQuestions: string[] = [];
+
+      const response = await axios.post(`${AI_SERVICE_URL}/v1/ai/chat/stream`, payload, {
+        headers: { 'Content-Type': 'application/json' },
+        responseType: 'stream',
+        timeout: 180000
+      });
+
+      response.data.on('data', (chunk: Buffer) => {
+        const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.substring(6);
+            try {
+              const node = JSON.parse(jsonStr);
+              if (node.type === 'text') {
+                fullMessage += node.data;
+                onData(line + '\n\n');
+              } else if (node.type === 'metadata') {
+                promptToken = node.data.promptTokens || 0;
+                completionToken = node.data.completionTokens || 0;
+                suggestedQuestions = node.data.suggestedQuestions || [];
+                onData(line + '\n\n');
+              } else if (node.type === 'error') {
+                onData(line + '\n\n');
+              }
+            } catch (err) {
+              console.warn('Error parsing SSE chunk:', err);
+            }
+          }
+        }
+      });
+
+      response.data.on('end', async () => {
+        try {
+          userMsg.token = promptToken;
+          await userMsg.save();
+
+          await Message.create({
+            sessionId: session._id,
+            isFromAi: true,
+            content: fullMessage,
+            suggestedQuestions: suggestedQuestions,
+            token: completionToken,
+            messageType: messageType || 'TEXT'
+          });
+
+          const totalToken = promptToken + completionToken;
+          let remainingTokens = user.token || 0;
+          if (isCustomer && totalToken > 0) {
+            remainingTokens = Math.max(0, remainingTokens - totalToken);
+            user.token = remainingTokens;
+            await user.save();
+          }
+
+          session.lastMessageAt = new Date();
+          await session.save();
+
+          const msgCount = await Message.countDocuments({ sessionId: session._id });
+          if (msgCount <= 3 && !session.title) {
+            setImmediate(() => this.generateTitleAsync(session, character, context, userMessageText, fullMessage));
+          }
+
+          onComplete(remainingTokens);
+        } catch (err) {
+          onError(err);
+        }
+      });
+
+      response.data.on('error', (err: any) => {
+        onError(err);
+      });
+
+    } catch (err: any) {
+      onError(err);
+    }
   }
 }
 

@@ -117,6 +117,32 @@ router.post('/messages', authenticate, ChatController.sendMessage.bind(ChatContr
 
 /**
  * @openapi
+ * /chat/messages/stream:
+ *   post:
+ *     tags: [Chat]
+ *     summary: Send a message and stream the response (SSE)
+ *     description: Streaming chat endpoint mimicking ChatGPT behavior.
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [sessionId, content]
+ *             properties:
+ *               sessionId: { type: string }
+ *               content: { type: string }
+ *               messageType: { type: string }
+ *     responses:
+ *       200:
+ *         description: SSE stream of the AI response
+ */
+router.post('/messages/stream', authenticate, ChatController.sendMessageStream.bind(ChatController));
+
+/**
+ * @openapi
  * /chat/sessions/{sessionId}/chat:
  *   post:
  *     tags: [Chat]
