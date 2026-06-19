@@ -30,7 +30,8 @@ async function main() {
   }
 
   const { name } = last[0];
-  const mod: MigrationModule = await import(pathToFileURL(path.join(MIGRATIONS_DIR, name)).href);
+  const migrationUrl = pathToFileURL(path.join(MIGRATIONS_DIR, name)).href;
+  const mod: MigrationModule = await import(migrationUrl);
   await mod.down(db);
   await db.collection(CHANGELOG).deleteOne({ name });
   logger.info(`Rolled back: ${name}`);
