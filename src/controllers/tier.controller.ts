@@ -10,7 +10,6 @@ export class TierController {
       const filter = showAll ? {} : { isActive: true };
 
       const tiers = await Tier.find(filter).sort({ amount: 1 });
-      
       const mappedTiers = tiers.map(t => {
         const obj = t.toObject();
         return {
