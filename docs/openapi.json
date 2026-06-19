@@ -28,6 +28,175 @@
       }
     },
     "schemas": {
+      "QuizQuestion": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correctAnswer": {
+            "type": "integer",
+            "example": 0
+          },
+          "selectedAnswer": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "orderIndex": {
+            "type": "integer",
+            "example": 0
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "correct": {
+            "type": "boolean"
+          }
+        }
+      },
+      "QuizSummary": {
+        "type": "object",
+        "properties": {
+          "quizId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "EASY",
+              "MEDIUM",
+              "HARD"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "grade": {
+            "type": "integer",
+            "example": 12
+          },
+          "chapterNumber": {
+            "type": "integer",
+            "example": 1
+          },
+          "chapterTitle": {
+            "type": "string"
+          },
+          "era": {
+            "type": "string",
+            "enum": [
+              "ANCIENT",
+              "MEDIEVAL",
+              "MODERN",
+              "CONTEMPORARY"
+            ]
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "example": 900
+          },
+          "playCount": {
+            "type": "integer"
+          },
+          "rating": {
+            "type": "number"
+          },
+          "contextTitle": {
+            "type": "string"
+          }
+        }
+      },
+      "StaffQuizSet": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/QuizSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "isPublished": {
+                "type": "boolean"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "ACTIVE",
+                  "DRAFT",
+                  "DELETED"
+                ]
+              },
+              "contextId": {
+                "type": "string"
+              },
+              "createdBy": {
+                "type": "string"
+              },
+              "createdDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedDate": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "deletedAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/QuizQuestion"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "QuizResultSummary": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "quizId": {
+            "type": "string"
+          },
+          "quizTitle": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number",
+            "example": 8
+          },
+          "totalQuestions": {
+            "type": "integer",
+            "example": 10
+          },
+          "percentage": {
+            "type": "integer",
+            "example": 80
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ErrorResponse": {
         "type": "object",
         "properties": {
@@ -2016,9 +2185,68 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/QuizResultSummary"
+                          }
+                        },
+                        "totalElements": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        },
+                        "currentPage": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "hasNext": {
+                          "type": "boolean"
+                        },
+                        "hasPrevious": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2046,7 +2274,62 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz result detail retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sessionId": {
+                          "type": "string"
+                        },
+                        "quizId": {
+                          "type": "string"
+                        },
+                        "quizTitle": {
+                          "type": "string"
+                        },
+                        "score": {
+                          "type": "number"
+                        },
+                        "totalQuestions": {
+                          "type": "integer"
+                        },
+                        "percentage": {
+                          "type": "integer"
+                        },
+                        "limitedTime": {
+                          "type": "integer"
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "questions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/QuizQuestion"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Completed quiz session not found"
           }
         }
       }
@@ -2062,9 +2345,101 @@
             "BearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sessionId",
+                  "answers"
+                ],
+                "properties": {
+                  "sessionId": {
+                    "type": "string"
+                  },
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "questionId",
+                        "selectedAnswer"
+                      ],
+                      "properties": {
+                        "questionId": {
+                          "type": "string"
+                        },
+                        "selectedAnswer": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "selectedOption": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Backward-compatible alias for selectedAnswer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz answers submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "resultId": {
+                          "type": "string"
+                        },
+                        "score": {
+                          "type": "number"
+                        },
+                        "totalQuestions": {
+                          "type": "integer"
+                        },
+                        "percentage": {
+                          "type": "integer"
+                        },
+                        "startTime": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "endTime": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "correctAnswers": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          }
+                        },
+                        "wrongAnswers": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2075,9 +2450,37 @@
           "Quizzes"
         ],
         "summary": "List quizzes",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by quiz title"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quizzes retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QuizSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2100,7 +2503,25 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QuizSummary"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quiz not found"
           }
         }
       }
@@ -2132,12 +2553,54 @@
             "schema": {
               "type": "integer",
               "minimum": 1
-            }
+            },
+            "description": "Optional session time limit in seconds"
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz session started successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sessionId": {
+                          "type": "string"
+                        },
+                        "quizId": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "limitedTime": {
+                          "type": "integer"
+                        },
+                        "durationSeconds": {
+                          "type": "integer"
+                        },
+                        "questions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/QuizQuestion"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quiz not found"
           }
         }
       }
@@ -2153,9 +2616,96 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by quiz title"
+          },
+          {
+            "in": "query",
+            "name": "grade",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "era",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ANCIENT",
+                "MEDIEVAL",
+                "MODERN",
+                "CONTEMPORARY"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quizzes retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/StaffQuizSet"
+                          }
+                        },
+                        "totalElements": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        },
+                        "currentPage": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "hasNext": {
+                          "type": "boolean"
+                        },
+                        "hasPrevious": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -2169,9 +2719,88 @@
             "BearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "contextId"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "contextId": {
+                    "type": "string"
+                  },
+                  "level": {
+                    "type": "string",
+                    "enum": [
+                      "EASY",
+                      "MEDIUM",
+                      "HARD"
+                    ]
+                  },
+                  "isPublished": {
+                    "type": "boolean"
+                  },
+                  "grade": {
+                    "type": "integer"
+                  },
+                  "chapterNumber": {
+                    "type": "integer"
+                  },
+                  "chapterTitle": {
+                    "type": "string"
+                  },
+                  "durationSeconds": {
+                    "type": "integer"
+                  },
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "content",
+                        "options",
+                        "correctAnswer"
+                      ],
+                      "properties": {
+                        "content": {
+                          "type": "string"
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "correctAnswer": {
+                          "type": "integer"
+                        },
+                        "orderIndex": {
+                          "type": "integer"
+                        },
+                        "explanation": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz created successfully"
           }
         }
       }
@@ -2214,7 +2843,48 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz sessions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/QuizResultSummary"
+                          }
+                        },
+                        "totalElements": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        },
+                        "currentPage": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "hasNext": {
+                          "type": "boolean"
+                        },
+                        "hasPrevious": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2242,7 +2912,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz session detail retrieved successfully"
+          },
+          "404": {
+            "description": "Completed quiz session not found"
           }
         }
       }
@@ -2270,7 +2943,25 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz detail retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/StaffQuizSet"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Quiz not found"
           }
         }
       },
@@ -2294,9 +2985,56 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "contextId": {
+                    "type": "string"
+                  },
+                  "level": {
+                    "type": "string",
+                    "enum": [
+                      "EASY",
+                      "MEDIUM",
+                      "HARD"
+                    ]
+                  },
+                  "isPublished": {
+                    "type": "boolean"
+                  },
+                  "grade": {
+                    "type": "integer"
+                  },
+                  "chapterNumber": {
+                    "type": "integer"
+                  },
+                  "chapterTitle": {
+                    "type": "string"
+                  },
+                  "durationSeconds": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz updated successfully"
+          },
+          "404": {
+            "description": "Quiz not found"
           }
         }
       },
@@ -2322,7 +3060,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz permanently deleted successfully"
+          },
+          "404": {
+            "description": "Quiz not found"
           }
         }
       }
@@ -2350,7 +3091,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz soft deleted successfully"
+          },
+          "404": {
+            "description": "Quiz not found"
           }
         }
       }
@@ -2378,7 +3122,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Quiz restored successfully"
+          },
+          "404": {
+            "description": "Quiz not found"
           }
         }
       }
@@ -2404,9 +3151,44 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content",
+                  "options",
+                  "correctAnswer"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "correctAnswer": {
+                    "type": "integer"
+                  },
+                  "orderIndex": {
+                    "type": "integer"
+                  },
+                  "explanation": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Question added successfully"
           }
         }
       }
@@ -2440,9 +3222,42 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "correctAnswer": {
+                    "type": "integer"
+                  },
+                  "orderIndex": {
+                    "type": "integer"
+                  },
+                  "explanation": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Question updated successfully"
+          },
+          "404": {
+            "description": "Question not found"
           }
         }
       },
@@ -2476,7 +3291,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Question deleted successfully"
+          },
+          "404": {
+            "description": "Question not found"
           }
         }
       }

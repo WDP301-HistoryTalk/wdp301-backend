@@ -23,6 +23,60 @@ router.use(authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAd
  *     summary: List quizzes for staff
  *     security:
  *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by quiz title
+ *       - in: query
+ *         name: grade
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: era
+ *         schema:
+ *           type: string
+ *           enum: [ANCIENT, MEDIEVAL, MODERN, CONTEMPORARY]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Quizzes retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     content:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/StaffQuizSet'
+ *                     totalElements:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     pageSize:
+ *                       type: integer
+ *                     hasNext:
+ *                       type: boolean
+ *                     hasPrevious:
+ *                       type: boolean
  */
 router.get('/quizzes', QuizController.staffListQuizzes);
 
@@ -49,6 +103,35 @@ router.get('/quizzes', QuizController.staffListQuizzes);
  *         schema:
  *           type: integer
  *           default: 10
+ *     responses:
+ *       200:
+ *         description: Quiz sessions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     content:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/QuizResultSummary'
+ *                     totalElements:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     pageSize:
+ *                       type: integer
+ *                     hasNext:
+ *                       type: boolean
+ *                     hasPrevious:
+ *                       type: boolean
  */
 router.get('/quizzes/sessions', QuizController.staffListSessions);
 
@@ -66,6 +149,11 @@ router.get('/quizzes/sessions', QuizController.staffListSessions);
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Quiz session detail retrieved successfully
+ *       404:
+ *         description: Completed quiz session not found
  */
 router.get('/quizzes/sessions/:sessionId', QuizController.staffGetSessionDetail);
 
@@ -83,6 +171,20 @@ router.get('/quizzes/sessions/:sessionId', QuizController.staffGetSessionDetail)
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Quiz detail retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/StaffQuizSet'
+ *       404:
+ *         description: Quiz not found
  */
 router.get('/quizzes/:quizId', QuizController.staffGetQuizDetail);
 
@@ -94,6 +196,54 @@ router.get('/quizzes/:quizId', QuizController.staffGetQuizDetail);
  *     summary: Create a quiz
  *     security:
  *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, contextId]
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               contextId:
+ *                 type: string
+ *               level:
+ *                 type: string
+ *                 enum: [EASY, MEDIUM, HARD]
+ *               isPublished:
+ *                 type: boolean
+ *               grade:
+ *                 type: integer
+ *               chapterNumber:
+ *                 type: integer
+ *               chapterTitle:
+ *                 type: string
+ *               durationSeconds:
+ *                 type: integer
+ *               questions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [content, options, correctAnswer]
+ *                   properties:
+ *                     content:
+ *                       type: string
+ *                     options:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     correctAnswer:
+ *                       type: integer
+ *                     orderIndex:
+ *                       type: integer
+ *                     explanation:
+ *                       type: string
+ *     responses:
+ *       200:
+ *         description: Quiz created successfully
  */
 router.post('/quizzes', QuizController.staffCreateQuiz);
 
@@ -111,6 +261,37 @@ router.post('/quizzes', QuizController.staffCreateQuiz);
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               contextId:
+ *                 type: string
+ *               level:
+ *                 type: string
+ *                 enum: [EASY, MEDIUM, HARD]
+ *               isPublished:
+ *                 type: boolean
+ *               grade:
+ *                 type: integer
+ *               chapterNumber:
+ *                 type: integer
+ *               chapterTitle:
+ *                 type: string
+ *               durationSeconds:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Quiz updated successfully
+ *       404:
+ *         description: Quiz not found
  */
 router.put('/quizzes/:quizId', QuizController.staffUpdateQuiz);
 
@@ -128,6 +309,11 @@ router.put('/quizzes/:quizId', QuizController.staffUpdateQuiz);
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Quiz permanently deleted successfully
+ *       404:
+ *         description: Quiz not found
  */
 router.delete('/quizzes/:quizId', QuizController.staffDeleteQuiz);
 
@@ -145,6 +331,11 @@ router.delete('/quizzes/:quizId', QuizController.staffDeleteQuiz);
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Quiz soft deleted successfully
+ *       404:
+ *         description: Quiz not found
  */
 router.patch('/quizzes/:quizId/soft-delete', QuizController.staffSoftDeleteQuiz);
 
@@ -162,6 +353,11 @@ router.patch('/quizzes/:quizId/soft-delete', QuizController.staffSoftDeleteQuiz)
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Quiz restored successfully
+ *       404:
+ *         description: Quiz not found
  */
 router.patch('/quizzes/:quizId/restore', QuizController.staffRestoreQuiz);
 
@@ -179,6 +375,29 @@ router.patch('/quizzes/:quizId/restore', QuizController.staffRestoreQuiz);
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [content, options, correctAnswer]
+ *             properties:
+ *               content:
+ *                 type: string
+ *               options:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               correctAnswer:
+ *                 type: integer
+ *               orderIndex:
+ *                 type: integer
+ *               explanation:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Question added successfully
  */
 router.post('/quizzes/:quizId/questions', QuizController.staffAddQuestion);
 
@@ -201,6 +420,30 @@ router.post('/quizzes/:quizId/questions', QuizController.staffAddQuestion);
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: string
+ *               options:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               correctAnswer:
+ *                 type: integer
+ *               orderIndex:
+ *                 type: integer
+ *               explanation:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Question updated successfully
+ *       404:
+ *         description: Question not found
  */
 router.put('/quizzes/:quizId/questions/:questionId', QuizController.staffUpdateQuestion);
 
@@ -223,6 +466,11 @@ router.put('/quizzes/:quizId/questions/:questionId', QuizController.staffUpdateQ
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Question deleted successfully
+ *       404:
+ *         description: Question not found
  */
 router.delete('/quizzes/:quizId/questions/:questionId', QuizController.staffDeleteQuestion);
 
