@@ -14,6 +14,13 @@ import { AppError } from './utils/app-error';
 
 const app = express();
 
+// OpenAPI docs are served before Helmet so Swagger UI assets can run normally.
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 app.use(helmet());
 
 app.use(
@@ -44,13 +51,6 @@ app.get('/health', (req: Request, res: Response) => {
     uptime: process.uptime(),
     env: config.nodeEnv,
   });
-});
-
-// OpenAPI docs — available at /api-docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get('/api-docs.json', (_req: Request, res: Response) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
 });
 
 app.use('/api/v1', apiRouter);

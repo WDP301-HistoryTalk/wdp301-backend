@@ -20,6 +20,9 @@ const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
  *   get:
  *     tags: [Historical Contexts]
  *     summary: List historical contexts
+ *     responses:
+ *       200:
+ *         description: Historical contexts retrieved successfully
  */
 router.get('/', optionalAuth, HistoricalContextController.list);
 
@@ -35,6 +38,11 @@ router.get('/', optionalAuth, HistoricalContextController.list);
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Historical context retrieved successfully
+ *       404:
+ *         description: Historical context not found
  */
 router.get('/:id', optionalAuth, HistoricalContextController.getById);
 
@@ -88,6 +96,11 @@ router.post('/', authenticate, authorize(...staffOrAdmin), HistoricalContextCont
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Historical context updated successfully
+ *       404:
+ *         description: Historical context not found
  */
 router.put('/:id', authenticate, authorize(...staffOrAdmin), HistoricalContextController.update);
 
@@ -105,6 +118,11 @@ router.put('/:id', authenticate, authorize(...staffOrAdmin), HistoricalContextCo
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Historical context deleted successfully
+ *       404:
+ *         description: Historical context not found
  */
 router.delete('/:id', authenticate, authorize(...staffOrAdmin), HistoricalContextController.delete);
 
@@ -122,6 +140,11 @@ router.delete('/:id', authenticate, authorize(...staffOrAdmin), HistoricalContex
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Historical context soft-deleted successfully
+ *       404:
+ *         description: Historical context not found
  */
 router.patch('/:id/soft-delete', authenticate, authorize(...staffOrAdmin), HistoricalContextController.softDelete);
 
@@ -139,6 +162,11 @@ router.patch('/:id/soft-delete', authenticate, authorize(...staffOrAdmin), Histo
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Historical context active status toggled successfully
+ *       404:
+ *         description: Historical context not found
  */
 router.patch('/:id/toggle-active', authenticate, authorize(...staffOrAdmin), HistoricalContextController.toggleActive);
 
