@@ -56,6 +56,7 @@ export class ChatController {
           ...obj,
           id: obj.id || obj._id,
           role: obj.isFromAi ? 'ASSISTANT' : 'USER',
+          messageType: obj.messageType || 'TEXT',
           suggestedQuestions: obj.suggestedQuestion || [],
         };
       });
@@ -108,20 +109,21 @@ export class ChatController {
   public async sendMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const uid = req.user?.id;
-      const { sessionId, content } = req.body;
+      const { sessionId, content, messageType } = req.body;
 
       if (!sessionId || !content) {
         throw new AppError('Yêu cầu cung cấp sessionId và content', 400);
       }
       if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
 
-      const { userMessage, assistantMessage, suggestedQuestions } = await ChatService.sendMessage(sessionId as string, content as string, uid as string);
+      const { userMessage, assistantMessage, suggestedQuestions } = await ChatService.sendMessage(sessionId as string, content as string, uid as string, messageType as string);
 
       const mapMsg = (msg: any, isAi: boolean) => ({
         id: msg.id || msg._id,
         sessionId: msg.sessionId,
         role: isAi ? 'ASSISTANT' : 'USER',
         content: msg.content,
+        messageType: msg.messageType || 'TEXT',
         createdAt: msg.createdAt,
       });
 
@@ -132,6 +134,48 @@ export class ChatController {
       };
 
       sendSuccess(res, data, 'Message sent successfully', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/v1/chat/messages/stream
+   * Stream response for SSE
+   */
+  public async sendMessageStream(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const uid = req.user?.id;
+      const { sessionId, content, messageType } = req.body;
+
+      if (!sessionId || !content) {
+        throw new AppError('Yêu cầu cung cấp sessionId và content', 400);
+      }
+      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('X-Accel-Buffering', 'no');
+      res.setHeader('Connection', 'keep-alive');
+
+      await ChatService.sendMessageStream(
+        sessionId as string,
+        content as string,
+        uid as string,
+        messageType as string,
+        (data: string) => {
+          res.write(data);
+        },
+        (remainingTokens: number) => {
+          res.write(`data: {"type":"done","remainingTokens":${remainingTokens}}\n\n`);
+          res.end();
+        },
+        (err: any) => {
+          console.error('[ChatController] Stream error:', err);
+          res.write(`data: {"type":"error","message":"${err.message || 'Stream error'}"}\n\n`);
+          res.end();
+        }
+      );
     } catch (error) {
       next(error);
     }
@@ -174,7 +218,7 @@ export class ChatController {
       const uid = req.user?.id;
       if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
 
-      await ChatService.deleteSession(req.params.sessionId as string, uid as string);
+      await ChatService.hardDeleteSession(req.params.sessionId as string, uid as string);
       sendSuccess(res, null, 'Session deleted successfully');
     } catch (error) {
       next(error);
