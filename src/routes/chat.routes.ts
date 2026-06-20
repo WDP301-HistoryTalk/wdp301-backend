@@ -11,10 +11,44 @@ const router = Router();
  *   description: Chat session and message management
  */
 
-// GET /api/v1/chat/history — must be before /:sessionId routes
+/**
+ * @openapi
+ * /chat/history:
+ *   get:
+ *     tags: [Chat]
+ *     summary: Get user's chat history (sidebar)
+ *     description: Retrieve a list of all chat sessions for the current user, sorted by last active time.
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of chat sessions retrieved successfully
+ */
 router.get('/history', authenticate, ChatController.getHistory.bind(ChatController));
 
-// GET /api/v1/chat/sessions?contextId&characterId
+/**
+ * @openapi
+ * /chat/sessions:
+ *   get:
+ *     tags: [Chat]
+ *     summary: Get chat sessions filtered by context and character
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: contextId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: characterId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Filtered list of chat sessions
+ *       400:
+ *         description: Missing query parameters
+ */
 router.get('/sessions', authenticate, ChatController.getSessions.bind(ChatController));
 
 /**
