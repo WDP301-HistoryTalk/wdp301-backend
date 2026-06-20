@@ -739,6 +739,12 @@
                   "background": {
                     "type": "string"
                   },
+                  "imageUrl": {
+                    "type": "string"
+                  },
+                  "modelUrl": {
+                    "type": "string"
+                  },
                   "bornYear": {
                     "type": "number"
                   },
@@ -1090,6 +1096,9 @@
                   },
                   "content": {
                     "type": "string"
+                  },
+                  "messageType": {
+                    "type": "string"
                   }
                 }
               }
@@ -1105,6 +1114,50 @@
           },
           "502": {
             "description": "AI service unavailable"
+          }
+        }
+      }
+    },
+    "/chat/messages/stream": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Send a message and stream the response (SSE)",
+        "description": "Streaming chat endpoint mimicking ChatGPT behavior.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sessionId",
+                  "content"
+                ],
+                "properties": {
+                  "sessionId": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "messageType": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE stream of the AI response"
           }
         }
       }
@@ -1628,6 +1681,113 @@
         ]
       }
     },
+    "/payments/webhook": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "PayOS webhook (server-to-server, public, HMAC-verified)",
+        "description": "Called by PayOS after a payment event. Not authenticated — trust is established by verifying the HMAC-SHA256 signature in the body.\n",
+        "responses": {
+          "200": {
+            "description": "Webhook acknowledged"
+          }
+        }
+      }
+    },
+    "/payments/orders": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Create a payment order and PayOS checkout link",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tierId"
+                ],
+                "properties": {
+                  "tierId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Checkout link created"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "List my orders",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/payments/orders/{orderCode}": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get order status (lazily reconciles with PayOS)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orderCode",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/payments/orders/{orderCode}/cancel": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Cancel a pending order",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orderCode",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
     "/quizzes/results/me": {
       "get": {
         "tags": [
@@ -1637,6 +1797,29 @@
         "security": [
           {
             "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/quizzes/results/me/{sessionId}": {
+      "get": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "Get one of the current user's completed quiz sessions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }
@@ -1699,6 +1882,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "limitedTime",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ]
       }
@@ -1723,6 +1915,67 @@
         "security": [
           {
             "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/staff/quizzes/sessions": {
+      "get": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Get completed quiz sessions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ]
+      }
+    },
+    "/staff/quizzes/sessions/{sessionId}": {
+      "get": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Get completed quiz session detail",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ]
       }
@@ -1917,6 +2170,55 @@
             "schema": {
               "type": "string"
             }
+          }
+        ]
+      }
+    },
+    "/tiers": {
+      "get": {
+        "tags": [
+          "Tiers"
+        ],
+        "summary": "Get all active subscription tiers"
+      },
+      "post": {
+        "tags": [
+          "Tiers"
+        ],
+        "summary": "Create a subscription tier (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/tiers/{id}": {
+      "get": {
+        "tags": [
+          "Tiers"
+        ],
+        "summary": "Get a subscription tier by ID"
+      },
+      "put": {
+        "tags": [
+          "Tiers"
+        ],
+        "summary": "Update a subscription tier (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Tiers"
+        ],
+        "summary": "Deactivate a subscription tier (Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2188,12 +2490,20 @@
       "description": "Historical Context management"
     },
     {
+      "name": "Payments",
+      "description": "PayOS subscription payments"
+    },
+    {
       "name": "Quizzes",
       "description": "Quiz management and taking"
     },
     {
       "name": "Staff Quizzes",
       "description": "Staff quiz management"
+    },
+    {
+      "name": "Tiers",
+      "description": "Subscription Tier management"
     }
   ]
 }

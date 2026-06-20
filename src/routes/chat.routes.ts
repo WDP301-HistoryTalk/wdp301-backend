@@ -105,6 +105,7 @@ router.patch('/sessions/:sessionId/soft-delete', authenticate, ChatController.so
  *             properties:
  *               sessionId: { type: string }
  *               content: { type: string }
+ *               messageType: { type: string }
  *     responses:
  *       201:
  *         description: Message sent and AI responded
