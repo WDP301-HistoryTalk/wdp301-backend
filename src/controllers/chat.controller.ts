@@ -57,7 +57,7 @@ export class ChatController {
           id: obj.id || obj._id,
           role: obj.isFromAi ? 'ASSISTANT' : 'USER',
           messageType: obj.messageType || 'TEXT',
-          suggestedQuestions: obj.suggestedQuestion || [],
+          suggestedQuestions: obj.suggestedQuestions || [],
         };
       });
 
