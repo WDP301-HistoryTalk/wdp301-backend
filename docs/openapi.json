@@ -1325,6 +1325,9 @@
                   },
                   "content": {
                     "type": "string"
+                  },
+                  "messageType": {
+                    "type": "string"
                   }
                 }
               }
