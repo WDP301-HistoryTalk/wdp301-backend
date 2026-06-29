@@ -77,7 +77,8 @@ export class QuizService {
       chapterTitle: quiz.chapterTitle || '',
       era: quiz.era,
       durationSeconds: quiz.durationSeconds || 0,
-      playCount: userPlayCount,
+      playCount: quiz.playCount || 0,
+      userPlayCount,
       rating: quiz.rating || 0,
       contextTitle: (quiz.contextId as any)?.name || '',
     };
