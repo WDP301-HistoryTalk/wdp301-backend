@@ -171,16 +171,19 @@ export class QuizService {
         throw new AppError('Duplicate answers are not allowed', 400);
       }
 
-      const selectedAnswer = answer.selectedAnswer ?? answer.selectedOption;
+      const rawAnswer = answer.selectedAnswer !== undefined ? answer.selectedAnswer : answer.selectedOption;
+      // null/undefined means the user explicitly left this question unanswered
+      if (rawAnswer === null || rawAnswer === undefined) {
+        continue;
+      }
       if (
-        !Number.isInteger(selectedAnswer)
-        || selectedAnswer === undefined
-        || selectedAnswer < 0
-        || selectedAnswer >= question.options.length
+        !Number.isInteger(rawAnswer)
+        || rawAnswer < 0
+        || rawAnswer >= question.options.length
       ) {
         throw new AppError('selectedAnswer is invalid', 400);
       }
-      submittedAnswers.set(answer.questionId, selectedAnswer);
+      submittedAnswers.set(answer.questionId, rawAnswer);
     }
 
     let correctCount = 0;
@@ -231,7 +234,10 @@ export class QuizService {
     session.score = score;
     session.totalQuestions = questions.length;
     session.percentage = percentage;
-    await session.save();
+    await Promise.all([
+      session.save(),
+      Quiz.findByIdAndUpdate(quizId, { $inc: { playCount: 1 } }),
+    ]);
 
     return {
       resultId: session._id.toString(),
