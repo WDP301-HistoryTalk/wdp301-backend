@@ -1,6 +1,6 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
-import DocumentModel, { IDocumentEntity } from '../models/document.model';
+import DocumentModel from '../models/document.model';
 import HistoricalContext from '../models/historical-context.model';
 import Character from '../models/character.model';
 import { AppError } from '../utils/app-error';
@@ -60,7 +60,7 @@ export class DocumentService {
 
   // ── Context Documents ──────────────────────────────────────────────────────
 
-  static async createContextDocument(userId: string, data: CreateContextDocumentInput): Promise<IDocumentEntity> {
+  static async createContextDocument(userId: string, data: CreateContextDocumentInput): Promise<any> {
     const context = await HistoricalContext.findOne({
       _id: data.contextId,
       deletedAt: { $exists: false },
@@ -80,22 +80,25 @@ export class DocumentService {
     const entityIdStr = context._id.toString();
     setImmediate(() => triggerAiProcess(doc._id.toString(), entityIdStr, data.content));
 
-    return doc;
+    await doc.populate('uploadedBy', 'userName');
+    return this.mapToResponse(doc, true);
   }
 
-  static async getDocumentsByContext(contextId: string): Promise<IDocumentEntity[]> {
+  static async getDocumentsByContext(contextId: string): Promise<any[]> {
     const context = await HistoricalContext.findOne({
       _id: contextId,
     });
     if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
-    return DocumentModel.find({ entityId: context._id, entityType: EntityType.Context })
+    const docs = await DocumentModel.find({ entityId: context._id, entityType: EntityType.Context })
+      .populate('uploadedBy', 'userName')
       .sort({ createdAt: -1 });
+    return docs.map(d => this.mapToResponse(d, true));
   }
 
   // ── Character Documents ────────────────────────────────────────────────────
 
-  static async createCharacterDocument(userId: string, data: CreateCharacterDocumentInput): Promise<IDocumentEntity> {
+  static async createCharacterDocument(userId: string, data: CreateCharacterDocumentInput): Promise<any> {
     const character = await Character.findOne({
       _id: data.characterId,
       deletedAt: { $exists: false },
@@ -114,28 +117,31 @@ export class DocumentService {
     const entityIdStr = character._id.toString();
     setImmediate(() => triggerAiProcess(doc._id.toString(), entityIdStr, data.content));
 
-    return doc;
+    await doc.populate('uploadedBy', 'userName');
+    return this.mapToResponse(doc, false);
   }
 
-  static async getDocumentsByCharacter(characterId: string): Promise<IDocumentEntity[]> {
+  static async getDocumentsByCharacter(characterId: string): Promise<any[]> {
     const character = await Character.findOne({
       _id: characterId,
     });
     if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
-    return DocumentModel.find({ entityId: character._id, entityType: EntityType.Character })
+    const docs = await DocumentModel.find({ entityId: character._id, entityType: EntityType.Character })
+      .populate('uploadedBy', 'userName')
       .sort({ createdAt: -1 });
+    return docs.map(d => this.mapToResponse(d, false));
   }
 
   // ── Shared ────────────────────────────────────────────────────────────────
 
-  static async getDocumentById(docId: string): Promise<IDocumentEntity> {
-    const doc = await DocumentModel.findById(docId);
+  static async getDocumentById(docId: string): Promise<any> {
+    const doc = await DocumentModel.findById(docId).populate('uploadedBy', 'userName');
     if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
-    return doc;
+    return this.mapToResponse(doc, doc.entityType === EntityType.Context);
   }
 
-  static async updateDocument(docId: string, data: UpdateDocumentInput): Promise<IDocumentEntity> {
+  static async updateDocument(docId: string, data: UpdateDocumentInput): Promise<any> {
     const doc = await DocumentModel.findByIdAndUpdate(
       docId,
       { $set: data },
@@ -148,7 +154,8 @@ export class DocumentService {
       setImmediate(() => triggerAiProcess(doc._id.toString(), doc.entityId.toString(), data.content!));
     }
 
-    return doc;
+    await doc.populate('uploadedBy', 'userName');
+    return this.mapToResponse(doc, doc.entityType === EntityType.Context);
   }
 
   static async deleteDocument(docId: string): Promise<void> {
@@ -157,9 +164,38 @@ export class DocumentService {
     setImmediate(() => triggerAiDelete(docId));
   }
 
-  static async getAllDocuments(entityType?: EntityType): Promise<IDocumentEntity[]> {
+  static async getAllDocuments(entityType?: EntityType): Promise<any[]> {
     const filter = entityType ? { entityType } : {};
-    return DocumentModel.find(filter).sort({ createdAt: -1 });
+    const docs = await DocumentModel.find(filter)
+      .populate('uploadedBy', 'userName')
+      .sort({ createdAt: -1 });
+    return docs.map(d => this.mapToResponse(d, d.entityType === EntityType.Context));
+  }
+
+  private static mapToResponse(doc: any, isContext: boolean): any {
+    if (!doc) return null;
+    const document = typeof doc.toObject === 'function' ? doc.toObject() : doc;
+
+    const baseResponse: any = {
+      docId: document._id.toString(),
+      uid: document.uploadedBy?._id ? document.uploadedBy._id.toString() : document.uploadedBy?.toString() || '',
+      userName: document.uploadedBy?.userName || 'Unknown',
+      title: document.title,
+      content: document.content,
+      fileUrl: document.fileUrl || null,
+      type: 'TEXT', // Defaulting to TEXT since type is not fully utilized yet
+      uploadDate: document.createdAt,
+      updatedDate: document.updatedAt,
+      deletedAt: document.deletedAt || null,
+    };
+
+    if (isContext) {
+      baseResponse.contextId = document.entityId.toString();
+    } else {
+      baseResponse.characterId = document.entityId.toString();
+    }
+
+    return baseResponse;
   }
 }
 
