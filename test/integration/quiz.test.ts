@@ -299,14 +299,15 @@ describe('Quiz API Operations (Staff & Customer)', () => {
       });
     });
 
-    it('rejects submission after the session time limit expires', async () => {
+    it('auto-submits and grades when the session time limit has expired', async () => {
       const startRes = await request(app)
         .post(`/api/v1/quizzes/${quizId}/start?limitedTime=1`)
         .set('Authorization', `Bearer ${customerToken}`);
       const sessionId = startRes.body.data.sessionId;
 
+      const backdatedStart = new Date(Date.now() - 2000);
       await QuizSession.findByIdAndUpdate(sessionId, {
-        startTime: new Date(Date.now() - 2000),
+        startTime: backdatedStart,
       });
 
       const res = await request(app)
@@ -317,9 +318,12 @@ describe('Quiz API Operations (Staff & Customer)', () => {
           answers: [{ questionId, selectedAnswer: 0 }],
         });
 
-      expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Quiz session time limit expired');
-      expect(await AnswerDetail.countDocuments({ sessionId })).toBe(0);
+      expect(res.status).toBe(200);
+      expect(res.body.data.score).toBeDefined();
+      // endTime should be capped at the deadline (startTime + 1s), not the actual submission time
+      const deadline = new Date(backdatedStart.getTime() + 1000);
+      expect(new Date(res.body.data.endTime).getTime()).toBeCloseTo(deadline.getTime(), -2);
+      expect(await AnswerDetail.countDocuments({ sessionId })).toBe(1);
     });
 
     it('returns the current user completion count in quiz detail', async () => {
