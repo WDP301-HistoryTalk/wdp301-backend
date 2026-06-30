@@ -152,10 +152,8 @@ export class QuizService {
       throw new AppError('Phiên làm bài đã được nộp', 400);
     }
 
-    const endTime = new Date();
-    if (endTime.getTime() > session.startTime.getTime() + session.limitedTime * 1000) {
-      throw new AppError('Quiz session time limit expired', 400);
-    }
+    const deadline = new Date(session.startTime.getTime() + session.limitedTime * 1000);
+    const endTime = new Date() > deadline ? deadline : new Date();
 
     const quizId = session.quizId;
     const questions = await Question.find({ quizId }).sort({ orderIndex: 1 });
