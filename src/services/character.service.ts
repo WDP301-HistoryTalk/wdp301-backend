@@ -333,13 +333,15 @@ export class CharacterService {
     }
 
     // Resolve contexts
-    const contexts = (char.contextIds || []).map((ctx: any) => {
-      // Handle both populated object and raw ObjectId
-      if (ctx._id) {
-        return { contextId: ctx._id.toString(), name: ctx.name };
-      }
-      return { contextId: ctx.toString(), name: 'Unknown' };
-    });
+    const contexts = (char.contextIds || [])
+      .filter((ctx: any) => ctx != null) // Filter out nulls from dangling references
+      .map((ctx: any) => {
+        // Handle both populated object and raw ObjectId
+        if (ctx._id) {
+          return { contextId: ctx._id.toString(), name: ctx.name || 'Unknown' };
+        }
+        return { contextId: ctx.toString(), name: 'Unknown' };
+      });
 
     const primaryContext = contexts.length > 0 ? contexts[0] : null;
 
