@@ -322,6 +322,8 @@ export class CharacterService {
 
   private static mapToResponse(character: any): any {
     if (!character) return null;
+    const rawId = character._id || character.id;
+    const charId = rawId ? rawId.toString() : '';
     const char = typeof character.toObject === 'function' ? character.toObject() : character;
 
     const isPublished = char.isPublished ?? false;
@@ -337,8 +339,9 @@ export class CharacterService {
       .filter((ctx: any) => ctx != null) // Filter out nulls from dangling references
       .map((ctx: any) => {
         // Handle both populated object and raw ObjectId
-        if (ctx._id) {
-          return { contextId: ctx._id.toString(), name: ctx.name || 'Unknown' };
+        const ctxId = ctx._id || ctx.id;
+        if (ctxId) {
+          return { contextId: ctxId.toString(), name: ctx.name || 'Unknown' };
         }
         return { contextId: ctx.toString(), name: 'Unknown' };
       });
@@ -346,7 +349,7 @@ export class CharacterService {
     const primaryContext = contexts.length > 0 ? contexts[0] : null;
 
     return {
-      characterId: char._id.toString(),
+      characterId: charId,
       name: char.name,
       title: char.title,
       background: char.background,
@@ -368,7 +371,7 @@ export class CharacterService {
       context: primaryContext,
       contexts: contexts,
       createdBy: char.createdBy ? {
-        uid: char.createdBy._id ? char.createdBy._id.toString() : char.createdBy.toString(),
+        uid: (char.createdBy._id || char.createdBy.id) ? (char.createdBy._id || char.createdBy.id).toString() : char.createdBy.toString(),
         userName: char.createdBy.userName || 'Unknown'
       } : null,
       createdDate: char.createdAt,

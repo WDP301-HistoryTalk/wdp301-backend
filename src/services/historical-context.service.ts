@@ -208,6 +208,8 @@ export class HistoricalContextService {
   private static mapToResponse(context: any): any {
     if (!context) return null;
     
+    const rawId = context._id || context.id;
+    const ctxId = rawId ? rawId.toString() : '';
     // Support both mongoose Document and raw object
     const ctx = typeof context.toObject === 'function' ? context.toObject() : context;
     
@@ -228,7 +230,7 @@ export class HistoricalContextService {
         : null;
 
     return {
-      contextId: ctx._id.toString(),
+      contextId: ctxId,
       name: ctx.name,
       description: ctx.description,
       era: ctx.era,
@@ -245,7 +247,7 @@ export class HistoricalContextService {
       isPublished: isPublished,
       status: status,
       createdBy: ctx.createdBy ? {
-        uid: ctx.createdBy._id ? ctx.createdBy._id.toString() : ctx.createdBy.toString(),
+        uid: (ctx.createdBy._id || ctx.createdBy.id) ? (ctx.createdBy._id || ctx.createdBy.id).toString() : ctx.createdBy.toString(),
         userName: ctx.createdBy.userName || 'Unknown'
       } : null,
       createdDate: ctx.createdAt,

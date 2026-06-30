@@ -174,11 +174,13 @@ export class DocumentService {
 
   private static mapToResponse(doc: any, isContext: boolean): any {
     if (!doc) return null;
+    const rawId = doc._id || doc.id;
+    const docIdStr = rawId ? rawId.toString() : '';
     const document = typeof doc.toObject === 'function' ? doc.toObject() : doc;
 
     const baseResponse: any = {
-      docId: document._id.toString(),
-      uid: document.uploadedBy?._id ? document.uploadedBy._id.toString() : document.uploadedBy?.toString() || '',
+      docId: docIdStr,
+      uid: (document.uploadedBy?._id || document.uploadedBy?.id) ? (document.uploadedBy._id || document.uploadedBy.id).toString() : document.uploadedBy?.toString() || '',
       userName: document.uploadedBy?.userName || 'Unknown',
       title: document.title,
       content: document.content,
@@ -190,9 +192,9 @@ export class DocumentService {
     };
 
     if (isContext) {
-      baseResponse.contextId = document.entityId.toString();
+      baseResponse.contextId = (document.entityId._id || document.entityId.id || document.entityId).toString();
     } else {
-      baseResponse.characterId = document.entityId.toString();
+      baseResponse.characterId = (document.entityId._id || document.entityId.id || document.entityId).toString();
     }
 
     return baseResponse;
