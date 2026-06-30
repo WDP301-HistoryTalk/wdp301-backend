@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import Character, { ICharacter } from '../models/character.model';
+import Character from '../models/character.model';
 import HistoricalContext from '../models/historical-context.model';
 import { AppError } from '../utils/app-error';
 import { EventEra } from '../types/enums';
@@ -47,15 +47,16 @@ export interface PaginationResult<T> {
 }
 
 export class CharacterService {
-  static async create(userId: string, data: CreateCharacterInput): Promise<ICharacter> {
+  static async create(userId: string, data: CreateCharacterInput): Promise<any> {
     const character = await Character.create({
       createdBy: new mongoose.Types.ObjectId(userId),
       ...data,
     });
-    return character;
+    await character.populate('createdBy', 'userName');
+    return this.mapToResponse(character);
   }
 
-  static async findById(id: string, includeUnpublished = false, includeInactive = false): Promise<ICharacter> {
+  static async findById(id: string, includeUnpublished = false, includeInactive = false): Promise<any> {
     const filter: Record<string, unknown> = {};
     
     if (!includeInactive) {
@@ -68,7 +69,7 @@ export class CharacterService {
     }
     
     if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
-    const character = await Character.findOne({ ...filter, _id: id });
+    const character = await Character.findOne({ ...filter, _id: id }).populate('createdBy', 'userName');
     if (!character) {
       throw new AppError('Không tìm thấy nhân vật', 404);
     }
@@ -82,7 +83,7 @@ export class CharacterService {
       });
     }
     
-    return character;
+    return this.mapToResponse(character);
   }
 
   static async list(query: ListCharactersQuery): Promise<PaginationResult<any>> {
@@ -112,15 +113,16 @@ export class CharacterService {
     }
 
     const [characters, totalElements] = await Promise.all([
-      Character.find(filter).populate('contextIds', 'name').skip(skip).limit(pageSize).sort({ createdAt: -1 }),
+      Character.find(filter)
+        .populate('contextIds', 'name')
+        .populate('createdBy', 'userName')
+        .skip(skip)
+        .limit(pageSize)
+        .sort({ createdAt: -1 }),
       Character.countDocuments(filter),
     ]);
 
-    // Map to include id field for FE compatibility
-    const content = characters.map(char => ({
-      ...char.toObject(),
-      id: char._id.toString(),
-    }));
+    const content = characters.map(char => this.mapToResponse(char));
 
     const totalPages = Math.ceil(totalElements / pageSize);
 
@@ -135,7 +137,7 @@ export class CharacterService {
     };
   }
 
-  static async listByContextId(contextId: string, includeUnpublished = false): Promise<ICharacter[]> {
+  static async listByContextId(contextId: string, includeUnpublished = false): Promise<any[]> {
     const context = await HistoricalContext.findOne({ _id: contextId, deletedAt: { $exists: false } });
     if (!context) {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
@@ -151,12 +153,14 @@ export class CharacterService {
       filter.isPublished = true;
     }
 
-    const characters = await Character.find(filter).populate('contextIds', 'name');
+    const characters = await Character.find(filter)
+      .populate('contextIds', 'name')
+      .populate('createdBy', 'userName');
 
-    return characters;
+    return characters.map(char => this.mapToResponse(char));
   }
 
-  static async update(id: string, data: UpdateCharacterInput): Promise<ICharacter> {
+  static async update(id: string, data: UpdateCharacterInput): Promise<any> {
     const updateFields: any = { ...data, updatedAt: new Date() };
     const updateQuery: any = {};
     
@@ -174,13 +178,15 @@ export class CharacterService {
       { _id: id },
       updateQuery,
       { returnDocument: 'after', runValidators: true }
-    );
+    )
+      .populate('contextIds', 'name')
+      .populate('createdBy', 'userName');
 
     if (!character) {
       throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
-    return character;
+    return this.mapToResponse(character);
   }
 
   static async delete(id: string): Promise<void> {
@@ -200,22 +206,24 @@ export class CharacterService {
     );
   }
 
-  static async softDelete(id: string): Promise<ICharacter> {
+  static async softDelete(id: string): Promise<any> {
     if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const character = await Character.findOneAndUpdate(
       { _id: id },
       { deletedAt: new Date(), isActive: false },
       { returnDocument: 'after' }
-    );
+    )
+      .populate('contextIds', 'name')
+      .populate('createdBy', 'userName');
 
     if (!character) {
       throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
-    return character;
+    return this.mapToResponse(character);
   }
 
-  static async toggleActive(id: string): Promise<ICharacter> {
+  static async toggleActive(id: string): Promise<any> {
     if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const character = await Character.findOne({ _id: id });
     if (!character) {
@@ -237,13 +245,15 @@ export class CharacterService {
       { _id: character._id },
       updateQuery,
       { returnDocument: 'after' }
-    );
+    )
+      .populate('contextIds', 'name')
+      .populate('createdBy', 'userName');
 
     if (!updated) {
       throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
-    return updated;
+    return this.mapToResponse(updated);
   }
 
   static async attachToContext(characterId: string, contextId: string): Promise<void> {
@@ -302,6 +312,65 @@ export class CharacterService {
       match: includeUnpublished ? { deletedAt: { $exists: false } } : { isPublished: true, isActive: true, deletedAt: { $exists: false } },
     });
     if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
-    return character.contextIds || [];
+    
+    // Map contexts properly to match Java's CharacterResponse.ContextInfo
+    return (character.contextIds || []).map((ctx: any) => ({
+      contextId: ctx._id.toString(),
+      name: ctx.name
+    }));
+  }
+
+  private static mapToResponse(character: any): any {
+    if (!character) return null;
+    const char = typeof character.toObject === 'function' ? character.toObject() : character;
+
+    const isPublished = char.isPublished ?? false;
+    let status = 'ACTIVE';
+    if (char.deletedAt) {
+      status = 'INACTIVE';
+    } else if (!isPublished) {
+      status = 'DRAFT';
+    }
+
+    // Resolve contexts
+    const contexts = (char.contextIds || []).map((ctx: any) => {
+      // Handle both populated object and raw ObjectId
+      if (ctx._id) {
+        return { contextId: ctx._id.toString(), name: ctx.name };
+      }
+      return { contextId: ctx.toString(), name: 'Unknown' };
+    });
+
+    const primaryContext = contexts.length > 0 ? contexts[0] : null;
+
+    return {
+      characterId: char._id.toString(),
+      name: char.name,
+      title: char.title,
+      background: char.background,
+      image: char.imageUrl, // Java maps imageUrl to "image" via @JsonProperty
+      modelUrl: char.modelUrl,
+      personality: char.personality,
+      bornYear: char.bornYear,
+      bornMonth: char.bornMonth,
+      bornDay: char.bornDay,
+      isBornBc: char.isBornBc,
+      deathYear: char.deathYear,
+      deathMonth: char.deathMonth,
+      deathDay: char.deathDay,
+      isDeathBc: char.isDeathBc,
+      isPublished: isPublished,
+      status: status,
+      era: char.era || null,
+      events: [],
+      context: primaryContext,
+      contexts: contexts,
+      createdBy: char.createdBy ? {
+        uid: char.createdBy._id ? char.createdBy._id.toString() : char.createdBy.toString(),
+        userName: char.createdBy.userName || 'Unknown'
+      } : null,
+      createdDate: char.createdAt,
+      updatedDate: char.updatedAt
+    };
   }
 }
