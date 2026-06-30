@@ -35,16 +35,17 @@ export interface ListHistoricalContextsQuery {
 }
 
 export class HistoricalContextService {
-  static async create(userId: string, data: CreateHistoricalContextInput): Promise<IHistoricalContext> {
+  static async create(userId: string, data: CreateHistoricalContextInput): Promise<any> {
     const context = await HistoricalContext.create({
       createdBy: new mongoose.Types.ObjectId(userId),
       characterIds: [],
       ...data,
     });
-    return context;
+    await context.populate('createdBy', 'userName');
+    return this.mapToResponse(context);
   }
 
-  static async findById(id: string, includeUnpublished = false, includeInactive = false): Promise<IHistoricalContext> {
+  static async findById(id: string, includeUnpublished = false, includeInactive = false): Promise<any> {
     const filter: Record<string, unknown> = {};
     
     if (!includeInactive) {
@@ -57,11 +58,14 @@ export class HistoricalContextService {
     }
     
     if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
-    const context = await HistoricalContext.findOne({ ...filter, _id: id }).populate('characterIds');
+    const context = await HistoricalContext.findOne({ ...filter, _id: id })
+      .populate('characterIds')
+      .populate('createdBy', 'userName');
+      
     if (!context) {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
-    return context;
+    return this.mapToResponse(context);
   }
 
   static async list(query: ListHistoricalContextsQuery): Promise<PaginationResult<any>> {
@@ -93,17 +97,14 @@ export class HistoricalContextService {
     const [contexts, totalElements] = await Promise.all([
       HistoricalContext.find(filter)
         .populate('characterIds')
+        .populate('createdBy', 'userName')
         .skip(skip)
         .limit(pageSize)
         .sort({ createdAt: -1 }),
       HistoricalContext.countDocuments(filter),
     ]);
 
-    // Map to include id field for FE compatibility
-    const content = contexts.map(ctx => ({
-      ...ctx.toObject(),
-      id: ctx._id.toString(),
-    }));
+    const content = contexts.map(ctx => this.mapToResponse(ctx));
 
     const totalPages = Math.ceil(totalElements / pageSize);
 
@@ -118,7 +119,7 @@ export class HistoricalContextService {
     };
   }
 
-  static async update(id: string, data: UpdateHistoricalContextInput): Promise<IHistoricalContext> {
+  static async update(id: string, data: UpdateHistoricalContextInput): Promise<any> {
     const updateFields: any = { ...data, updatedAt: new Date() };
     const updateQuery: any = {};
     
@@ -136,13 +137,15 @@ export class HistoricalContextService {
       { _id: id },
       updateQuery,
       { returnDocument: 'after', runValidators: true }
-    ).populate('characterIds');
+    )
+      .populate('characterIds')
+      .populate('createdBy', 'userName');
 
     if (!context) {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
-    return context;
+    return this.mapToResponse(context);
   }
 
   static async delete(id: string): Promise<void> {
@@ -156,22 +159,22 @@ export class HistoricalContextService {
     }
   }
 
-  static async softDelete(id: string): Promise<IHistoricalContext> {
+  static async softDelete(id: string): Promise<any> {
     if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const context = await HistoricalContext.findOneAndUpdate(
       { _id: id, deletedAt: { $exists: false } },
       { deletedAt: new Date(), isActive: false },
       { returnDocument: 'after' }
-    );
+    ).populate('createdBy', 'userName');
 
     if (!context) {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
-    return context;
+    return this.mapToResponse(context);
   }
 
-  static async toggleActive(id: string): Promise<IHistoricalContext> {
+  static async toggleActive(id: string): Promise<any> {
     if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const context = await HistoricalContext.findOne({ _id: id });
     if (!context) {
@@ -193,12 +196,60 @@ export class HistoricalContextService {
       { _id: context._id },
       updateQuery,
       { returnDocument: 'after' }
-    );
+    ).populate('createdBy', 'userName');
 
     if (!updated) {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
-    return updated;
+    return this.mapToResponse(updated);
+  }
+
+  private static mapToResponse(context: any): any {
+    if (!context) return null;
+    
+    // Support both mongoose Document and raw object
+    const ctx = typeof context.toObject === 'function' ? context.toObject() : context;
+    
+    const isPublished = ctx.isPublished ?? false;
+    let status = 'ACTIVE';
+    if (ctx.deletedAt) {
+      status = 'INACTIVE';
+    } else if (!isPublished) {
+      status = 'DRAFT';
+    }
+
+    const startYear = ctx.startYear;
+    const endYear = ctx.endYear;
+    const period = startYear != null && endYear != null ? `${startYear}–${endYear}` : null;
+    
+    const yearLabel = ctx.year != null 
+        ? `${ctx.year} ${ctx.isBC ? 'TCN' : 'SCN'}` 
+        : null;
+
+    return {
+      contextId: ctx._id.toString(),
+      name: ctx.name,
+      description: ctx.description,
+      era: ctx.era,
+      category: ctx.category || null,
+      year: ctx.year,
+      startYear: ctx.startYear,
+      endYear: ctx.endYear,
+      period: period,
+      yearLabel: yearLabel,
+      isBC: ctx.isBC || false,
+      location: ctx.location,
+      imageUrl: ctx.imageUrl,
+      videoUrl: ctx.videoUrl,
+      isPublished: isPublished,
+      status: status,
+      createdBy: ctx.createdBy ? {
+        uid: ctx.createdBy._id ? ctx.createdBy._id.toString() : ctx.createdBy.toString(),
+        userName: ctx.createdBy.userName || 'Unknown'
+      } : null,
+      createdDate: ctx.createdAt,
+      updatedDate: ctx.updatedAt
+    };
   }
 }
