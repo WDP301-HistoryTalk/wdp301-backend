@@ -15,18 +15,18 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            # 1. Di chuyển vào thư mục code Express đang chạy trong Docker
-            cd /home/minhtringuyen/SWD392_FinalProject_HistoryTalk/Source-code/SWD392_FinalProject_HistoryTalk/wdp301-backend
+            # 1. Di chuyển vào thư mục code Express ở repo độc lập
+            cd /home/ec2-user/wdp301-backend
             
             # 2. Reset và Kéo code mới nhất từ nhánh main
             git reset --hard HEAD
             git pull origin main
             
-            # 3. Di chuyển ra thư mục chứa file docker-compose.prod.yml
-            cd ../../../
+            # 3. Build lại image (tối ưu, bypass lỗi buildx trên EC2)
+            sudo docker build -t historytalk-express:latest .
             
-            # 4. Rebuild và chạy lại riêng container express-backend
-            docker compose -f docker-compose.prod.yml up -d --build express-backend
+            # 4. Chạy lại container express-backend
+            sudo docker compose -f docker-compose.prod.yml up -d
             
-            # 5. Dọn dẹp các image cũ lơ lửng để tránh đầy ổ cứng
-            docker image prune -f
+            # 5. Dọn dẹp các image cũ để tránh rác ổ cứng
+            sudo docker image prune -f
