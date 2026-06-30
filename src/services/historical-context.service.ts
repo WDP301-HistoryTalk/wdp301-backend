@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import HistoricalContext, { IHistoricalContext } from '../models/historical-context.model';
+import HistoricalContext from '../models/historical-context.model';
 
 import { AppError } from '../utils/app-error';
 import { EventEra, EventCategory } from '../types/enums';
