@@ -281,9 +281,8 @@ export class ChatService {
   // ── POST /chat/sessions ───────────────────────────────────────────────────
 
   /**
-   * Create a new session and generate AI greeting (fire-and-forget).
-   * Mirrors Java ChatSessionServiceImpl.createSession().
-   * Returns only the ChatSessionResponse (same as Java).
+   * Create a new session and generate AI greeting synchronously.
+   * Awaits greeting before returning so FE can call GET /messages immediately.
    */
   public async createSession(
     uid: string,
@@ -317,18 +316,25 @@ export class ChatService {
       isActive: true,
     });
 
-    // Generate AI greeting asynchronously (fire-and-forget, same as Java)
-    setImmediate(() => this.generateGreetingAsync(session, character, context));
+    // Await greeting so it is persisted before we return the session id.
+    // This prevents the race condition where FE calls GET /messages before
+    // the async greeting has been saved.
+    await this.generateGreetingAsync(session, character, context);
 
-    // Return ChatSessionResponse immediately (mirrors Java response — no greeting in body)
+    // Count persisted messages (1 if greeting succeeded, 0 if AI failed)
+    const messageCount = await Message.countDocuments({
+      sessionId: session._id,
+      deletedAt: { $exists: false },
+    });
+
     return {
       id: (session as any)._id.toString(),
       characterId: character._id.toString(),
       contextId: context ? context._id.toString() : null,
       title: '',
       lastMessage: null,
-      lastMessageAt: null,
-      messageCount: 0,
+      lastMessageAt: messageCount > 0 ? (session as any).lastMessageAt ?? null : null,
+      messageCount,
     };
   }
 
@@ -680,24 +686,48 @@ export class ChatService {
 
   // ── DELETE /chat/sessions/:id (hard delete) ───────────────────────────────
 
-  public async hardDeleteSession(sessionId: string, uid: string): Promise<void> {
-    const session = await ChatSession.findOneAndDelete({
-      _id: sessionId,
-      uid: new mongoose.Types.ObjectId(uid),
-    });
+  /**
+   * Hard-delete a session and all its messages.
+   * Mirrors Java ChatSessionServiceImpl.deleteSession():
+   *   - Admin/Staff can delete ANY session (bypass uid filter)
+   *   - Regular user can only delete their own session
+   */
+  public async hardDeleteSession(sessionId: string, uid: string, role?: string): Promise<void> {
+    const ADMIN_ROLES = ['SYSTEM_ADMIN', 'CONTENT_ADMIN', 'STAFF', 'ADMIN'];
+    const isAdmin = role && ADMIN_ROLES.includes(role.toUpperCase());
+
+    const filter: Record<string, any> = { _id: sessionId };
+    if (!isAdmin) {
+      // Non-admin: can only delete own sessions
+      filter['uid'] = new mongoose.Types.ObjectId(uid);
+    }
+
+    const session = await ChatSession.findOneAndDelete(filter);
     if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
     await Message.deleteMany({ sessionId: session._id });
   }
 
   // ── PATCH /chat/sessions/:id/soft-delete ─────────────────────────────────
 
+  /**
+   * Soft-delete a session AND all its child messages.
+   * Mirrors Java ChatSessionServiceImpl.softDeleteSession() which cascades
+   * deletedAt to all messages in the session.
+   */
   public async softDeleteSession(sessionId: string, uid: string): Promise<void> {
+    const now = new Date();
     const session = await ChatSession.findOneAndUpdate(
       { _id: sessionId, uid: new mongoose.Types.ObjectId(uid) },
-      { $set: { deletedAt: new Date(), isActive: false } },
+      { $set: { deletedAt: now, isActive: false } },
       { new: true }
     );
     if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+
+    // Mirrors Java: cascade soft-delete to all child messages
+    await Message.updateMany(
+      { sessionId: session._id },
+      { $set: { deletedAt: now } }
+    );
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────

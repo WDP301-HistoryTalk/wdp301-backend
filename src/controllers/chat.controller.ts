@@ -177,7 +177,8 @@ export class ChatController {
       const uid: string | undefined = req.user?.id;
       if (!uid) throw new AppError('Không có quyền truy cập', 401);
 
-      await ChatService.hardDeleteSession(req.params['sessionId'] as string, String(uid));
+      const role: string | undefined = req.user?.role;
+      await ChatService.hardDeleteSession(req.params['sessionId'] as string, String(uid), role);
       // HTTP 204 No Content — same as Java
       res.status(204).send();
     } catch (error) {
