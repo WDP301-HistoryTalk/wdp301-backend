@@ -9,11 +9,108 @@ import { AppError } from '../utils/app-error';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
 
+// ─── Response shape types (mirrors Java DTOs) ────────────────────────────────
+
+export interface MessageResponse {
+  id: string;
+  sessionId: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  messageType: string;
+  createdAt: Date;
+}
+
+export interface ChatSessionResponse {
+  id: string;
+  characterId: string;
+  contextId: string | null;
+  title: string;
+  lastMessage: string | null;
+  lastMessageAt: Date | null;
+  messageCount: number;
+}
+
+export interface ChatHistorySessionItem {
+  id: string;
+  characterId: string;
+  characterName: string;
+  characterTitle: string | null;
+  characterImage: string | null;
+  contextId: string | null;
+  contextName: string | null;
+  sessionTitle: string;
+  lastMessage: string | null;
+  lastMessageAt: Date | null;
+  messageCount: number;
+}
+
+export interface ChatHistoryGroupResponse {
+  contextId: string;       // actually characterId — kept to match Java field name
+  contextName: string;     // actually characterName — kept to match Java field name
+  sessions: ChatHistorySessionItem[];
+}
+
+export interface GetMessagesResponse {
+  messages: MessageResponse[];
+  suggestedQuestions: string[];
+}
+
+export interface SendMessageResponse {
+  userMessage: MessageResponse;
+  assistantMessage: MessageResponse;
+  suggestedQuestions: string[];
+  remainingTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+}
+
+export interface CreateSessionResponse {
+  id: string;
+  characterId: string;
+  contextId: string | null;
+  title: string;
+  lastMessage: string | null;
+  lastMessageAt: Date | null;
+  messageCount: number;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
+ * Map a raw Message document → MessageResponse DTO (mirrors Java mapToMessageResponse).
+ */
+function mapToMessageResponse(msg: IMessage): MessageResponse {
+  return {
+    id: (msg as any)._id.toString(),
+    sessionId: msg.sessionId.toString(),
+    role: msg.isFromAi ? 'ASSISTANT' : 'USER',
+    content: msg.content,
+    messageType: msg.messageType || 'TEXT',
+    createdAt: msg.createdAt,
+  };
+}
+
+/**
+ * Map a populated ChatSession → ChatSessionResponse DTO (mirrors Java mapToResponse).
+ */
+function mapSessionToResponse(
+  session: IChatSession,
+  lastMessage: string | null,
+  messageCount: number
+): ChatSessionResponse {
+  return {
+    id: (session as any)._id.toString(),
+    characterId: session.characterId.toString(),
+    contextId: session.contextId ? session.contextId.toString() : null,
+    title: (session as any).title || '',
+    lastMessage,
+    lastMessageAt: (session as any).lastMessageAt ?? null,
+    messageCount,
+  };
+}
+
+/**
  * Build CharacterPayload for the AI Service.
- * Mirrors AiServiceClient.buildCharacterPayload() in Java BE.
  */
 function buildCharacterPayload(character: any) {
   const fmtDate = (year?: number, month?: number, day?: number, isBC?: boolean): string => {
@@ -28,7 +125,7 @@ function buildCharacterPayload(character: any) {
   if (character.contextIds && character.contextIds.length > 0) {
     enhancedBackground += "\n\nCác sự kiện/bối cảnh lịch sử đã tham gia:\n";
     for (const ctx of character.contextIds) {
-      if (ctx.name) { // Ensure populated
+      if (ctx.name) {
         enhancedBackground += `- ${ctx.name}: ${ctx.description || ''}\n`;
         contexts.push({ contextId: ctx._id.toString(), name: ctx.name });
       }
@@ -43,13 +140,12 @@ function buildCharacterPayload(character: any) {
     personality: character.personality || '',
     born: fmtDate(character.bornYear, character.bornMonth, character.bornDay, character.isBornBc),
     death: fmtDate(character.deathYear, character.deathMonth, character.deathDay, character.isDeathBc),
-    contexts: contexts.length > 0 ? contexts : undefined
+    contexts: contexts.length > 0 ? contexts : undefined,
   };
 }
 
 /**
  * Build ContextPayload for the AI Service.
- * Mirrors AiServiceClient.buildContextPayload() in Java BE.
  */
 function buildContextPayload(context: any) {
   return {
@@ -66,53 +162,186 @@ function buildContextPayload(context: any) {
 
 export class ChatService {
 
+  // ── GET /chat/history ─────────────────────────────────────────────────────
+
   /**
-   * Create a new chat session and generate the AI greeting message.
-   * Mirrors ChatSessionServiceImpl.createSession() in Java BE.
+   * Get all sessions of a user, grouped by character.
+   * Mirrors Java ChatHistoryServiceImpl.getHistory().
    */
-  public async createSession(uid: string, characterId: string, contextId: string): Promise<{
-    session: IChatSession;
-    greetingMessage: IMessage | null;
-    suggestedQuestions: string[];
-  }> {
-    // Look up character and context (by custom ID or _id)
+  public async getHistory(uid: string): Promise<ChatHistoryGroupResponse[]> {
+    const sessions = await ChatSession.find({
+      uid: new mongoose.Types.ObjectId(uid),
+      deletedAt: { $exists: false },
+    })
+      .populate('characterId')
+      .populate('contextId')
+      .sort({ lastMessageAt: -1 });
+
+    // Group by characterId
+    const grouped = new Map<string, { character: any; sessions: IChatSession[] }>();
+    for (const session of sessions) {
+      const char = (session as any).characterId as any;
+      if (!char || !char._id) continue;
+      const charKey = char._id.toString();
+      if (!grouped.has(charKey)) {
+        grouped.set(charKey, { character: char, sessions: [] });
+      }
+      grouped.get(charKey)!.sessions.push(session);
+    }
+
+    // Build response, sorted by latest lastMessageAt DESC
+    const groups: ChatHistoryGroupResponse[] = [];
+    for (const [charId, { character, sessions: groupSessions }] of grouped) {
+      // Fetch message counts for each session
+      const sessionIds = groupSessions.map((s: any) => s._id);
+      const counts = await Message.aggregate([
+        { $match: { sessionId: { $in: sessionIds }, deletedAt: { $exists: false } } },
+        { $group: { _id: '$sessionId', count: { $sum: 1 }, lastContent: { $last: '$content' }, lastAt: { $max: '$createdAt' } } },
+      ]);
+      const countMap = new Map(counts.map((c) => [c._id.toString(), c]));
+
+      const items: ChatHistorySessionItem[] = groupSessions
+        .sort((a: any, b: any) => {
+          const ta = a.lastMessageAt?.getTime() ?? 0;
+          const tb = b.lastMessageAt?.getTime() ?? 0;
+          return tb - ta;
+        })
+        .map((session: any) => {
+          const sid = session._id.toString();
+          const stat = countMap.get(sid);
+          const ctx = session.contextId as any;
+          return {
+            id: sid,
+            characterId: charId,
+            characterName: character.name || '[Deleted Character]',
+            characterTitle: character.title ?? null,
+            characterImage: character.imageUrl ?? null,
+            contextId: ctx?._id?.toString() ?? null,
+            contextName: ctx?.name ?? null,
+            sessionTitle: session.title || '',
+            lastMessage: stat?.lastContent ?? null,
+            lastMessageAt: session.lastMessageAt ?? null,
+            messageCount: stat?.count ?? 0,
+          } as ChatHistorySessionItem;
+        });
+
+      // Use characterId as contextId field name (matching Java's "repurposing")
+      groups.push({
+        contextId: charId,
+        contextName: character.name || '[Deleted Character]',
+        sessions: items,
+      });
+    }
+
+    // Sort groups by latest lastMessageAt DESC
+    groups.sort((a, b) => {
+      const ta = a.sessions[0]?.lastMessageAt?.getTime() ?? 0;
+      const tb = b.sessions[0]?.lastMessageAt?.getTime() ?? 0;
+      return tb - ta;
+    });
+
+    return groups;
+  }
+
+  // ── GET /chat/sessions?characterId= ───────────────────────────────────────
+
+  /**
+   * Get sessions filtered by characterId (and optionally contextId).
+   * Mirrors Java ChatSessionServiceImpl.getSessions().
+   * Note: Java only requires characterId; contextId is optional filter.
+   */
+  public async getSessions(uid: string, characterId: string, contextId?: string): Promise<ChatSessionResponse[]> {
+    const filter: any = {
+      uid: new mongoose.Types.ObjectId(uid),
+      deletedAt: { $exists: false },
+    };
+    if (mongoose.isValidObjectId(characterId)) {
+      filter.characterId = new mongoose.Types.ObjectId(characterId);
+    }
+    if (contextId && mongoose.isValidObjectId(contextId)) {
+      filter.contextId = new mongoose.Types.ObjectId(contextId);
+    }
+
+    const sessions = await ChatSession.find(filter).sort({ lastMessageAt: -1, updatedAt: -1 });
+
+    // For each session, get messageCount and lastMessage
+    const sessionIds = sessions.map((s: any) => s._id);
+    const counts = await Message.aggregate([
+      { $match: { sessionId: { $in: sessionIds }, deletedAt: { $exists: false } } },
+      { $group: { _id: '$sessionId', count: { $sum: 1 }, lastContent: { $last: '$content' }, lastAt: { $max: '$createdAt' } } },
+    ]);
+    const countMap = new Map(counts.map((c) => [c._id.toString(), c]));
+
+    return sessions.map((session: any) => {
+      const stat = countMap.get(session._id.toString());
+      return mapSessionToResponse(session, stat?.lastContent ?? null, stat?.count ?? 0);
+    });
+  }
+
+  // ── POST /chat/sessions ───────────────────────────────────────────────────
+
+  /**
+   * Create a new session and generate AI greeting (fire-and-forget).
+   * Mirrors Java ChatSessionServiceImpl.createSession().
+   * Returns only the ChatSessionResponse (same as Java).
+   */
+  public async createSession(
+    uid: string,
+    characterId: string,
+    contextId: string | null
+  ): Promise<CreateSessionResponse> {
     const character = await Character.findOne({
       $or: [
-        { characterId },
         ...(mongoose.isValidObjectId(characterId) ? [{ _id: characterId }] : []),
       ],
       deletedAt: { $exists: false },
     }).populate('contextIds');
     if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
-    const context = await HistoricalContext.findOne({
-      $or: [
-        { contextId },
-        ...(mongoose.isValidObjectId(contextId) ? [{ _id: contextId }] : []),
-      ],
-      deletedAt: { $exists: false },
-    });
-    if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
+    let context = null;
+    if (contextId && contextId.trim() !== '') {
+      context = await HistoricalContext.findOne({
+        $or: [
+          ...(mongoose.isValidObjectId(contextId) ? [{ _id: contextId }] : []),
+        ],
+        deletedAt: { $exists: false },
+      });
+      // context is optional — if not found, proceed without it (same as Java)
+    }
 
     const session = await ChatSession.create({
       uid: new mongoose.Types.ObjectId(uid),
       characterId: character._id,
-      contextId: context._id,
+      contextId: context ? context._id : undefined,
+      title: '',
       isActive: true,
     });
 
-    // Generate AI greeting (mirrors Java createSession greeting call)
-    let greetingMessage: IMessage | null = null;
-    let suggestedQuestions: string[] = [];
+    // Generate AI greeting asynchronously (fire-and-forget, same as Java)
+    setImmediate(() => this.generateGreetingAsync(session, character, context));
 
+    // Return ChatSessionResponse immediately (mirrors Java response — no greeting in body)
+    return {
+      id: (session as any)._id.toString(),
+      characterId: character._id.toString(),
+      contextId: context ? context._id.toString() : null,
+      title: '',
+      lastMessage: null,
+      lastMessageAt: null,
+      messageCount: 0,
+    };
+  }
+
+  private async generateGreetingAsync(session: IChatSession, character: any, context: any): Promise<void> {
     try {
       const payload = {
         characterId: character._id.toString(),
-        contextId: context._id.toString(),
-        userMessage: `Hãy chào người dùng bằng cách nhập vai là ${character.name} trong bối cảnh ${context.name}. Hãy giới thiệu bản thân ngắn gọn.`,
+        contextId: context ? context._id.toString() : '00000000-0000-0000-0000-000000000000',
+        userMessage: `Hãy chào và giới thiệu ngắn gọn về bản thân.`,
         messageHistory: [],
         characterData: buildCharacterPayload(character),
-        contextData: buildContextPayload(context),
+        contextData: context ? buildContextPayload(context) : null,
+        skipSuggestions: false,
       };
 
       const aiRes = await axios.post(`${AI_SERVICE_URL}/v1/ai/chat`, payload, {
@@ -121,118 +350,125 @@ export class ChatService {
       });
 
       const data = aiRes.data?.data || aiRes.data;
-      const greetingContent = data?.message || data?.response || data?.content || '';
-      suggestedQuestions = data?.suggestedQuestions || [];
+      const greetingContent: string = data?.message || data?.response || data?.content || '';
+      const suggestedQuestions: string[] = data?.suggestedQuestions || [];
 
       if (greetingContent) {
-        greetingMessage = await Message.create({
+        await Message.create({
           sessionId: session._id,
           isFromAi: true,
           content: greetingContent,
-          suggestedQuestions: suggestedQuestions,
+          suggestedQuestions,
+          messageType: 'TEXT',
         });
+
+        await ChatSession.findByIdAndUpdate(session._id, { lastMessageAt: new Date() });
       }
     } catch (err: any) {
       console.warn('[ChatService] Failed to generate greeting:', err.message);
     }
-
-    return { session, greetingMessage, suggestedQuestions };
   }
 
-  public async getSessionMessages(sessionId: string, uid?: string): Promise<{
-    session: IChatSession | null;
-    messages: IMessage[];
-  }> {
-    const filter: any = { _id: sessionId };
-    if (uid) filter.uid = new mongoose.Types.ObjectId(uid);
-
-    const session = await ChatSession.findOne(filter);
-    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
-
-    const messages = await Message.find({ sessionId: session._id }).sort({ createdAt: 1 });
-    return { session, messages };
-  }
-
-  public async getUserSessions(uid: string): Promise<IChatSession[]> {
-    return ChatSession.find({
-      uid: new mongoose.Types.ObjectId(uid),
-      deletedAt: { $exists: false },
-    }).sort({ lastMessageAt: -1, updatedAt: -1 });
-  }
-
-  public async getSessionsFiltered(uid: string, contextId: string, characterId: string): Promise<IChatSession[]> {
-    const filter: any = {
-      uid: new mongoose.Types.ObjectId(uid),
-      deletedAt: { $exists: false },
-    };
-    if (mongoose.isValidObjectId(contextId)) filter.contextId = new mongoose.Types.ObjectId(contextId);
-    if (mongoose.isValidObjectId(characterId)) filter.characterId = new mongoose.Types.ObjectId(characterId);
-
-    return ChatSession.find(filter).sort({ lastMessageAt: -1, updatedAt: -1 });
-  }
+  // ── GET /chat/sessions/:id/messages ───────────────────────────────────────
 
   /**
-   * Send a user message and get AI response.
-   * Supports both:
-   *   - Java-style: POST /chat/messages { sessionId, content }
-   *   - Old style:  POST /chat/sessions/:sessionId/chat { message }
+   * Get all messages in a session + suggestedQuestions from last ASSISTANT message.
+   * Mirrors Java MessageServiceImpl.getMessages() → GetMessagesResponse.
    */
-  public async sendMessage(sessionId: string, userMessageText: string, uid: string, messageType: string = 'TEXT'): Promise<{
-    userMessage: IMessage;
-    assistantMessage: IMessage;
-    suggestedQuestions: string[];
-  }> {
+  public async getMessages(sessionId: string, uid: string): Promise<GetMessagesResponse> {
     const session = await ChatSession.findOne({
       _id: sessionId,
       uid: new mongoose.Types.ObjectId(uid),
+      deletedAt: { $exists: false },
+    });
+    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+
+    const messages = await Message.find({
+      sessionId: session._id,
+      deletedAt: { $exists: false },
+    }).sort({ createdAt: 1 });
+
+    const messageResponses = messages.map(mapToMessageResponse);
+
+    // suggestedQuestions from last ASSISTANT message (same as Java)
+    const lastAssistant = [...messages].reverse().find((m) => m.isFromAi);
+    const suggestedQuestions: string[] = lastAssistant?.suggestedQuestions ?? [];
+
+    return { messages: messageResponses, suggestedQuestions };
+  }
+
+  // ── POST /chat/messages ───────────────────────────────────────────────────
+
+  /**
+   * Send a user message, call AI, return SendMessageResponse.
+   * Mirrors Java MessageServiceImpl.sendMessage() exactly.
+   */
+  public async sendMessage(
+    sessionId: string,
+    userMessageText: string,
+    uid: string,
+    messageType: string = 'TEXT'
+  ): Promise<SendMessageResponse> {
+    const session = await ChatSession.findOne({
+      _id: sessionId,
+      uid: new mongoose.Types.ObjectId(uid),
+      deletedAt: { $exists: false },
     });
     if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
 
     const user = await User.findById(uid);
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
     const isCustomer = user.role === 'CUSTOMER';
-    if (isCustomer && user.token <= 0) throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+    if (isCustomer && (user.token ?? 0) <= 0) {
+      throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+    }
 
-    // 1. Save user message
-    const userMsg = await Message.create({
+    // Load existing history BEFORE saving new user message (same as Java)
+    const existingMessages = await Message.find({
+      sessionId: session._id,
+      deletedAt: { $exists: false },
+    }).sort({ createdAt: 1 });
+
+    const userMessageCount = existingMessages.filter((m) => !m.isFromAi).length;
+    const isFirstUserMessage = userMessageCount === 0;
+
+    // Save user message
+    const savedUserMsg = await Message.create({
       sessionId: session._id,
       isFromAi: false,
       content: userMessageText,
       messageType: messageType || 'TEXT',
     });
 
-    // 2. Fetch character + context
-    const character = await Character.findById(session.characterId).populate('contextIds');
-    const context = await HistoricalContext.findById(session.contextId);
-    if (!character || !context) throw new AppError('Không tìm thấy nhân vật hoặc bối cảnh lịch sử', 404);
-
-    // 3. Build message history (latest 10, ascending)
-    const historyDocs = await Message.find({ sessionId: session._id })
-      .sort({ createdAt: -1 })
-      .limit(10);
-    historyDocs.reverse();
-
-    const messageHistory = historyDocs.map((m) => ({
+    // Build history for AI (last 4 messages, mirrors Java MAX_HISTORY_MESSAGES = 4)
+    const MAX_HISTORY = 4;
+    const recentMessages = existingMessages.slice(Math.max(0, existingMessages.length - MAX_HISTORY));
+    const messageHistory = recentMessages.map((m) => ({
       role: m.isFromAi ? 'assistant' : 'user',
       content: m.content,
     }));
 
-    // 4. Call AI Service
+    const character = await Character.findById(session.characterId).populate('contextIds');
+    const context = await HistoricalContext.findById(session.contextId);
+    if (!character) throw new AppError('Không tìm thấy nhân vật hoặc bối cảnh lịch sử', 404);
+
+    const skipSuggestions = (messageType || '').toUpperCase() === 'VOICE';
+
     const payload = {
       characterId: character._id.toString(),
-      contextId: context._id.toString(),
+      contextId: context ? context._id.toString() : '00000000-0000-0000-0000-000000000000',
       userMessage: userMessageText,
       messageHistory,
       characterData: buildCharacterPayload(character),
-      contextData: buildContextPayload(context),
-      skipSuggestions: messageType.toUpperCase() === 'VOICE',
+      contextData: context ? buildContextPayload(context) : null,
+      skipSuggestions,
     };
 
     let assistantContent = 'Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này.';
     let suggestedQuestions: string[] = [];
-    let promptToken = 0;
-    let completionToken = 0;
-    let totalToken = 0;
+    let promptTokens = 0;
+    let completionTokens = 0;
+    let totalTokens = 0;
 
     try {
       const aiRes = await axios.post(`${AI_SERVICE_URL}/v1/ai/chat`, payload, {
@@ -243,91 +479,59 @@ export class ChatService {
       assistantContent = data?.message || data?.response || data?.content || assistantContent;
       suggestedQuestions = data?.suggestedQuestions || [];
       if (data?.tokenUsage) {
-        promptToken = data.tokenUsage.promptTokens || 0;
-        completionToken = data.tokenUsage.completionTokens || 0;
-        totalToken = data.tokenUsage.totalTokens || 0;
+        promptTokens = data.tokenUsage.promptTokens || 0;
+        completionTokens = data.tokenUsage.completionTokens || 0;
+        totalTokens = data.tokenUsage.totalTokens || 0;
       }
     } catch (err: any) {
       console.error('[ChatService] AI call failed:', err.message);
       throw new AppError('Lỗi giao tiếp với AI Service', 502);
     }
 
-    // Deduct tokens
-    if (isCustomer && totalToken > 0) {
-      user.token = Math.max(0, user.token - totalToken);
-      await user.save();
-    }
+    // Save prompt tokens to user message
+    savedUserMsg.token = promptTokens;
+    await savedUserMsg.save();
 
-    // Update userMsg with prompt tokens (optional, if schema supports it)
-    userMsg.token = promptToken;
-    await userMsg.save();
-
-    // 5. Save AI message
-    const aiMsg = await Message.create({
+    // Save assistant message
+    const savedAssistantMsg = await Message.create({
       sessionId: session._id,
       isFromAi: true,
       content: assistantContent,
-      suggestedQuestions: suggestedQuestions,
-      token: completionToken,
+      suggestedQuestions,
+      token: completionTokens,
       messageType: messageType || 'TEXT',
     });
 
-    // 6. Update session
+    // Deduct tokens from user
+    let remainingTokens = user.token ?? 0;
+    if (isCustomer && totalTokens > 0) {
+      remainingTokens = Math.max(0, remainingTokens - totalTokens);
+      user.token = remainingTokens;
+      await user.save();
+    }
+
+    // Update session lastMessageAt
     session.lastMessageAt = new Date();
     await session.save();
 
-    // 7. Async title generation (fire-and-forget, only on first real exchange)
-    const msgCount = await Message.countDocuments({ sessionId: session._id });
-    if (msgCount <= 3 && !session.title) {
-      setImmediate(() => this.generateTitleAsync(session, character, context, userMessageText, assistantContent));
+    // Async title generation on first user message
+    if (isFirstUserMessage) {
+      setImmediate(() =>
+        this.generateTitleAsync(session, character, context, userMessageText, assistantContent)
+      );
     }
 
-    return { userMessage: userMsg, assistantMessage: aiMsg, suggestedQuestions };
+    return {
+      userMessage: mapToMessageResponse(savedUserMsg),
+      assistantMessage: mapToMessageResponse(savedAssistantMsg),
+      suggestedQuestions,
+      remainingTokens,
+      promptTokens,
+      completionTokens,
+    };
   }
 
-  private async generateTitleAsync(
-    session: IChatSession,
-    character: any,
-    context: any,
-    firstUserMsg: string,
-    firstAiMsg: string
-  ): Promise<void> {
-    try {
-      const payload = {
-        characterId: character._id.toString(),
-        contextId: context._id.toString(),
-        firstUserMessage: firstUserMsg,
-        firstAssistantMessage: firstAiMsg,
-        characterData: buildCharacterPayload(character),
-        contextData: buildContextPayload(context),
-      };
-      const res = await axios.post(`${AI_SERVICE_URL}/v1/ai/generate-title`, payload, { timeout: 30000 });
-      const title = res.data?.data?.title || res.data?.title;
-      if (title) {
-        await ChatSession.findByIdAndUpdate(session._id, { $set: { title } });
-      }
-    } catch (err: any) {
-      console.warn('[ChatService] Title generation failed:', err.message);
-    }
-  }
-
-  public async deleteSession(sessionId: string, uid: string): Promise<void> {
-    const session = await ChatSession.findOneAndUpdate(
-      { _id: sessionId, uid: new mongoose.Types.ObjectId(uid) },
-      { $set: { deletedAt: new Date(), isActive: false } },
-      { new: true }
-    );
-    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
-  }
-
-  public async hardDeleteSession(sessionId: string, uid: string): Promise<void> {
-    const session = await ChatSession.findOneAndDelete({
-      _id: sessionId,
-      uid: new mongoose.Types.ObjectId(uid),
-    });
-    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
-    await Message.deleteMany({ sessionId: session._id });
-  }
+  // ── POST /chat/messages/stream ────────────────────────────────────────────
 
   public async sendMessageStream(
     sessionId: string,
@@ -342,45 +546,55 @@ export class ChatService {
       const session = await ChatSession.findOne({
         _id: sessionId,
         uid: new mongoose.Types.ObjectId(uid),
+        deletedAt: { $exists: false },
       });
       if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
 
       const user = await User.findById(uid);
       if (!user) throw new AppError('Không tìm thấy người dùng', 404);
       const isCustomer = user.role === 'CUSTOMER';
-      if (isCustomer && user.token <= 0) throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+      if (isCustomer && (user.token ?? 0) <= 0) {
+        throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+      }
 
-      const userMsg = await Message.create({
+      // Load existing history BEFORE saving new user message
+      const existingMessages = await Message.find({
+        sessionId: session._id,
+        deletedAt: { $exists: false },
+      }).sort({ createdAt: 1 });
+
+      const userMessageCount = existingMessages.filter((m) => !m.isFromAi).length;
+      const isFirstUserMessage = userMessageCount === 0;
+
+      const savedUserMsg = await Message.create({
         sessionId: session._id,
         isFromAi: false,
         content: userMessageText,
-        messageType: messageType || 'TEXT'
+        messageType: messageType || 'TEXT',
       });
 
       const character = await Character.findById(session.characterId).populate('contextIds');
       const context = await HistoricalContext.findById(session.contextId);
-      if (!character || !context) throw new AppError('Không tìm thấy nhân vật hoặc bối cảnh lịch sử', 404);
+      if (!character) throw new AppError('Không tìm thấy nhân vật hoặc bối cảnh lịch sử', 404);
 
-      const historyDocs = await Message.find({ sessionId: session._id })
-        .sort({ createdAt: -1 })
-        .limit(5); 
-      historyDocs.reverse();
-
-      const messageHistory = historyDocs.slice(0, -1).map((m) => ({
+      // Last 5 existing messages (exclude current just-saved one), mirrors Java MAX_HISTORY_MESSAGES=5
+      const MAX_HISTORY = 5;
+      const recentMessages = existingMessages.slice(Math.max(0, existingMessages.length - MAX_HISTORY));
+      const messageHistory = recentMessages.map((m) => ({
         role: m.isFromAi ? 'assistant' : 'user',
         content: m.content,
       }));
 
-      const skipSuggestions = messageType.toUpperCase() === 'VOICE';
+      const skipSuggestions = (messageType || '').toUpperCase() === 'VOICE';
 
       const payload = {
         characterId: character._id.toString(),
-        contextId: context._id.toString(),
+        contextId: context ? context._id.toString() : '00000000-0000-0000-0000-000000000000',
         userMessage: userMessageText,
         messageHistory,
         characterData: buildCharacterPayload(character),
-        contextData: buildContextPayload(context),
-        skipSuggestions
+        contextData: context ? buildContextPayload(context) : null,
+        skipSuggestions,
       };
 
       let fullMessage = '';
@@ -391,11 +605,11 @@ export class ChatService {
       const response = await axios.post(`${AI_SERVICE_URL}/v1/ai/chat/stream`, payload, {
         headers: { 'Content-Type': 'application/json' },
         responseType: 'stream',
-        timeout: 180000
+        timeout: 180000,
       });
 
       response.data.on('data', (chunk: Buffer) => {
-        const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
+        const lines = chunk.toString().split('\n').filter((line) => line.trim() !== '');
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const jsonStr = line.substring(6);
@@ -413,7 +627,7 @@ export class ChatService {
                 onData(line + '\n\n');
               }
             } catch (err) {
-              console.warn('Error parsing SSE chunk:', err);
+              console.warn('[ChatService] Error parsing SSE chunk:', err);
             }
           }
         }
@@ -421,20 +635,20 @@ export class ChatService {
 
       response.data.on('end', async () => {
         try {
-          userMsg.token = promptToken;
-          await userMsg.save();
+          savedUserMsg.token = promptToken;
+          await savedUserMsg.save();
 
           await Message.create({
             sessionId: session._id,
             isFromAi: true,
             content: fullMessage,
-            suggestedQuestions: suggestedQuestions,
+            suggestedQuestions,
             token: completionToken,
-            messageType: messageType || 'TEXT'
+            messageType: messageType || 'TEXT',
           });
 
           const totalToken = promptToken + completionToken;
-          let remainingTokens = user.token || 0;
+          let remainingTokens = user.token ?? 0;
           if (isCustomer && totalToken > 0) {
             remainingTokens = Math.max(0, remainingTokens - totalToken);
             user.token = remainingTokens;
@@ -444,9 +658,10 @@ export class ChatService {
           session.lastMessageAt = new Date();
           await session.save();
 
-          const msgCount = await Message.countDocuments({ sessionId: session._id });
-          if (msgCount <= 3 && !session.title) {
-            setImmediate(() => this.generateTitleAsync(session, character, context, userMessageText, fullMessage));
+          if (isFirstUserMessage) {
+            setImmediate(() =>
+              this.generateTitleAsync(session, character, context, userMessageText, fullMessage)
+            );
           }
 
           onComplete(remainingTokens);
@@ -458,9 +673,58 @@ export class ChatService {
       response.data.on('error', (err: any) => {
         onError(err);
       });
-
     } catch (err: any) {
       onError(err);
+    }
+  }
+
+  // ── DELETE /chat/sessions/:id (hard delete) ───────────────────────────────
+
+  public async hardDeleteSession(sessionId: string, uid: string): Promise<void> {
+    const session = await ChatSession.findOneAndDelete({
+      _id: sessionId,
+      uid: new mongoose.Types.ObjectId(uid),
+    });
+    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+    await Message.deleteMany({ sessionId: session._id });
+  }
+
+  // ── PATCH /chat/sessions/:id/soft-delete ─────────────────────────────────
+
+  public async softDeleteSession(sessionId: string, uid: string): Promise<void> {
+    const session = await ChatSession.findOneAndUpdate(
+      { _id: sessionId, uid: new mongoose.Types.ObjectId(uid) },
+      { $set: { deletedAt: new Date(), isActive: false } },
+      { new: true }
+    );
+    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  private async generateTitleAsync(
+    session: IChatSession,
+    character: any,
+    context: any,
+    firstUserMsg: string,
+    firstAiMsg: string
+  ): Promise<void> {
+    try {
+      const payload = {
+        characterId: character._id.toString(),
+        contextId: context ? context._id.toString() : '00000000-0000-0000-0000-000000000000',
+        firstUserMessage: firstUserMsg,
+        firstAssistantMessage: firstAiMsg,
+        characterData: buildCharacterPayload(character),
+        contextData: context ? buildContextPayload(context) : null,
+      };
+      const res = await axios.post(`${AI_SERVICE_URL}/v1/ai/generate-title`, payload, { timeout: 30000 });
+      const title = res.data?.data?.title || res.data?.title;
+      if (title) {
+        await ChatSession.findByIdAndUpdate(session._id, { $set: { title } });
+      }
+    } catch (err: any) {
+      console.warn('[ChatService] Title generation failed:', err.message);
     }
   }
 }

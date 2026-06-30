@@ -5,153 +5,141 @@ import { AppError } from '../utils/app-error';
 
 export class ChatController {
 
+  // ── POST /api/v1/chat/sessions ─────────────────────────────────────────────
   /**
-   * POST /api/v1/chat/sessions
-   * Create session + AI greeting (mirrors Java BE)
+   * Create a new chat session.
+   * Returns ChatSessionResponse only — same as Java (greeting is fire-and-forget, NOT in response).
    */
   public async createSession(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { characterId, contextId } = req.body;
-      const uid = req.user?.id;
+      const uid: string | undefined = req.user?.id;
 
-      if (!characterId || !contextId || !uid) {
-        throw new AppError('Thiếu các trường bắt buộc: characterId, contextId', 400);
+      if (!characterId || !uid) {
+        throw new AppError('Thiếu trường bắt buộc: characterId', 400);
       }
 
-      const { session, greetingMessage, suggestedQuestions } = await ChatService.createSession(uid as string, characterId as string, contextId as string);
-
-      const data = {
-        session,
-        greetingMessage: greetingMessage
-          ? {
-              id: (greetingMessage as any).id || (greetingMessage as any)._id,
-              sessionId: (session as any).id || session._id,
-              role: 'ASSISTANT',
-              content: greetingMessage.content,
-              createdAt: greetingMessage.createdAt,
-            }
-          : null,
-        suggestedQuestions,
-      };
-
-      sendSuccess(res, data, 'Chat session created successfully', 201);
+      const session = await ChatService.createSession(String(uid), String(characterId), contextId ? String(contextId) : null);
+      sendSuccess(res, session, 'Session created successfully', 201);
     } catch (error) {
       next(error);
     }
   }
 
+  // ── GET /api/v1/chat/history ───────────────────────────────────────────────
   /**
-   * GET /api/v1/chat/sessions/:sessionId/messages
-   */
-  public async getSessionWithMessages(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { sessionId } = req.params;
-      const uid = req.user?.id;
-
-      const { session, messages } = await ChatService.getSessionMessages(sessionId as string, uid as string);
-
-      const mappedMessages = messages.map((msg) => {
-        const obj = msg.toObject ? msg.toObject() : msg;
-        return {
-          ...obj,
-          id: obj.id || obj._id,
-          role: obj.isFromAi ? 'ASSISTANT' : 'USER',
-          messageType: obj.messageType || 'TEXT',
-          suggestedQuestions: obj.suggestedQuestions || [],
-        };
-      });
-
-      sendSuccess(res, { session, messages: mappedMessages }, 'Session messages retrieved successfully');
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * GET /api/v1/chat/history
-   * User's own session list (sidebar, like ChatGPT)
+   * Get user's chat history grouped by character.
+   * Mirrors Java ChatHistoryServiceImpl.getHistory() → List<ChatHistoryGroupResponse>.
    */
   public async getHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const uid = req.user?.id;
-      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
+      const uid: string | undefined = req.user?.id;
+      if (!uid) throw new AppError('Không có quyền truy cập', 401);
 
-      const sessions = await ChatService.getUserSessions(uid);
-      sendSuccess(res, sessions, 'Chat history retrieved successfully');
+      const history = await ChatService.getHistory(String(uid));
+      sendSuccess(res, history, 'Chat history retrieved successfully');
     } catch (error) {
       next(error);
     }
   }
 
+  // ── GET /api/v1/chat/sessions?characterId= ────────────────────────────────
   /**
-   * GET /api/v1/chat/sessions?contextId=&characterId=
+   * Get sessions filtered by characterId (contextId optional).
+   * Mirrors Java ChatSessionServiceImpl.getSessions() → List<ChatSessionResponse>.
    */
   public async getSessions(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const uid = req.user?.id;
-      const { contextId, characterId } = req.query;
-      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
+      const uid: string | undefined = req.user?.id;
+      if (!uid) throw new AppError('Không có quyền truy cập', 401);
 
-      if (!contextId || !characterId) {
-        throw new AppError('Yêu cầu cung cấp contextId và characterId', 400);
+      const characterId = req.query['characterId'];
+      const contextId = req.query['contextId'];
+
+      if (!characterId) {
+        throw new AppError('Yêu cầu cung cấp characterId', 400);
       }
 
-      const sessions = await ChatService.getSessionsFiltered(uid, contextId as string, characterId as string);
+      const sessions = await ChatService.getSessions(
+        String(uid),
+        String(characterId),
+        contextId ? String(contextId) : undefined
+      );
       sendSuccess(res, sessions, 'Sessions retrieved successfully');
     } catch (error) {
       next(error);
     }
   }
 
+  // ── GET /api/v1/chat/sessions/:sessionId/messages ─────────────────────────
   /**
-   * POST /api/v1/chat/messages   ← Java-style: sessionId in body
+   * Get all messages in a session.
+   * Mirrors Java MessageServiceImpl.getMessages() → GetMessagesResponse { messages, suggestedQuestions }.
    */
-  public async sendMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getMessages(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const uid = req.user?.id;
-      const { sessionId, content, messageType } = req.body;
+      const sessionId: string = req.params['sessionId'] as string;
+      const uid: string | undefined = req.user?.id;
+      if (!uid) throw new AppError('Không có quyền truy cập', 401);
 
-      if (!sessionId || !content) {
-        throw new AppError('Yêu cầu cung cấp sessionId và content', 400);
-      }
-      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
-
-      const { userMessage, assistantMessage, suggestedQuestions } = await ChatService.sendMessage(sessionId as string, content as string, uid as string, messageType as string);
-
-      const mapMsg = (msg: any, isAi: boolean) => ({
-        id: msg.id || msg._id,
-        sessionId: msg.sessionId,
-        role: isAi ? 'ASSISTANT' : 'USER',
-        content: msg.content,
-        messageType: msg.messageType || 'TEXT',
-        createdAt: msg.createdAt,
-      });
-
-      const data = {
-        userMessage: mapMsg(userMessage, false),
-        assistantMessage: mapMsg(assistantMessage, true),
-        suggestedQuestions,
-      };
-
-      sendSuccess(res, data, 'Message sent successfully', 201);
+      const result = await ChatService.getMessages(sessionId, String(uid));
+      sendSuccess(res, result, 'Messages retrieved successfully');
     } catch (error) {
       next(error);
     }
   }
 
+  // ── POST /api/v1/chat/messages ─────────────────────────────────────────────
   /**
-   * POST /api/v1/chat/messages/stream
-   * Stream response for SSE
+   * Send a message and receive an AI response.
+   * Mirrors Java MessageServiceImpl.sendMessage() → SendMessageResponse
+   * (includes remainingTokens, promptTokens, completionTokens).
    */
-  public async sendMessageStream(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async sendMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const uid = req.user?.id;
-      const { sessionId, content, messageType } = req.body;
+      const uid: string | undefined = req.user?.id;
+      const { sessionId, content, messageType } = req.body as {
+        sessionId: string;
+        content: string;
+        messageType?: string;
+      };
 
       if (!sessionId || !content) {
         throw new AppError('Yêu cầu cung cấp sessionId và content', 400);
       }
-      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
+      if (!uid) throw new AppError('Không có quyền truy cập', 401);
+
+      const result = await ChatService.sendMessage(
+        sessionId,
+        content,
+        String(uid),
+        messageType || 'TEXT'
+      );
+
+      sendSuccess(res, result, 'Message sent successfully', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ── POST /api/v1/chat/messages/stream ─────────────────────────────────────
+  /**
+   * Stream an AI response via SSE.
+   * Mirrors Java MessageServiceImpl.sendMessageStream().
+   */
+  public async sendMessageStream(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const uid: string | undefined = req.user?.id;
+      const { sessionId, content, messageType } = req.body as {
+        sessionId: string;
+        content: string;
+        messageType?: string;
+      };
+
+      if (!sessionId || !content) {
+        throw new AppError('Yêu cầu cung cấp sessionId và content', 400);
+      }
+      if (!uid) throw new AppError('Không có quyền truy cập', 401);
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -159,13 +147,11 @@ export class ChatController {
       res.setHeader('Connection', 'keep-alive');
 
       await ChatService.sendMessageStream(
-        sessionId as string,
-        content as string,
-        uid as string,
-        messageType as string,
-        (data: string) => {
-          res.write(data);
-        },
+        sessionId,
+        content,
+        String(uid),
+        messageType || 'TEXT',
+        (data: string) => { res.write(data); },
         (remainingTokens: number) => {
           res.write(`data: {"type":"done","remainingTokens":${remainingTokens}}\n\n`);
           res.end();
@@ -181,59 +167,35 @@ export class ChatController {
     }
   }
 
+  // ── DELETE /api/v1/chat/sessions/:sessionId ────────────────────────────────
   /**
-   * POST /api/v1/chat/sessions/:sessionId/chat   ← Legacy style kept for backward compat
-   */
-  public async chat(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { sessionId } = req.params;
-      const { message, content } = req.body;
-      const uid = req.user?.id;
-      const msgText = content || message;
-
-      if (!msgText) {
-        throw new AppError('Yêu cầu cung cấp message hoặc content', 400);
-      }
-      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
-
-      const { userMessage, assistantMessage, suggestedQuestions } = await ChatService.sendMessage(sessionId as string, msgText as string, uid as string);
-
-      const data = {
-        userMessage: { id: (userMessage as any).id || userMessage._id, role: 'USER', content: userMessage.content },
-        assistantMessage: { id: (assistantMessage as any).id || assistantMessage._id, role: 'ASSISTANT', content: assistantMessage.content },
-        suggestedQuestions,
-      };
-
-      sendSuccess(res, data, 'Chat successful');
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * DELETE /api/v1/chat/sessions/:sessionId
+   * Hard-delete a session (and its messages).
+   * Mirrors Java deleteSession → HTTP 204 No Content.
    */
   public async deleteSession(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const uid = req.user?.id;
-      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
+      const uid: string | undefined = req.user?.id;
+      if (!uid) throw new AppError('Không có quyền truy cập', 401);
 
-      await ChatService.hardDeleteSession(req.params.sessionId as string, uid as string);
-      sendSuccess(res, null, 'Session deleted successfully');
+      await ChatService.hardDeleteSession(req.params['sessionId'] as string, String(uid));
+      // HTTP 204 No Content — same as Java
+      res.status(204).send();
     } catch (error) {
       next(error);
     }
   }
 
+  // ── PATCH /api/v1/chat/sessions/:sessionId/soft-delete ────────────────────
   /**
-   * PATCH /api/v1/chat/sessions/:sessionId/soft-delete
+   * Soft-delete a session.
+   * Mirrors Java softDeleteSession → HTTP 200 { success: true, data: null }.
    */
   public async softDeleteSession(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const uid = req.user?.id;
-      if (!uid) { throw new AppError('Không có quyền truy cập', 401); }
+      const uid: string | undefined = req.user?.id;
+      if (!uid) throw new AppError('Không có quyền truy cập', 401);
 
-      await ChatService.deleteSession(req.params.sessionId as string, uid as string);
+      await ChatService.softDeleteSession(req.params['sessionId'] as string, String(uid));
       sendSuccess(res, null, 'Session soft-deleted successfully');
     } catch (error) {
       next(error);
