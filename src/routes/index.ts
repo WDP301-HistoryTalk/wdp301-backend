@@ -15,6 +15,7 @@ const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/admin/users', userRoutes); // Alias for Java compatibility
 router.use('/characters', characterRoutes);
 router.use('/historical-contexts', historicalContextRoutes);
 router.use('/chat', chatRoutes);
