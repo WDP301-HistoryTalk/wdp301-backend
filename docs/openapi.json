@@ -366,6 +366,208 @@
           }
         }
       },
+      "MessageResponse": {
+        "type": "object",
+        "description": "A single chat message (mirrors Java MessageResponse DTO)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "64f1a2b3c4d5e6f7a8b9c0d1"
+          },
+          "sessionId": {
+            "type": "string",
+            "example": "64f1a2b3c4d5e6f7a8b9c0d2"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ASSISTANT"
+            ],
+            "example": "ASSISTANT"
+          },
+          "content": {
+            "type": "string",
+            "example": "Xin chào! Ta là Nguyễn Du..."
+          },
+          "messageType": {
+            "type": "string",
+            "enum": [
+              "TEXT",
+              "VOICE"
+            ],
+            "example": "TEXT"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatSessionResponse": {
+        "type": "object",
+        "description": "A chat session summary (mirrors Java ChatSessionResponse DTO)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "64f1a2b3c4d5e6f7a8b9c0d3"
+          },
+          "characterId": {
+            "type": "string",
+            "example": "64f1a2b3c4d5e6f7a8b9c0d4"
+          },
+          "contextId": {
+            "type": "string",
+            "nullable": true,
+            "example": "64f1a2b3c4d5e6f7a8b9c0d5"
+          },
+          "title": {
+            "type": "string",
+            "example": "Cuộc trò chuyện với Nguyễn Du"
+          },
+          "lastMessage": {
+            "type": "string",
+            "nullable": true,
+            "example": "Đoạn trường ai có qua cầu mới hay"
+          },
+          "lastMessageAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "messageCount": {
+            "type": "integer",
+            "example": 5
+          }
+        }
+      },
+      "ChatHistorySessionItem": {
+        "type": "object",
+        "description": "Session item in history list with enriched character/context metadata",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "characterId": {
+            "type": "string"
+          },
+          "characterName": {
+            "type": "string",
+            "example": "Nguyễn Du"
+          },
+          "characterTitle": {
+            "type": "string",
+            "nullable": true,
+            "example": "Đại thi hào"
+          },
+          "characterImage": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://cdn.example.com/nguyen-du.jpg"
+          },
+          "contextId": {
+            "type": "string",
+            "nullable": true
+          },
+          "contextName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Thời kỳ Lê mạt Nguyễn sơ"
+          },
+          "sessionTitle": {
+            "type": "string",
+            "example": "Hỏi về Truyện Kiều"
+          },
+          "lastMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastMessageAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "messageCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "ChatHistoryGroupResponse": {
+        "type": "object",
+        "description": "Sessions grouped by character (mirrors Java ChatHistoryGroupResponse DTO)",
+        "properties": {
+          "contextId": {
+            "type": "string",
+            "description": "Actually the characterId (field name kept for FE compatibility)"
+          },
+          "contextName": {
+            "type": "string",
+            "description": "Actually the characterName (field name kept for FE compatibility)"
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatHistorySessionItem"
+            }
+          }
+        }
+      },
+      "GetMessagesResponse": {
+        "type": "object",
+        "description": "Session messages + suggested questions (mirrors Java GetMessagesResponse DTO)",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          },
+          "suggestedQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Suggested questions from the last ASSISTANT message",
+            "example": [
+              "Bạn muốn hỏi về tác phẩm nào?",
+              "Cuộc đời ông thế nào?"
+            ]
+          }
+        }
+      },
+      "SendMessageResponse": {
+        "type": "object",
+        "description": "Response after sending a message (mirrors Java SendMessageResponse DTO)",
+        "properties": {
+          "userMessage": {
+            "$ref": "#/components/schemas/MessageResponse"
+          },
+          "assistantMessage": {
+            "$ref": "#/components/schemas/MessageResponse"
+          },
+          "suggestedQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remainingTokens": {
+            "type": "integer",
+            "description": "User's remaining token balance after this exchange",
+            "example": 950
+          },
+          "promptTokens": {
+            "type": "integer",
+            "description": "Tokens consumed by the user prompt",
+            "example": 250
+          },
+          "completionTokens": {
+            "type": "integer",
+            "description": "Tokens consumed by the AI response",
+            "example": 150
+          }
+        }
+      },
       "UserProfile": {
         "type": "object",
         "properties": {
@@ -1195,8 +1397,8 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Get user's chat history (sidebar)",
-        "description": "Retrieve a list of all chat sessions for the current user, sorted by last active time.",
+        "summary": "Get user's chat history grouped by character",
+        "description": "Returns all non-deleted chat sessions of the authenticated user, grouped by character (mirrors Java ChatHistoryServiceImpl.getHistory()). Each group includes rich character metadata and per-session stats.\n",
         "security": [
           {
             "BearerAuth": []
@@ -1204,7 +1406,33 @@
         ],
         "responses": {
           "200": {
-            "description": "List of chat sessions retrieved successfully"
+            "description": "Chat history retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Chat history retrieved successfully"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ChatHistoryGroupResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         }
       }
@@ -1214,7 +1442,8 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Get chat sessions filtered by context and character",
+        "summary": "Get sessions filtered by characterId",
+        "description": "Returns sessions for the authenticated user filtered by characterId. contextId is an optional additional filter. Mirrors Java ChatSessionServiceImpl.getSessions() → List<ChatSessionResponse>.\n",
         "security": [
           {
             "BearerAuth": []
@@ -1223,27 +1452,54 @@
         "parameters": [
           {
             "in": "query",
-            "name": "contextId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "characterId",
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "MongoDB ObjectId of the character"
+          },
+          {
+            "in": "query",
+            "name": "contextId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional MongoDB ObjectId of the historical context"
           }
         ],
         "responses": {
           "200": {
-            "description": "Filtered list of chat sessions"
+            "description": "Sessions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ChatSessionResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
-            "description": "Missing query parameters"
+            "description": "Missing characterId"
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         }
       },
@@ -1251,7 +1507,8 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Create a new chat session (also returns AI greeting)",
+        "summary": "Create a new chat session",
+        "description": "Creates a new chat session and asynchronously generates an AI greeting in the background (fire-and-forget). The greeting is saved to DB but NOT included in the response body — same behaviour as Java BE. Returns ChatSessionResponse immediately after session creation.\n",
         "security": [
           {
             "BearerAuth": []
@@ -1264,15 +1521,18 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "characterId",
-                  "contextId"
+                  "characterId"
                 ],
                 "properties": {
                   "characterId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "64f1a2b3c4d5e6f7a8b9c0d4"
                   },
                   "contextId": {
-                    "type": "string"
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Optional. Context for the session.",
+                    "example": "64f1a2b3c4d5e6f7a8b9c0d5"
                   }
                 }
               }
@@ -1281,7 +1541,33 @@
         },
         "responses": {
           "201": {
-            "description": "Session created with greeting message"
+            "description": "Session created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Session created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ChatSessionResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields"
+          },
+          "404": {
+            "description": "Character or context not found"
           }
         }
       }
@@ -1291,7 +1577,98 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Get session info and all messages",
+        "summary": "Get all messages in a session",
+        "description": "Returns all non-deleted messages for the given session, plus suggestedQuestions from the last ASSISTANT message. Mirrors Java MessageServiceImpl.getMessages() → GetMessagesResponse.\n",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "MongoDB ObjectId of the chat session"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Messages retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GetMessagesResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Session not found or does not belong to this user"
+          }
+        }
+      }
+    },
+    "/chat/sessions/{sessionId}": {
+      "delete": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Hard-delete a chat session",
+        "description": "Permanently deletes the session and all its messages. Returns HTTP 204 No Content — same as Java BE.\n",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session deleted (no response body)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        }
+      }
+    },
+    "/chat/sessions/{sessionId}/soft-delete": {
+      "patch": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Soft-delete a chat session",
+        "description": "Marks the session as deleted (sets deletedAt timestamp) without removing it from DB. Mirrors Java ChatSessionServiceImpl.softDeleteSession().\n",
         "security": [
           {
             "BearerAuth": []
@@ -1309,46 +1686,34 @@
         ],
         "responses": {
           "200": {
-            "description": "Session and message history"
+            "description": "Session soft-deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Session soft-deleted successfully"
+                    },
+                    "data": {
+                      "nullable": true,
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
           },
           "404": {
             "description": "Session not found"
-          }
-        }
-      }
-    },
-    "/chat/sessions/{sessionId}": {
-      "delete": {
-        "tags": [
-          "Chat"
-        ],
-        "summary": "Soft-delete a chat session",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response"
-          }
-        }
-      }
-    },
-    "/chat/sessions/{sessionId}/soft-delete": {
-      "patch": {
-        "tags": [
-          "Chat"
-        ],
-        "summary": "Soft-delete a chat session",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response"
           }
         }
       }
@@ -1358,8 +1723,8 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Send a message (Java-style — sessionId in body)",
-        "description": "Primary chat endpoint. Send a message and receive an AI response.\nThe sessionId is passed in the request body (same as Java BE).\n",
+        "summary": "Send a message and receive an AI response",
+        "description": "Primary chat endpoint. Sends a user message, calls the AI service, saves both messages to DB, and returns SendMessageResponse. Includes token usage fields (remainingTokens, promptTokens, completionTokens) — same as Java BE.\n",
         "security": [
           {
             "BearerAuth": []
@@ -1377,13 +1742,22 @@
                 ],
                 "properties": {
                   "sessionId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "64f1a2b3c4d5e6f7a8b9c0d3"
                   },
                   "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 4000,
+                    "example": "Ông có thể kể về Truyện Kiều không?"
                   },
                   "messageType": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                      "TEXT",
+                      "VOICE"
+                    ],
+                    "default": "TEXT",
+                    "description": "VOICE skips suggested questions to save tokens"
                   }
                 }
               }
@@ -1392,7 +1766,30 @@
         },
         "responses": {
           "201": {
-            "description": "Message sent and AI responded"
+            "description": "Message sent and AI responded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Message sent successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SendMessageResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields or out of tokens"
           },
           "404": {
             "description": "Session not found"
@@ -1408,8 +1805,8 @@
         "tags": [
           "Chat"
         ],
-        "summary": "Send a message and stream the response (SSE)",
-        "description": "Streaming chat endpoint mimicking ChatGPT behavior.",
+        "summary": "Send a message and stream the AI response (SSE)",
+        "description": "Streaming chat endpoint. Response is a Server-Sent Events (SSE) stream.\nSSE event types: - `text`: `{ \"type\": \"text\", \"data\": \"<chunk>\" }` - `metadata`: `{ \"type\": \"metadata\", \"data\": { \"promptTokens\": N, \"completionTokens\": N, \"suggestedQuestions\": [...] } }` - `done`: `{ \"type\": \"done\", \"remainingTokens\": N }` — stream ends here - `error`: `{ \"type\": \"error\", \"message\": \"...\" }`\nMirrors Java MessageServiceImpl.sendMessageStream().\n",
         "security": [
           {
             "BearerAuth": []
@@ -1427,13 +1824,20 @@
                 ],
                 "properties": {
                   "sessionId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "64f1a2b3c4d5e6f7a8b9c0d3"
                   },
                   "content": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Kể về Truyện Kiều"
                   },
                   "messageType": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                      "TEXT",
+                      "VOICE"
+                    ],
+                    "default": "TEXT"
                   }
                 }
               }
@@ -1442,26 +1846,20 @@
         },
         "responses": {
           "200": {
-            "description": "SSE stream of the AI response"
-          }
-        }
-      }
-    },
-    "/chat/sessions/{sessionId}/chat": {
-      "post": {
-        "tags": [
-          "Chat"
-        ],
-        "summary": "Send a message (Legacy — sessionId in path)",
-        "description": "Kept for backward compatibility. Prefer /chat/messages.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response"
+            "description": "SSE stream of the AI response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing fields or out of tokens"
+          },
+          "404": {
+            "description": "Session not found"
           }
         }
       }
@@ -3127,6 +3525,91 @@
         }
       }
     },
+    "/staff/quizzes/import": {
+      "post": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Bulk-import quizzes from CSV",
+        "description": "Upload a .csv file to bulk-create quizzes (all as drafts, isPublished=false). Rows with the same `title` are grouped into one quiz; each row is one question. Duplicate titles and invalid rows are skipped and reported in `errors[]`. Required CSV columns: title, contextId, level, questionContent, option1, option2, option3, option4, correctAnswer, explanation. Mirrors Java: POST /api/v1/staff/quizzes/import\n",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A .csv file with required columns"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CSV import completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "CSV import completed"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalQuizzesAttempted": {
+                          "type": "integer"
+                        },
+                        "successCount": {
+                          "type": "integer"
+                        },
+                        "skippedCount": {
+                          "type": "integer"
+                        },
+                        "errors": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "imported": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/StaffQuizSet"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid file or missing CSV columns"
+          }
+        }
+      }
+    },
     "/staff/quizzes/{quizId}/soft-delete": {
       "patch": {
         "tags": [
@@ -3688,6 +4171,65 @@
         "responses": {
           "200": {
             "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/users/{id}/deactivate": {
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Deactivate (soft-delete) a user account (SystemAdmin only)",
+        "description": "Sets deletedAt on the target user and cascade soft-deletes all their chat sessions, characters, historical contexts, and quiz sessions. Mirrors Java: PATCH /api/v1/admin/users/{userId}/deactivate\n",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User account deactivated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "null",
+                      "example": null
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User account deactivated successfully"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — only SYSTEM_ADMIN may deactivate other users"
+          },
+          "404": {
+            "description": "User not found"
           }
         }
       }
