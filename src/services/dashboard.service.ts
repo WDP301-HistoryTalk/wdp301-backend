@@ -1,5 +1,5 @@
 import User from '../models/user.model';
-import { UserRole, OrderStatus } from '../types/enums';
+import { UserRole } from '../types/enums';
 import Character from '../models/character.model';
 import HistoricalContext from '../models/historical-context.model';
 import ChatSession from '../models/chat-session.model';
