@@ -51,13 +51,18 @@ export class PaymentController {
 
   static async webhook(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
+      console.log('--- PAYOS WEBHOOK TEST ---');
+      console.log('Headers:', req.headers);
+      console.log('Body:', JSON.stringify(req.body));
+      console.log('--------------------------');
+
       const body = req.body as { data: WebhookData; signature?: string };
       
       // PayOS test/confirmation request can have data as null or orderCode as 123.
       // We return 200 OK immediately for these to let PayOS successfully register the webhook.
       if (!body || body.data === null || !body.signature || (body.data && body.data.orderCode === 123)) {
         logger.info('Received PayOS webhook verification/test request, returning 200 OK');
-        res.json({ error: 0, message: 'Ok', data: null });
+        res.json({ error: 0, message: 'Ok', data: null, success: true });
         return;
       }
 
