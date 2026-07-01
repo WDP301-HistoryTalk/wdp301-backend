@@ -10,6 +10,7 @@ import documentRoutes from './document.routes';
 import dashboardRoutes from './dashboard.routes';
 import paymentRoutes from './payment.routes';
 import systemTrashRoutes from './system-trash.routes';
+import tierRoutes from './tier.routes';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use('/chat', chatRoutes);
 router.use('/quizzes', quizRoutes);
 router.use('/staff', staffRoutes);
 router.use('/system-admin/dashboard', dashboardRoutes);
+router.use('/system-admin/tiers', tierRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/system/trash', systemTrashRoutes);
 router.use('/', documentRoutes); // historical-documents & character-documents
