@@ -14,6 +14,11 @@ import { AppError } from './utils/app-error';
 
 const app = express();
 
+// Trust the first proxy (e.g., Caddy/Nginx) to accurately provide the client's IP via X-Forwarded-For.
+// Fixes express-rate-limit ERR_ERL_UNEXPECTED_X_FORWARDED_FOR warning.
+app.set('trust proxy', 1);
+
+
 // OpenAPI docs are served before Helmet so Swagger UI assets can run normally.
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api-docs.json', (_req: Request, res: Response) => {
