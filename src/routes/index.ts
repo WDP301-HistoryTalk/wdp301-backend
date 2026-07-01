@@ -9,7 +9,6 @@ import staffRoutes from './staff.routes';
 import documentRoutes from './document.routes';
 import dashboardRoutes from './dashboard.routes';
 import paymentRoutes from './payment.routes';
-import tierRoutes from './tier.routes';
 import systemTrashRoutes from './system-trash.routes';
 
 const router = Router();
@@ -23,8 +22,6 @@ router.use('/quizzes', quizRoutes);
 router.use('/staff', staffRoutes);
 router.use('/system-admin/dashboard', dashboardRoutes);
 router.use('/payments', paymentRoutes);
-router.use('/payments/tiers', tierRoutes); // Alias for frontend compatibility with Java
-router.use('/tiers', tierRoutes);
 router.use('/system/trash', systemTrashRoutes);
 router.use('/', documentRoutes); // historical-documents & character-documents
 
