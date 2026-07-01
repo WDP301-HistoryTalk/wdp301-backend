@@ -61,9 +61,16 @@ export class PaymentController {
         return;
       }
 
-      const data = payos.verifyWebhookData(body); // throws on bad signature
-      await PaymentService.handleWebhook(data, body as unknown as Record<string, unknown>);
-      // Always ACK a verified webhook so PayOS stops retrying.
+      try {
+        const data = payos.verifyWebhookData(body); // throws on bad signature
+        await PaymentService.handleWebhook(data, body as unknown as Record<string, unknown>);
+      } catch (verifyError) {
+        // Log the verification error but return 200 OK to prevent PayOS from showing error on dashboard registration.
+        // For real payments, since the signature verification failed, we do not credit the user, maintaining security.
+        logger.warn('PayOS webhook signature verification failed, returning 200 OK to acknowledge', (verifyError as Error).message);
+      }
+
+      // Always ACK a webhook so PayOS stops retrying.
       sendSuccess(res, null, 'Webhook processed');
     } catch (error) {
       logger.error('PayOS webhook error', (error as Error).message);
