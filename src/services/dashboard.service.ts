@@ -1,5 +1,5 @@
 import User from '../models/user.model';
-import { UserRole } from '../types/enums';
+import { UserRole, OrderStatus } from '../types/enums';
 import Character from '../models/character.model';
 import HistoricalContext from '../models/historical-context.model';
 import ChatSession from '../models/chat-session.model';
@@ -205,7 +205,7 @@ export class DashboardService {
     const yearStart = new Date(today.getFullYear(), 0, 1);
 
     const revenueAggr = await Order.aggregate([
-      { $match: { status: 'PAID' } },
+      { $match: { status: OrderStatus.Paid } },
       { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } }
     ]);
     const totalRevenue = revenueAggr.length > 0 ? revenueAggr[0].total : 0;
@@ -213,7 +213,7 @@ export class DashboardService {
     const averageOrderValue = paidOrders > 0 ? totalRevenue / paidOrders : 0;
 
     const getRevenueBetween = async (start: Date, end?: Date) => {
-      const match: any = { status: 'PAID', paidAt: { $gte: start } };
+      const match: any = { status: OrderStatus.Paid, paidAt: { $gte: start } };
       if (end) match.paidAt.$lt = end;
       const res = await Order.aggregate([{ $match: match }, { $group: { _id: null, total: { $sum: '$amount' } } }]);
       return res.length > 0 ? res[0].total : 0;
@@ -226,13 +226,13 @@ export class DashboardService {
     const statusCountsAggr = await Order.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
 
     const trendAggr = await Order.aggregate([
-      { $match: { status: 'PAID', paidAt: { $gte: from, $lte: to } } },
+      { $match: { status: OrderStatus.Paid, paidAt: { $gte: from, $lte: to } } },
       { $group: { _id: { $dateToString: { format, date: '$paidAt' } }, total: { $sum: '$amount' }, count: { $sum: 1 } } }
     ]);
     const trendMap = Object.fromEntries(trendAggr.map(d => [d._id, { revenue: d.total, paidOrders: d.count }]));
 
     const revenueByTierAggr = await Order.aggregate([
-      { $match: { status: 'PAID', paidAt: { $gte: from, $lte: to } } },
+      { $match: { status: OrderStatus.Paid, paidAt: { $gte: from, $lte: to } } },
       { $group: { _id: '$tierId', revenue: { $sum: '$amount' }, paidOrders: { $sum: 1 } } }
     ]);
     const tierIds = revenueByTierAggr.map(r => r._id);
@@ -275,20 +275,20 @@ export class DashboardService {
       const date = t._id.date;
       if (!trendMap[date]) trendMap[date] = { date, total: 0, successful: 0, failed: 0 };
       trendMap[date].total += t.count;
-      if (t._id.status === 'PAID') trendMap[date].successful += t.count;
-      if (t._id.status === 'FAILED' || t._id.status === 'CANCELLED') trendMap[date].failed += t.count;
+      if (t._id.status === OrderStatus.Paid) trendMap[date].successful += t.count;
+      if (t._id.status === 'failed' || t._id.status === OrderStatus.Cancelled) trendMap[date].failed += t.count;
     });
 
     return {
       summary: {
         totalOrders: await Order.countDocuments(),
-        pendingOrders: counts['PENDING'] || 0,
-        paidOrders: counts['PAID'] || 0,
-        cancelledOrders: counts['CANCELLED'] || 0,
-        expiredOrders: counts['EXPIRED'] || 0,
-        failedOrders: counts['FAILED'] || 0,
-        successfulTransactions: counts['PAID'] || 0,
-        failedTransactions: (counts['FAILED'] || 0) + (counts['CANCELLED'] || 0)
+        pendingOrders: counts[OrderStatus.Pending] || 0,
+        paidOrders: counts[OrderStatus.Paid] || 0,
+        cancelledOrders: counts[OrderStatus.Cancelled] || 0,
+        expiredOrders: counts[OrderStatus.Expired] || 0,
+        failedOrders: counts['failed'] || 0,
+        successfulTransactions: counts[OrderStatus.Paid] || 0,
+        failedTransactions: (counts['failed'] || 0) + (counts[OrderStatus.Cancelled] || 0)
       },
       transactionTrend: trendDates.map(date => trendMap[date] || { date, total: 0, successful: 0, failed: 0 })
     };
