@@ -25,8 +25,8 @@ export const config = {
     baseUrl: process.env.PAYOS_BASE_URL || 'https://api-merchant.payos.vn',
     // Where PayOS redirects the buyer's browser after the hosted checkout.
     // These point at frontend pages, NOT backend endpoints.
-    returnUrl: process.env.PAYOS_RETURN_URL || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success`,
-    cancelUrl: process.env.PAYOS_CANCEL_URL || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success`,
+    returnUrl: (process.env.PAYOS_RETURN_URL || '').replace('/payment/result', '/payment/success') || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success`,
+    cancelUrl: (process.env.PAYOS_CANCEL_URL || '').replace('/payment/result', '/payment/success') || `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success`,
     // Deep link the mobile app registers in app.json ("scheme": "mobilehistorytalk").
     // PayOS appends ?code&id&cancel&status&orderCode to whichever URL is used for return/cancel.
     mobileDeepLink: process.env.PAYOS_MOBILE_DEEPLINK || 'mobilehistorytalk://payment/result',

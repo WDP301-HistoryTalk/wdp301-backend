@@ -21,7 +21,7 @@ router.use('/historical-contexts', historicalContextRoutes);
 router.use('/chat', chatRoutes);
 router.use('/quizzes', quizRoutes);
 router.use('/staff', staffRoutes);
-router.use('/system-admin', dashboardRoutes);
+router.use('/system-admin/dashboard', dashboardRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/system/trash', systemTrashRoutes);
 router.use('/', documentRoutes); // historical-documents & character-documents
