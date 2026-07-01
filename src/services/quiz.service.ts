@@ -737,4 +737,210 @@ export class QuizService {
       throw new AppError('Câu hỏi không thuộc về quiz này', 404);
     }
   }
+
+  // ==================== CSV Import ====================
+
+  /**
+   * Bulk-import quizzes from a CSV file uploaded as a Buffer (multer memoryStorage).
+   *
+   * CSV format (header row required):
+   *   title,contextId,level,questionContent,option1,option2,option3,option4,correctAnswer,explanation
+   *
+   * Rows sharing the same `title` are grouped into one quiz.
+   * Each group becomes one Quiz (isPublished = false) with N Questions.
+   * Duplicate titles, invalid contextIds, or validation errors → row skipped with error message.
+   *
+   * Mirrors Java: QuizServiceImpl.importQuizzesFromCsv + saveQuizGroup
+   *
+   * @returns QuizImportResponse: { totalQuizzesAttempted, successCount, skippedCount, errors, imported }
+   */
+  static async staffImportQuizzes(
+    fileBuffer: Buffer,
+    originalName: string,
+    userId: string,
+  ): Promise<{
+    totalQuizzesAttempted: number;
+    successCount: number;
+    skippedCount: number;
+    errors: string[];
+    imported: any[];
+  }> {
+    // ── 1. Basic file validation ─────────────────────────────────────────────
+    if (!fileBuffer || fileBuffer.length === 0) {
+      throw new AppError('File CSV không được để trống', 400);
+    }
+    if (!originalName.toLowerCase().endsWith('.csv')) {
+      throw new AppError('Chỉ chấp nhận file .csv', 400);
+    }
+
+    // ── 2. Parse CSV from buffer ─────────────────────────────────────────────
+    const { parse } = await import('csv-parse');
+
+    const REQUIRED_HEADERS = [
+      'title', 'contextId', 'level',
+      'questionContent', 'option1', 'option2', 'option3', 'option4',
+      'correctAnswer', 'explanation',
+    ];
+
+    const records: Record<string, string>[] = await new Promise((resolve, reject) => {
+      parse(
+        fileBuffer,
+        {
+          columns: true,         // first row = header
+          skip_empty_lines: true,
+          trim: true,
+          bom: true,             // handle UTF-8 BOM
+        },
+        (err, rows: Record<string, string>[]) => {
+          if (err) return reject(new AppError('Không thể đọc file CSV: ' + err.message, 400));
+          resolve(rows);
+        },
+      );
+    });
+
+    // Validate headers
+    if (records.length === 0) {
+      throw new AppError('File CSV không chứa hàng dữ liệu hợp lệ nào', 400);
+    }
+    const headers = Object.keys(records[0]);
+    for (const h of REQUIRED_HEADERS) {
+      if (!headers.includes(h)) {
+        throw new AppError(`File CSV thiếu cột tiêu đề bắt buộc: '${h}'`, 400);
+      }
+    }
+
+    // ── 3. Group rows by title (preserve insertion order) ────────────────────
+    const grouped = new Map<string, Record<string, string>[]>();
+    for (const row of records) {
+      const title = (row['title'] || '').trim();
+      if (!title) continue; // skip blank-title rows
+      if (!grouped.has(title)) grouped.set(title, []);
+      grouped.get(title)!.push(row);
+    }
+
+    if (grouped.size === 0) {
+      throw new AppError('File CSV không chứa hàng dữ liệu hợp lệ nào', 400);
+    }
+
+    // ── 4. Process each quiz group ───────────────────────────────────────────
+    const totalQuizzesAttempted = grouped.size;
+    let successCount = 0;
+    let skippedCount = 0;
+    const errors: string[] = [];
+    const imported: any[] = [];
+
+    for (const [title, rows] of grouped.entries()) {
+      try {
+        const created = await this._saveQuizGroup(title, rows, userId);
+        imported.push(created);
+        successCount++;
+      } catch (err: any) {
+        const msg = err?.message ?? 'Unexpected error';
+        if (msg.includes('đã tồn tại') || msg.includes('duplicate') || msg.toLowerCase().includes('conflict')) {
+          errors.push(`Quiz '${title}' skipped — duplicate title: ${msg}`);
+        } else if (err?.statusCode === 404) {
+          errors.push(`Quiz '${title}' skipped — ${msg}`);
+        } else {
+          errors.push(`Quiz '${title}' skipped — validation error: ${msg}`);
+        }
+        skippedCount++;
+      }
+    }
+
+    return { totalQuizzesAttempted, successCount, skippedCount, errors, imported };
+  }
+
+  /**
+   * Validates and persists one quiz group (one quiz + its questions).
+   * Mirrors Java: QuizServiceImpl.saveQuizGroup
+   */
+  private static async _saveQuizGroup(
+    title: string,
+    rows: Record<string, string>[],
+    userId: string,
+  ): Promise<any> {
+    const first = rows[0];
+
+    // Validate contextId
+    const contextIdStr = (first['contextId'] || '').trim();
+    if (!contextIdStr) throw new AppError('contextId không được để trống', 400);
+
+    const context = await HistoricalContext.findById(contextIdStr);
+    if (!context) {
+      throw new AppError(`HistoricalContext not found for contextId: ${contextIdStr}`, 404);
+    }
+
+    // Validate level
+    const levelStr = (first['level'] || '').trim().toUpperCase();
+    if (!Object.values(QuizLevel).includes(levelStr as QuizLevel)) {
+      throw new AppError(
+        `Giá trị cấp độ (level) không hợp lệ: ${levelStr}. Giá trị hợp lệ: EASY, MEDIUM, HARD`,
+        400,
+      );
+    }
+
+    // Duplicate title check
+    const exists = await Quiz.findOne({ title: { $regex: `^${title}$`, $options: 'i' } });
+    if (exists) throw new AppError(`Quiz với tiêu đề '${title}' đã tồn tại`, 409);
+
+    // Create Quiz (draft — isPublished = false, mirrors Java)
+    const quiz = await Quiz.create({
+      title,
+      contextId: context._id,
+      createdBy: new mongoose.Types.ObjectId(userId),
+      level: levelStr as QuizLevel,
+      era: context.era,
+      isActive: true,
+      isPublished: false,   // always draft on import, same as Java
+    }) as import('../models/quiz.model').IQuiz;
+
+    // Create Questions
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 1;
+
+      const questionContent = (row['questionContent'] || '').trim();
+      if (!questionContent) {
+        throw new AppError(`Hàng ${rowNum}: questionContent must not be empty`, 400);
+      }
+
+      const options = [
+        (row['option1'] || '').trim(),
+        (row['option2'] || '').trim(),
+        (row['option3'] || '').trim(),
+        (row['option4'] || '').trim(),
+      ];
+      for (let o = 0; o < options.length; o++) {
+        if (!options[o]) {
+          throw new AppError(`Hàng ${rowNum}: option${o + 1} must not be empty`, 400);
+        }
+      }
+
+      const correctAnswerRaw = (row['correctAnswer'] || '').trim();
+      const correctAnswer = parseInt(correctAnswerRaw, 10);
+      if (isNaN(correctAnswer)) {
+        throw new AppError(`Hàng ${rowNum}: correctAnswer must be an integer (0-3)`, 400);
+      }
+      if (correctAnswer < 0 || correctAnswer > 3) {
+        throw new AppError(
+          `Hàng ${rowNum}: correctAnswer must be between 0 and 3, got: ${correctAnswer}`,
+          400,
+        );
+      }
+
+      const explanation = (row['explanation'] || '').trim() || undefined;
+
+      await Question.create({
+        quizId: quiz._id,
+        content: questionContent,
+        options,
+        correctAnswer,
+        orderIndex: i,
+        explanation,
+      });
+    }
+
+    // Return full quiz detail (same shape as staffGetQuizDetail)
+    return this.staffGetQuizDetail(quiz._id.toString());
+  }
 }

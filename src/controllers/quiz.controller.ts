@@ -183,4 +183,36 @@ export class QuizController {
       next(error);
     }
   }
+
+  /**
+   * POST /staff/quizzes/import  (multipart/form-data, field: "file")
+   *
+   * Bulk-import quizzes from a CSV file. Each distinct quiz `title` in the CSV
+   * becomes one Quiz (draft). Rows sharing the same title become questions.
+   * Invalid/duplicate quiz groups are skipped and reported in `errors[]`.
+   *
+   * Request  : multipart/form-data  → field "file" (.csv)
+   * Response : { success, data: { totalQuizzesAttempted, successCount, skippedCount, errors[], imported[] }, message }
+   *
+   * Mirrors: Java StaffQuizController.importQuizzes
+   */
+  static async staffImportQuizzes(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) {
+        res.status(400).json({ success: false, message: 'File CSV là bắt buộc (field name: "file")', data: null });
+        return;
+      }
+
+      const data = await QuizService.staffImportQuizzes(
+        req.file.buffer,
+        req.file.originalname,
+        req.user!.id,
+      );
+
+      sendSuccess(res, data, 'CSV import completed');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

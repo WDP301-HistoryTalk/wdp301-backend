@@ -208,4 +208,41 @@ router.patch('/:id', authorizeRoles(UserRole.SystemAdmin), UserController.adminU
  */
 router.patch('/:id/role', authorizeRoles(UserRole.SystemAdmin), UserController.updateUserRole);
 
+/**
+ * @openapi
+ * /users/{id}/deactivate:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Deactivate (soft-delete) a user account (SystemAdmin only)
+ *     description: >
+ *       Sets deletedAt on the target user and cascade soft-deletes all their
+ *       chat sessions, characters, historical contexts, and quiz sessions.
+ *       Mirrors Java: PATCH /api/v1/admin/users/{userId}/deactivate
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User account deactivated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data: { type: 'null', example: null }
+ *                 message: { type: string, example: User account deactivated successfully }
+ *                 timestamp: { type: string }
+ *       403:
+ *         description: Forbidden — only SYSTEM_ADMIN may deactivate other users
+ *       404:
+ *         description: User not found
+ */
+router.patch('/:id/deactivate', authorizeRoles(UserRole.SystemAdmin), UserController.deactivateUser);
+
 export default router;

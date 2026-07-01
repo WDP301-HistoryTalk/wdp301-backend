@@ -69,4 +69,22 @@ export class UserController {
       next(error);
     }
   }
+
+  /**
+   * PATCH /users/:id/deactivate
+   * Soft-delete (deactivate) a user + cascade-delete all their content.
+   * SYSTEM_ADMIN only (enforced by route middleware + service layer).
+   * Response: { success: true, data: null, message: 'User account deactivated successfully' }
+   * Mirrors: Java AdminUserController.deactivateUser
+   */
+  static async deactivateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const targetUserId = req.params.id as string;
+      const requestingUserId = req.user!.id;
+      await UserService.deactivateUser(targetUserId, requestingUserId);
+      sendSuccess(res, null, 'User account deactivated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

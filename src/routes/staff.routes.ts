@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { QuizController } from '../controllers/quiz.controller';
 import { authenticate, authorizeRoles } from '../middlewares/auth.middleware';
+import { uploadCsv } from '../middlewares/upload.middleware';
 import { UserRole } from '../types/enums';
 
 const router = Router();
@@ -246,6 +247,63 @@ router.get('/quizzes/:quizId', QuizController.staffGetQuizDetail);
  *         description: Quiz created successfully
  */
 router.post('/quizzes', QuizController.staffCreateQuiz);
+
+/**
+ * @openapi
+ * /staff/quizzes/import:
+ *   post:
+ *     tags: [Staff Quizzes]
+ *     summary: Bulk-import quizzes from CSV
+ *     description: >
+ *       Upload a .csv file to bulk-create quizzes (all as drafts, isPublished=false).
+ *       Rows with the same `title` are grouped into one quiz; each row is one question.
+ *       Duplicate titles and invalid rows are skipped and reported in `errors[]`.
+ *       Required CSV columns: title, contextId, level, questionContent,
+ *       option1, option2, option3, option4, correctAnswer, explanation.
+ *       Mirrors Java: POST /api/v1/staff/quizzes/import
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [file]
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: A .csv file with required columns
+ *     responses:
+ *       200:
+ *         description: CSV import completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: CSV import completed }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalQuizzesAttempted: { type: integer }
+ *                     successCount: { type: integer }
+ *                     skippedCount: { type: integer }
+ *                     errors:
+ *                       type: array
+ *                       items: { type: string }
+ *                     imported:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/StaffQuizSet'
+ *       400:
+ *         description: Invalid file or missing CSV columns
+ */
+// NOTE: Must be registered BEFORE /:quizId routes so Express matches it first
+router.post('/quizzes/import', uploadCsv, QuizController.staffImportQuizzes);
+
 
 /**
  * @openapi
