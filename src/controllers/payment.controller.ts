@@ -49,13 +49,18 @@ export class PaymentController {
     }
   }
 
-  /**
-   * POST /payments/webhook — PayOS server-to-server callback. PUBLIC (no auth):
-   * trust is established by HMAC signature verification, not by a JWT.
-   */
   static async webhook(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const body = req.body as { data: WebhookData; signature?: string };
+      
+      // PayOS test/confirmation request can have data as null or orderCode as 123.
+      // We return 200 OK immediately for these to let PayOS successfully register the webhook.
+      if (!body || body.data === null || !body.signature || (body.data && body.data.orderCode === 123)) {
+        logger.info('Received PayOS webhook verification/test request, returning 200 OK');
+        sendSuccess(res, null, 'Webhook processed');
+        return;
+      }
+
       const data = payos.verifyWebhookData(body); // throws on bad signature
       await PaymentService.handleWebhook(data, body as unknown as Record<string, unknown>);
       // Always ACK a verified webhook so PayOS stops retrying.
