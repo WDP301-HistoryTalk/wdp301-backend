@@ -49,7 +49,7 @@ export class PaymentController {
     }
   }
 
-  static async webhook(req: Request, res: Response, next: NextFunction): Promise<void> {
+  static async webhook(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
       const body = req.body as { data: WebhookData; signature?: string };
       
