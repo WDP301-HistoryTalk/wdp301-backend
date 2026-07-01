@@ -46,7 +46,7 @@ export class UserController {
   static async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.findUserById(req.params.id as string);
-      sendSuccess(res, user, 'User retrieved successfully');
+      sendSuccess(res, UserService.toAdminUserDTO(user), 'User retrieved successfully');
     } catch (error) {
       next(error);
     }

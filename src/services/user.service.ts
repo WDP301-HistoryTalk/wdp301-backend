@@ -8,6 +8,20 @@ import { UserRole } from '../types/enums';
 import bcrypt from 'bcryptjs';
 
 export class UserService {
+  // Admin-facing DTOs use `uid` (mirrors auth.service.ts login/register responses),
+  // while the raw Mongoose `toJSON`/`toObject` transform only exposes `id`.
+  static toAdminUserDTO(userDoc: any) {
+    const user: any = typeof userDoc.toObject === 'function' ? userDoc.toObject() : { ...userDoc };
+    const tier = user.tierId;
+    const isPopulated = tier && typeof tier === 'object';
+    return {
+      ...user,
+      uid: user.id,
+      tierId: isPopulated ? tier.id : tier,
+      tierTitle: isPopulated ? tier.title : (user.tierTitle ?? null),
+    };
+  }
+
   static async findUserById(id: string) {
     const user = await User.findById(id).populate('tierId');
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
@@ -67,8 +81,9 @@ export class UserService {
     const skip = page * size;
     const users = await User.find().skip(skip).limit(size).populate('tierId');
     const total = await User.countDocuments();
+    const content = users.map((u) => UserService.toAdminUserDTO(u));
     return {
-      content: users,
+      content,
       totalElements: total,
       totalPages: Math.ceil(total / size),
       currentPage: page,
@@ -84,15 +99,15 @@ export class UserService {
     for (const field of allowedFields) {
       if (data[field] !== undefined) updateData[field] = data[field];
     }
-    const user = await User.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true });
+    const user = await User.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true }).populate('tierId');
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
-    return user;
+    return UserService.toAdminUserDTO(user);
   }
 
   static async updateUserRole(id: string, role: string) {
-    const user = await User.findByIdAndUpdate(id, { role }, { returnDocument: 'after', runValidators: true });
+    const user = await User.findByIdAndUpdate(id, { role }, { returnDocument: 'after', runValidators: true }).populate('tierId');
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
-    return user;
+    return UserService.toAdminUserDTO(user);
   }
 
   /**
