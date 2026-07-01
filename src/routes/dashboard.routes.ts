@@ -17,7 +17,7 @@ router.use(authenticate, authorizeRoles(UserRole.SystemAdmin));
 
 /**
  * @openapi
- * /system-admin/dashboard/overview:
+ * /system-admin/overview:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get dashboard overview
@@ -28,7 +28,7 @@ router.get('/overview', DashboardController.getOverview);
 
 /**
  * @openapi
- * /system-admin/dashboard/users:
+ * /system-admin/users:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get user analytics
@@ -39,7 +39,7 @@ router.get('/users', DashboardController.getUserAnalytics);
 
 /**
  * @openapi
- * /system-admin/dashboard/content:
+ * /system-admin/content:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get content summary
@@ -50,7 +50,7 @@ router.get('/content', DashboardController.getContentSummary);
 
 /**
  * @openapi
- * /system-admin/dashboard/chat-activity:
+ * /system-admin/chat-activity:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get chat activity metrics
@@ -61,7 +61,7 @@ router.get('/chat-activity', DashboardController.getChatActivity);
 
 /**
  * @openapi
- * /system-admin/dashboard/system-health:
+ * /system-admin/system-health:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get system health metrics
@@ -72,7 +72,7 @@ router.get('/system-health', DashboardController.getSystemHealth);
 
 /**
  * @openapi
- * /system-admin/dashboard/revenue:
+ * /system-admin/revenue:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get revenue metrics
@@ -83,7 +83,7 @@ router.get('/revenue', DashboardController.getRevenue);
 
 /**
  * @openapi
- * /system-admin/dashboard/payments:
+ * /system-admin/payments:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get payment transactions
@@ -94,7 +94,7 @@ router.get('/payments', DashboardController.getPayments);
 
 /**
  * @openapi
- * /system-admin/dashboard/tiers:
+ * /system-admin/tiers:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get subscription tier analytics
@@ -105,7 +105,7 @@ router.get('/tiers', DashboardController.getTiers);
 
 /**
  * @openapi
- * /system-admin/dashboard/quiz:
+ * /system-admin/quiz:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get quiz analytics
@@ -116,7 +116,7 @@ router.get('/quiz', DashboardController.getQuiz);
 
 /**
  * @openapi
- * /system-admin/dashboard/tokens:
+ * /system-admin/tokens:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get token usage analytics

@@ -82,7 +82,8 @@ export class PaymentService {
       .sort({ createdAt: -1 });
 
     return orders.map(o => {
-      const tierObj = o.tierId as Record<string, unknown>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tierObj = o.tierId as any;
       return {
         orderId: o._id.toString(),
         orderCode: o.orderCode,
@@ -111,8 +112,10 @@ export class PaymentService {
 
     return {
       content: orders.map(o => {
-        const tierObj = o.tierId as Record<string, unknown>;
-        const userObj = o.uid as Record<string, unknown>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tierObj = o.tierId as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userObj = o.uid as any;
         return {
           orderId: o._id.toString(),
           orderCode: o.orderCode,
@@ -186,12 +189,12 @@ export class PaymentService {
 
   static async handlePayOSReturn(userId: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
     const { cancel, orderCode } = data;
-    const order = await Order.findOne({ orderCode, uid: userId });
+    const order = await Order.findOne({ orderCode: orderCode as number, uid: userId });
     if (!order) throw new AppError('Order not found', 404);
 
     if (order.status === OrderStatus.Pending && payos.isConfigured) {
       try {
-        const info = await payos.getPaymentLinkInformation(orderCode);
+        const info = await payos.getPaymentLinkInformation(orderCode as number);
         const remoteStatus = String(info.status || '').toUpperCase();
         if (remoteStatus === 'PAID') {
           await this.applyPaidOrder(order, info);
