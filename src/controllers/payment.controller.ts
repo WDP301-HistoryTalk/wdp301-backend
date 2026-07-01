@@ -57,7 +57,7 @@ export class PaymentController {
       // We return 200 OK immediately for these to let PayOS successfully register the webhook.
       if (!body || body.data === null || !body.signature || (body.data && body.data.orderCode === 123)) {
         logger.info('Received PayOS webhook verification/test request, returning 200 OK');
-        sendSuccess(res, null, 'Webhook processed');
+        res.json({ error: 0, message: 'Ok', data: null });
         return;
       }
 
@@ -71,10 +71,11 @@ export class PaymentController {
       }
 
       // Always ACK a webhook so PayOS stops retrying.
-      sendSuccess(res, null, 'Webhook processed');
+      res.json({ error: 0, message: 'Ok', data: null });
     } catch (error) {
       logger.error('PayOS webhook error', (error as Error).message);
-      next(error);
+      // PayOS expects error: -1 on actual server errors
+      res.status(500).json({ error: -1, message: 'failed', data: null });
     }
   }
 }
