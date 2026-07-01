@@ -27,7 +27,10 @@ const router = Router();
  *       200:
  *         description: Webhook acknowledged
  */
-// IMPORTANT: keep this PUBLIC (no authenticate). Verified by signature instead.
+// IMPORTANT: keep both routes PUBLIC (no authenticate). Verified by signature instead.
+// GET: PayOS pings this URL during dashboard registration to verify reachability (mirrors Java @GetMapping("/webhook"))
+router.get('/webhook', PaymentController.webhookVerify);
+// POST: actual payment notifications from PayOS
 router.post('/webhook', PaymentController.webhook);
 
 /**

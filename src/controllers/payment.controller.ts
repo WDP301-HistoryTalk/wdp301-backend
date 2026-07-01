@@ -49,6 +49,15 @@ export class PaymentController {
     }
   }
 
+  /**
+   * GET /payments/webhook
+   * PayOS pings this URL during dashboard webhook registration to verify the endpoint is reachable.
+   * Must return 200 OK — mirrors Java: @GetMapping("/webhook") → ResponseEntity.ok("OK")
+   */
+  static async webhookVerify(_req: Request, res: Response): Promise<void> {
+    res.status(200).send('OK');
+  }
+
   static async webhook(req: Request, res: Response, _next: NextFunction): Promise<void> {
     try {
       console.log('--- PAYOS WEBHOOK TEST ---');
@@ -58,11 +67,10 @@ export class PaymentController {
 
       const body = req.body as { data: WebhookData; signature?: string };
       
-      // PayOS test/confirmation request can have data as null or orderCode as 123.
-      // We return 200 OK immediately for these to let PayOS successfully register the webhook.
+      // PayOS test/confirmation: data is null, no signature, or orderCode === 123
       if (!body || body.data === null || !body.signature || (body.data && body.data.orderCode === 123)) {
         logger.info('Received PayOS webhook verification/test request, returning 200 OK');
-        res.json({ error: 0, message: 'Ok', data: null, success: true });
+        res.status(200).send('OK');
         return;
       }
 
@@ -75,12 +83,11 @@ export class PaymentController {
         logger.warn('PayOS webhook signature verification failed, returning 200 OK to acknowledge', (verifyError as Error).message);
       }
 
-      // Always ACK a webhook so PayOS stops retrying.
-      res.json({ error: 0, message: 'Ok', data: null });
+      // Always ACK a webhook so PayOS stops retrying — mirrors Java: return ResponseEntity.ok("OK")
+      res.status(200).send('OK');
     } catch (error) {
       logger.error('PayOS webhook error', (error as Error).message);
-      // PayOS expects error: -1 on actual server errors
-      res.status(500).json({ error: -1, message: 'failed', data: null });
+      res.status(500).send('Internal Server Error');
     }
   }
 }
