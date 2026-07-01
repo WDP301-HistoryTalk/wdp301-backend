@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { QuizService } from '../services/quiz.service';
 import { sendSuccess } from '../utils/response';
+import { AppError } from '../utils/app-error';
 
 export class QuizController {
   // --- Customer / Public Methods ---
@@ -199,8 +200,7 @@ export class QuizController {
   static async staffImportQuizzes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.file) {
-        res.status(400).json({ success: false, message: 'File CSV là bắt buộc (field name: "file")', data: null });
-        return;
+        throw new AppError('File CSV là bắt buộc (field name: "file")', 400);
       }
 
       const data = await QuizService.staffImportQuizzes(
@@ -209,10 +209,9 @@ export class QuizController {
         req.user!.id,
       );
 
-      sendSuccess(res, data, 'CSV import completed');
+      sendSuccess(res, data, 'Import file CSV thành công');
     } catch (error) {
       next(error);
     }
   }
 }
-
