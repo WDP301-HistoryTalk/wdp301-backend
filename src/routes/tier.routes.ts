@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { TierController } from '../controllers/tier.controller';
-import { protect, restrictTo } from '../middlewares/auth';
+import { authenticate, authorizeRoles } from '../middlewares/auth.middleware';
 import { UserRole } from '../types/enums';
 
 const router = Router();
 
 // Protect all tier routes for SYSTEM_ADMIN only
-router.use(protect);
-router.use(restrictTo(UserRole.SystemAdmin));
+router.use(authenticate);
+router.use(authorizeRoles(UserRole.SystemAdmin));
 
 router.get('/', TierController.list);
 router.get('/:id', TierController.getById);

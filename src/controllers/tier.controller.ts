@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { TierService } from '../services/tier.service';
 import { sendSuccess } from '../utils/response';
-import { ApiError } from '../middlewares/error';
+import { AppError } from '../utils/app-error';
 
 export class TierController {
   static async list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -15,8 +15,8 @@ export class TierController {
 
   static async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const tier = await TierService.getById(req.params.id);
-      if (!tier) throw new ApiError(404, 'Tier not found');
+      const tier = await TierService.getById(req.params.id as string);
+      if (!tier) throw new AppError('Tier not found', 404);
       sendSuccess(res, tier, 'Tier retrieved successfully');
     } catch (error) {
       next(error);
@@ -34,8 +34,8 @@ export class TierController {
 
   static async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const tier = await TierService.update(req.params.id, req.body);
-      if (!tier) throw new ApiError(404, 'Tier not found');
+      const tier = await TierService.update(req.params.id as string, req.body);
+      if (!tier) throw new AppError('Tier not found', 404);
       sendSuccess(res, tier, 'Tier updated successfully');
     } catch (error) {
       next(error);
@@ -44,8 +44,8 @@ export class TierController {
 
   static async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const success = await TierService.delete(req.params.id);
-      if (!success) throw new ApiError(404, 'Tier not found');
+      const success = await TierService.delete(req.params.id as string);
+      if (!success) throw new AppError('Tier not found', 404);
       sendSuccess(res, null, 'Tier deleted successfully');
     } catch (error) {
       next(error);
