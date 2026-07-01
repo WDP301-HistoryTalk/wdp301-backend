@@ -614,11 +614,18 @@ export class ChatService {
         timeout: 180000,
       });
 
+      let streamBuffer = '';
+
       response.data.on('data', (chunk: Buffer) => {
-        const lines = chunk.toString().split('\n').filter((line) => line.trim() !== '');
-        for (const line of lines) {
+        streamBuffer += chunk.toString();
+        let eolIndex;
+        while ((eolIndex = streamBuffer.indexOf('\n')) >= 0) {
+          const line = streamBuffer.slice(0, eolIndex).trim();
+          streamBuffer = streamBuffer.slice(eolIndex + 1);
+
           if (line.startsWith('data: ')) {
             const jsonStr = line.substring(6);
+            if (jsonStr === '[DONE]') continue; // Ignore [DONE] if sent by AI
             try {
               const node = JSON.parse(jsonStr);
               if (node.type === 'text') {
@@ -633,7 +640,7 @@ export class ChatService {
                 onData(line + '\n\n');
               }
             } catch (err) {
-              console.warn('[ChatService] Error parsing SSE chunk:', err);
+              console.warn('[ChatService] Error parsing SSE chunk:', err, 'Raw JSON:', jsonStr);
             }
           }
         }
