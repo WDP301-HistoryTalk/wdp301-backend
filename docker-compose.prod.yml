@@ -13,9 +13,9 @@ services:
       - JWT_SECRET=hellowdp301letsgetthehighestgradepossible
       - JWT_EXPIRES_IN=7d
       - AI_SERVICE_URL=http://historytalk-ai:8001
-      - PAYOS_CLIENT_ID=fca15eb2-1bf7-4341-a519-a305a0d517b3
-      - PAYOS_API_KEY=fdf535de-f58f-4106-9b09-19560e36be4b
-      - PAYOS_CHECKSUM_KEY=11ceadcd47d308491f28835eaccaa7dfcc48dcaaa6eca91cbfe79b7e0bd148eb
+      - PAYOS_CLIENT_ID=de1aadc9-b92e-4d96-98a1-1bc69b57b12e
+      - PAYOS_API_KEY=7e67c4fc-4759-4ad5-bd33-c62f0ce02846
+      - PAYOS_CHECKSUM_KEY=d45569890e1c1ce91bdb366ecdaf8bf625f1f6ace713a88ba54a0b403f0981da
       - PAYOS_BASE_URL=https://api-merchant.payos.vn
       - PAYOS_RETURN_URL=https://history-talk-fe-topaz.vercel.app/payment/result
       - PAYOS_CANCEL_URL=https://history-talk-fe-topaz.vercel.app/payment/result
