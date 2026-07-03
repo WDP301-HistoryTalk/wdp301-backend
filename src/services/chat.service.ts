@@ -426,7 +426,7 @@ export class ChatService {
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
     const isCustomer = user.role === 'CUSTOMER';
     if (isCustomer && (user.token ?? 0) <= 0) {
-      throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+      throw new AppError('Tham số không hợp lệ: Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
     }
 
     // Load existing history BEFORE saving new user message (same as Java)
@@ -539,6 +539,31 @@ export class ChatService {
 
   // ── POST /chat/messages/stream ────────────────────────────────────────────
 
+  /**
+   * Validate session, user and token BEFORE SSE headers are committed.
+   * Must be called by the controller BEFORE res.setHeader('Content-Type', 'text/event-stream').
+   * If anything is wrong, throws AppError → controller returns proper HTTP status (400/404/etc.).
+   * Mirrors Java MessageServiceImpl checks done before the stream is opened.
+   */
+  public async validateBeforeStream(
+    sessionId: string,
+    uid: string
+  ): Promise<void> {
+    const session = await ChatSession.findOne({
+      _id: sessionId,
+      uid: new mongoose.Types.ObjectId(uid),
+      deletedAt: { $exists: false },
+    });
+    if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+
+    const user = await User.findById(uid);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+
+    if (user.role === 'CUSTOMER' && (user.token ?? 0) <= 0) {
+      throw new AppError('Tham số không hợp lệ: Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
+    }
+  }
+
   public async sendMessageStream(
     sessionId: string,
     userMessageText: string,
@@ -549,19 +574,19 @@ export class ChatService {
     onError: (err: any) => void
   ): Promise<void> {
     try {
+      // NOTE: session/user/token validation is done by validateBeforeStream() BEFORE
+      // SSE headers are set. Here we re-fetch without throwing AppError so that any
+      // unexpected miss is handled gracefully via onError (stream already open).
       const session = await ChatSession.findOne({
         _id: sessionId,
         uid: new mongoose.Types.ObjectId(uid),
         deletedAt: { $exists: false },
       });
-      if (!session) throw new AppError('Không tìm thấy phiên chat', 404);
+      if (!session) { onError(new Error('Session not found')); return; }
 
       const user = await User.findById(uid);
-      if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+      if (!user) { onError(new Error('User not found')); return; }
       const isCustomer = user.role === 'CUSTOMER';
-      if (isCustomer && (user.token ?? 0) <= 0) {
-        throw new AppError('Bạn đã hết token. Vui lòng nạp thêm để tiếp tục chat.', 400);
-      }
 
       // Load existing history BEFORE saving new user message
       const existingMessages = await Message.find({
@@ -687,6 +712,8 @@ export class ChatService {
         onError(err);
       });
     } catch (err: any) {
+      // Only reach here for unexpected errors AFTER headers might already be committed.
+      // Send as SSE error event (HTTP status cannot be changed at this point).
       onError(err);
     }
   }

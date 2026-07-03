@@ -126,6 +126,10 @@ export class ChatController {
   /**
    * Stream an AI response via SSE.
    * Mirrors Java MessageServiceImpl.sendMessageStream().
+   *
+   * FIX: validateBeforeStream() is called BEFORE SSE headers are committed.
+   * This ensures that "out of token" and "session not found" errors return
+   * proper HTTP 400/404 instead of HTTP 200 with an SSE error event.
    */
   public async sendMessageStream(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -141,6 +145,12 @@ export class ChatController {
       }
       if (!uid) throw new AppError('Không có quyền truy cập', 401);
 
+      // ── Validate BEFORE committing SSE headers ──────────────────────────
+      // If session not found, user not found, or token exhausted → throws AppError
+      // → next(error) returns proper HTTP 400/404 to client.
+      await ChatService.validateBeforeStream(sessionId, String(uid));
+
+      // ── Headers committed here — no going back after this line ──────────
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache, no-transform');
       res.setHeader('X-Accel-Buffering', 'no');
