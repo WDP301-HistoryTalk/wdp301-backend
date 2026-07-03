@@ -31,4 +31,11 @@ export const config = {
     // PayOS appends ?code&id&cancel&status&orderCode to whichever URL is used for return/cancel.
     mobileDeepLink: process.env.PAYOS_MOBILE_DEEPLINK || 'mobilehistorytalk://payment/result',
   },
+  mail: {
+    host: process.env.MAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.MAIL_PORT || '587', 10),
+    user: process.env.MAIL_USER || '',
+    pass: process.env.MAIL_PASS || '',
+    from: process.env.MAIL_FROM || '"HistoryTalk" <noreply@historytalk.vn>',
+  },
 };
