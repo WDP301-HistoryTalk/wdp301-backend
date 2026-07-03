@@ -24,6 +24,8 @@ services:
       - MAIL_USERNAME=historicaltalk108@gmail.com
       - MAIL_PASSWORD=swmw kgkm dprw unvo
       - MAIL_FROM=historicaltalk108@gmail.com
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     networks:
       - historytalk-net
     logging:
