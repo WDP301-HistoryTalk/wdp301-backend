@@ -13,14 +13,17 @@ const mapToUserProfile = (user: any) => {
     fullName: user.fullName || null,
     dob: user.dob ? user.dob.toISOString().split('T')[0] : null,
     gender: user.gender || null,
+    phoneNumber: user.phoneNumber || null,
     address: user.address || null,
     avatarUrl: user.avatarUrl || null,
     tierId: tierObj ? tierObj._id?.toString() : null,
     tierTitle: tierObj ? tierObj.title : null,
     subscriptionEndTime: user.tierExpiresAt ? user.tierExpiresAt.toISOString() : null,
     token: user.token || 0,
+    lastActiveDate: user.lastActiveDate ? user.lastActiveDate.toISOString() : null,
     createdAt: user.createdAt ? user.createdAt.toISOString() : null,
-    updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null
+    updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
+    deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null
   };
 };
 
