@@ -147,4 +147,59 @@ export class UserService {
       ),
     ]);
   }
+
+  /**
+   * Restore a single soft-deleted user.
+   * Mirrors Java: UserServiceImpl.restoreUser
+   * PATCH /users/:id/restore
+   */
+  static async restoreUser(targetUserId: string) {
+    const user = await User.findById(targetUserId).populate('tierId');
+    if (!user) throw new AppError('User not found', 404);
+    if (!user.deletedAt) throw new AppError('User account is already active', 400);
+
+    user.deletedAt = undefined;
+    user.isActive = true;
+    await user.save();
+    return user;
+  }
+
+  /**
+   * Restore multiple soft-deleted users by ID list.
+   * Mirrors Java: UserServiceImpl.restoreUsersBatch
+   * PATCH /users/restore/batch
+   */
+  static async restoreUsersBatch(userIds: string[]) {
+    const users = await User.find({ _id: { $in: userIds } }).populate('tierId');
+    const restoredIds: string[] = [];
+
+    for (const user of users) {
+      if (user.deletedAt) {
+        user.deletedAt = undefined;
+        user.isActive = true;
+        await user.save();
+        restoredIds.push(user._id.toString());
+      }
+    }
+
+    const failedIds = userIds.filter(id => !restoredIds.includes(id));
+    return {
+      restoredCount: restoredIds.length,
+      restoredUserIds: restoredIds,
+      failedUserIds: failedIds,
+    };
+  }
+
+  /**
+   * Restore ALL soft-deleted users in the system.
+   * Mirrors Java: UserServiceImpl.restoreAllUsers (JPQL: UPDATE User SET deletedAt = null)
+   * PATCH /users/restore/all
+   */
+  static async restoreAllUsers() {
+    const result = await User.updateMany(
+      { deletedAt: { $ne: null, $exists: true } },
+      { $unset: { deletedAt: '' }, $set: { isActive: true } }
+    );
+    return result.modifiedCount;
+  }
 }

@@ -189,6 +189,78 @@ router.get('/:id', authorizeRoles(UserRole.SystemAdmin), UserController.getUserB
  *         schema:
  *           type: string
  */
+/**
+ * @openapi
+ * /users/restore/batch:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Restore multiple deactivated users in batch (SystemAdmin only)
+ *     description: >
+ *       Restores a list of soft-deleted users. Returns restoredCount, restoredUserIds, and failedUserIds
+ *       (users that were not found or already active).
+ *       Mirrors Java: PATCH /api/v1/admin/users/restore/batch
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userIds]
+ *             properties:
+ *               userIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["64a1b2c3d4e5f6789abcdef0", "64a1b2c3d4e5f6789abcdef1"]
+ *     responses:
+ *       200:
+ *         description: Batch user restoration completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     restoredCount: { type: integer, example: 2 }
+ *                     restoredUserIds: { type: array, items: { type: string } }
+ *                     failedUserIds: { type: array, items: { type: string } }
+ *                 message: { type: string }
+ *       400:
+ *         description: userIds must be a non-empty array
+ */
+router.patch('/restore/batch', authorizeRoles(UserRole.SystemAdmin), UserController.restoreUsersBatch);
+
+/**
+ * @openapi
+ * /users/restore/all:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Restore ALL deactivated users (SystemAdmin only)
+ *     description: >
+ *       Sets deletedAt = null and isActive = true for every soft-deleted user.
+ *       Returns the count of restored users.
+ *       Mirrors Java: PATCH /api/v1/admin/users/restore/all
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All deactivated users restored successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data: { type: integer, example: 5 }
+ *                 message: { type: string, example: "All deactivated users restored successfully (5 users restored)" }
+ */
+router.patch('/restore/all', authorizeRoles(UserRole.SystemAdmin), UserController.restoreAllUsers);
+
 router.patch('/:id', authorizeRoles(UserRole.SystemAdmin), UserController.adminUpdateUser);
 
 /**
@@ -244,5 +316,43 @@ router.patch('/:id/role', authorizeRoles(UserRole.SystemAdmin), UserController.u
  *         description: User not found
  */
 router.patch('/:id/deactivate', authorizeRoles(UserRole.SystemAdmin), UserController.deactivateUser);
+
+
+/**
+ * @openapi
+ * /users/{id}/restore:
+ *   patch:
+ *     tags: [Users]
+ *     summary: Restore a single deactivated user (SystemAdmin only)
+ *     description: >
+ *       Clears deletedAt and reactivates a soft-deleted user account.
+ *       Returns 400 if the user is already active.
+ *       Mirrors Java: PATCH /api/v1/admin/users/{userId}/restore
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User account restored successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   $ref: '#/components/schemas/UserProfile'
+ *                 message: { type: string }
+ *       400:
+ *         description: User account is already active
+ *       404:
+ *         description: User not found
+ */
+router.patch('/:id/restore', authorizeRoles(UserRole.SystemAdmin), UserController.restoreUser);
 
 export default router;

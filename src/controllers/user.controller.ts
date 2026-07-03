@@ -111,4 +111,52 @@ export class UserController {
       next(error);
     }
   }
+
+  /**
+   * PATCH /users/:id/restore
+   * Restore a single soft-deleted user account (SYSTEM_ADMIN only).
+   * Mirrors: Java AdminUserController.restoreUser
+   */
+  static async restoreUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = await UserService.restoreUser(req.params.id as string);
+      sendSuccess(res, mapToUserProfile(user), 'User account restored successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PATCH /users/restore/batch
+   * Restore multiple soft-deleted user accounts in batch (SYSTEM_ADMIN only).
+   * Body: { userIds: string[] }
+   * Mirrors: Java AdminUserController.restoreUsersBatch
+   */
+  static async restoreUsersBatch(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userIds } = req.body as { userIds: string[] };
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        res.status(400).json({ success: false, message: 'userIds must be a non-empty array' });
+        return;
+      }
+      const result = await UserService.restoreUsersBatch(userIds);
+      sendSuccess(res, result, 'Batch user restoration completed');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PATCH /users/restore/all
+   * Restore ALL soft-deleted user accounts (SYSTEM_ADMIN only).
+   * Mirrors: Java AdminUserController.restoreAllUsers
+   */
+  static async restoreAllUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const count = await UserService.restoreAllUsers();
+      sendSuccess(res, count, `All deactivated users restored successfully (${count} users restored)`);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
