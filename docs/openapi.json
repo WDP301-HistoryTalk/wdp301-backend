@@ -1864,7 +1864,7 @@
         }
       }
     },
-    "/system-admin/dashboard/overview": {
+    "/system-admin/overview": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -1882,7 +1882,7 @@
         }
       }
     },
-    "/system-admin/dashboard/users": {
+    "/system-admin/users": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -1900,7 +1900,7 @@
         }
       }
     },
-    "/system-admin/dashboard/content": {
+    "/system-admin/content": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -1918,7 +1918,7 @@
         }
       }
     },
-    "/system-admin/dashboard/chat-activity": {
+    "/system-admin/chat-activity": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -1936,7 +1936,7 @@
         }
       }
     },
-    "/system-admin/dashboard/system-health": {
+    "/system-admin/system-health": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -1954,7 +1954,7 @@
         }
       }
     },
-    "/system-admin/dashboard/revenue": {
+    "/system-admin/revenue": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -1972,7 +1972,7 @@
         }
       }
     },
-    "/system-admin/dashboard/payments": {
+    "/system-admin/payments": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -1990,12 +1990,12 @@
         }
       }
     },
-    "/system-admin/dashboard/tiers": {
+    "/system-admin/tiers": {
       "get": {
         "tags": [
-          "System Admin Dashboard"
+          "System Admin Tiers"
         ],
-        "summary": "Get subscription tier analytics",
+        "summary": "Get all tiers",
         "security": [
           {
             "BearerAuth": []
@@ -2003,12 +2003,55 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Lấy danh sách gói thành công"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "System Admin Tiers"
+        ],
+        "summary": "Create a new tier",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "noMonth": {
+                    "type": "number"
+                  },
+                  "limitedToken": {
+                    "type": "number"
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tạo gói thành công"
           }
         }
       }
     },
-    "/system-admin/dashboard/quiz": {
+    "/system-admin/quiz": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -2026,7 +2069,7 @@
         }
       }
     },
-    "/system-admin/dashboard/tokens": {
+    "/system-admin/tokens": {
       "get": {
         "tags": [
           "System Admin Dashboard"
@@ -2509,21 +2552,7 @@
         }
       }
     },
-    "/payments/webhook": {
-      "post": {
-        "tags": [
-          "Payments"
-        ],
-        "summary": "PayOS webhook (server-to-server, public, HMAC-verified)",
-        "description": "Called by PayOS after a payment event. Not authenticated — trust is established by verifying the HMAC-SHA256 signature in the body.\n",
-        "responses": {
-          "200": {
-            "description": "Webhook acknowledged"
-          }
-        }
-      }
-    },
-    "/payments/orders": {
+    "/payments/checkout": {
       "post": {
         "tags": [
           "Payments"
@@ -2553,16 +2582,18 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Checkout link created"
+          "200": {
+            "description": "Checkout link created successfully"
           }
         }
-      },
+      }
+    },
+    "/payments/me": {
       "get": {
         "tags": [
           "Payments"
         ],
-        "summary": "List my orders",
+        "summary": "List my payment history",
         "security": [
           {
             "BearerAuth": []
@@ -2570,17 +2601,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Payment history retrieved successfully"
           }
         }
       }
     },
-    "/payments/orders/{orderCode}": {
+    "/payments/history": {
       "get": {
         "tags": [
           "Payments"
         ],
-        "summary": "Get order status (lazily reconciles with PayOS)",
+        "summary": "Get all payment history (Admin only)",
         "security": [
           {
             "BearerAuth": []
@@ -2588,45 +2619,129 @@
         ],
         "parameters": [
           {
-            "in": "path",
-            "name": "orderCode",
-            "required": true,
+            "in": "query",
+            "name": "status",
             "schema": {
-              "type": "integer"
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "userId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer",
+              "default": 20
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "All payment history retrieved successfully"
           }
         }
       }
     },
-    "/payments/orders/{orderCode}/cancel": {
+    "/payments/tiers": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Get all active subscription tiers",
+        "responses": {
+          "200": {
+            "description": "List of active tiers retrieved successfully"
+          }
+        }
+      }
+    },
+    "/payments/payos/return": {
       "post": {
         "tags": [
           "Payments"
         ],
-        "summary": "Cancel a pending order",
+        "summary": "Handle PayOS return redirect/data",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "orderCode",
-            "required": true,
-            "schema": {
-              "type": "integer"
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Return handled successfully"
+          }
+        }
+      }
+    },
+    "/payments/payos/webhook": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Verify PayOS webhook endpoint (reachability check)",
+        "responses": {
+          "200": {
+            "description": "Webhook acknowledged"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "PayOS webhook (server-to-server, public, HMAC-verified)",
+        "description": "Called by PayOS after a payment event. Not authenticated — trust is established by verifying the HMAC-SHA256 signature in the body.\n",
+        "responses": {
+          "200": {
+            "description": "Webhook acknowledged"
+          }
+        }
+      }
+    },
+    "/payments/webhook": {
+      "get": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Verify webhook endpoint (alias)",
+        "responses": {
+          "200": {
+            "description": "Webhook acknowledged"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "PayOS webhook alias (server-to-server, public, HMAC-verified)",
+        "responses": {
+          "200": {
+            "description": "Webhook acknowledged"
           }
         }
       }
@@ -3841,76 +3956,109 @@
         }
       }
     },
-    "/tiers": {
+    "/system-admin/tiers/{id}": {
       "get": {
         "tags": [
-          "Tiers"
+          "System Admin Tiers"
         ],
-        "summary": "Get all active subscription tiers",
-        "responses": {
-          "200": {
-            "description": "Successful response"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Tiers"
-        ],
-        "summary": "Create a subscription tier (Admin only)",
+        "summary": "Get tier by ID",
         "security": [
           {
             "BearerAuth": []
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Successful response"
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
-        }
-      }
-    },
-    "/tiers/{id}": {
-      "get": {
-        "tags": [
-          "Tiers"
         ],
-        "summary": "Get a subscription tier by ID",
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Lấy thông tin gói thành công"
           }
         }
       },
       "put": {
         "tags": [
-          "Tiers"
+          "System Admin Tiers"
         ],
-        "summary": "Update a subscription tier (Admin only)",
+        "summary": "Update an existing tier",
         "security": [
           {
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "noMonth": {
+                    "type": "number"
+                  },
+                  "limitedToken": {
+                    "type": "number"
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Cập nhật gói thành công"
           }
         }
       },
       "delete": {
         "tags": [
-          "Tiers"
+          "System Admin Tiers"
         ],
-        "summary": "Deactivate a subscription tier (Admin only)",
+        "summary": "Delete a tier",
         "security": [
           {
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Xóa gói thành công"
           }
         }
       }
@@ -4262,7 +4410,7 @@
     },
     {
       "name": "Payments",
-      "description": "PayOS subscription payments"
+      "description": "Payment and Tier management"
     },
     {
       "name": "Quizzes",
@@ -4273,8 +4421,8 @@
       "description": "Staff quiz management"
     },
     {
-      "name": "Tiers",
-      "description": "Subscription Tier management"
+      "name": "System Admin Tiers",
+      "description": "Tier management for SYSTEM_ADMIN"
     }
   ]
 }
