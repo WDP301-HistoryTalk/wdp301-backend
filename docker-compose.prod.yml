@@ -19,6 +19,11 @@ services:
       - PAYOS_BASE_URL=https://api-merchant.payos.vn
       - PAYOS_RETURN_URL=https://history-talk-fe-topaz.vercel.app/payment/result
       - PAYOS_CANCEL_URL=https://history-talk-fe-topaz.vercel.app/payment/result
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=historicaltalk108@gmail.com
+      - MAIL_PASSWORD=swmw kgkm dprw unvo
+      - MAIL_FROM=historicaltalk108@gmail.com
     networks:
       - historytalk-net
     logging:
