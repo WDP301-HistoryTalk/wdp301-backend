@@ -186,7 +186,8 @@ export class AuthService {
       passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    // TODO: send email — `${config.clientUrl}/reset-password/${resetToken}`
+    const resetUrl = `${config.clientUrl}/reset-password?token=${resetToken}`;
+    mailService.sendPasswordResetEmail(user.email, user.userName, resetUrl).catch(console.error);
   }
 
   static async resetPassword(token: string, newPassword: string) {

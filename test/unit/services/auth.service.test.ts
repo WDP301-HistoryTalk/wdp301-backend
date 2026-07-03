@@ -117,4 +117,41 @@ describe('AuthService', () => {
       );
     });
   });
+
+  describe('googleAuth', () => {
+    it('creates new user and sends email if user does not exist', async () => {
+      const { OAuth2Client } = require('google-auth-library');
+      const mockVerifyIdToken = vi.fn().mockResolvedValue({
+        getPayload: vi.fn().mockReturnValue({ email: 'new@example.com', name: 'New', sub: 'g-id' })
+      });
+      OAuth2Client.prototype.verifyIdToken = mockVerifyIdToken;
+
+      (User.findOne as Mock).mockResolvedValue(null);
+      (Tier.findOne as Mock).mockResolvedValue({ _id: 'tier-id', limitedToken: 10 });
+      (User.create as Mock).mockResolvedValue({ ...mockUser, email: 'new@example.com', googleId: 'g-id' });
+      
+      const { mailService } = require('../../../src/services/mail.service');
+      mailService.sendLoginNotificationWithPassword = vi.fn().mockResolvedValue(true);
+
+      const result = await AuthService.googleAuth('token');
+      expect(result).toHaveProperty('accessToken');
+      expect(User.create).toHaveBeenCalled();
+      expect(mailService.sendLoginNotificationWithPassword).toHaveBeenCalled();
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('generates token and sends email if user exists', async () => {
+      (User.findOne as Mock).mockResolvedValue(mockUser);
+      (User.findByIdAndUpdate as Mock).mockResolvedValue(mockUser);
+      
+      const { mailService } = require('../../../src/services/mail.service');
+      mailService.sendPasswordResetEmail = vi.fn().mockResolvedValue(true);
+
+      await AuthService.forgotPassword('test@example.com');
+      
+      expect(User.findByIdAndUpdate).toHaveBeenCalled();
+      expect(mailService.sendPasswordResetEmail).toHaveBeenCalled();
+    });
+  });
 });

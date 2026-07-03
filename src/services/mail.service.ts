@@ -72,6 +72,27 @@ class MailService {
     `;
     return this.sendMail(to, subject, html);
   }
+
+  async sendPasswordResetEmail(to: string, userName: string, resetUrl: string) {
+    const subject = 'Đặt lại mật khẩu - HistoryTalk';
+    const html = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+        <h3>Chào ${userName},</h3>
+        <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
+        <p>Vui lòng click vào nút bên dưới để tiến hành đặt lại mật khẩu mới:</p>
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${resetUrl}" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Đặt Lại Mật Khẩu</a>
+        </div>
+        <p>Hoặc bạn có thể copy và dán đường dẫn này vào trình duyệt:</p>
+        <p><a href="${resetUrl}">${resetUrl}</a></p>
+        <p><em>Lưu ý: Đường dẫn này sẽ hết hạn sau 10 phút. Nếu bạn không yêu cầu đặt lại mật khẩu, xin vui lòng bỏ qua email này.</em></p>
+        <br>
+        <p>Trân trọng,</p>
+        <p><strong>Đội ngũ HistoryTalk</strong></p>
+      </div>
+    `;
+    return this.sendMail(to, subject, html);
+  }
 }
 
 export const mailService = new MailService();
