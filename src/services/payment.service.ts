@@ -7,6 +7,7 @@ import { AppError } from '../utils/app-error';
 import { config } from '../config';
 import { OrderStatus, TransactionStatus } from '../types/enums';
 import { payos, WebhookData } from './payos.client';
+import { mailService } from './mail.service';
 
 async function generateOrderCode(): Promise<number> {
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -184,6 +185,9 @@ export class PaymentService {
       user.token = (user.token || 0) + (tier.limitedToken || 0);
       user.lastTokenResetAt = now;
       await user.save();
+
+      // Gửi email sau khi thanh toán thành công
+      mailService.sendPaymentSuccessNotification(user.email, user.userName, tier.title, tier.amount).catch(console.error);
     }
   }
 

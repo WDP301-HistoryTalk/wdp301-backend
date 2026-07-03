@@ -7,6 +7,7 @@ import { AppError } from '../utils/app-error';
 import User from '../models/user.model';
 import Tier from '../models/tier.model';
 import { UserRole, TierTitle } from '../types/enums';
+import { mailService } from './mail.service';
 
 const googleClient = new OAuth2Client(config.google.clientId);
 
@@ -135,15 +136,23 @@ export class AuthService {
 
     if (!user) {
       const freeTier = await Tier.findOne({ title: TierTitle.Free });
+      
+      const randomPassword = crypto.randomBytes(8).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
       user = await User.create({
         userName: name ?? email.split('@')[0],
         email,
+        password: hashedPassword,
         googleId,
         role: UserRole.Customer,
         tierId: freeTier?._id,
         token: freeTier?.limitedToken ?? 10,
         lastTokenResetAt: new Date(),
       });
+
+      // Gửi mail thông báo đăng nhập và mật khẩu ngẫu nhiên
+      mailService.sendLoginNotificationWithPassword(email, user.userName, randomPassword).catch(console.error);
     } else if (!user.googleId) {
       await User.findByIdAndUpdate(user._id, { googleId });
     }
@@ -177,7 +186,8 @@ export class AuthService {
       passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    // TODO: send email — `${config.clientUrl}/reset-password/${resetToken}`
+    const resetUrl = `${config.clientUrl}/reset-password?token=${resetToken}`;
+    mailService.sendPasswordResetEmail(user.email, user.userName, resetUrl).catch(console.error);
   }
 
   static async resetPassword(token: string, newPassword: string) {
