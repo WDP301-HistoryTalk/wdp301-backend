@@ -1,7 +1,10 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import nodemailer from 'nodemailer';
 
-const mockSendMail = vi.fn().mockResolvedValue(true);
+const { mockSendMail } = vi.hoisted(() => ({
+  mockSendMail: vi.fn().mockResolvedValue(true)
+}));
+
 vi.mock('nodemailer', () => ({
   default: {
     createTransport: vi.fn().mockReturnValue({

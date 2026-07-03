@@ -4,6 +4,7 @@ import User from '../../../src/models/user.model';
 import Tier from '../../../src/models/tier.model';
 import bcrypt from 'bcryptjs';
 import { UserRole } from '../../../src/types/enums';
+import { mailService } from '../../../src/services/mail.service';
 
 vi.mock('../../../src/models/user.model', () => ({
   __esModule: true,
@@ -130,8 +131,7 @@ describe('AuthService', () => {
       (Tier.findOne as Mock).mockResolvedValue({ _id: 'tier-id', limitedToken: 10 });
       (User.create as Mock).mockResolvedValue({ ...mockUser, email: 'new@example.com', googleId: 'g-id' });
       
-      const { mailService } = require('../../../src/services/mail.service');
-      mailService.sendLoginNotificationWithPassword = vi.fn().mockResolvedValue(true);
+      vi.spyOn(mailService, 'sendLoginNotificationWithPassword').mockResolvedValue();
 
       const result = await AuthService.googleAuth('token');
       expect(result).toHaveProperty('accessToken');
@@ -145,8 +145,7 @@ describe('AuthService', () => {
       (User.findOne as Mock).mockResolvedValue(mockUser);
       (User.findByIdAndUpdate as Mock).mockResolvedValue(mockUser);
       
-      const { mailService } = require('../../../src/services/mail.service');
-      mailService.sendPasswordResetEmail = vi.fn().mockResolvedValue(true);
+      vi.spyOn(mailService, 'sendPasswordResetEmail').mockResolvedValue();
 
       await AuthService.forgotPassword('test@example.com');
       

@@ -6,6 +6,7 @@ import User from '../../../src/models/user.model';
 import Transaction from '../../../src/models/transaction.model';
 import { payos } from '../../../src/services/payos.client';
 import { OrderStatus } from '../../../src/types/enums';
+import { mailService } from '../../../src/services/mail.service';
 
 vi.mock('../../../src/models/order.model', () => ({
   __esModule: true,
@@ -62,7 +63,7 @@ describe('PaymentService', () => {
       const mockUser = { _id: 'user-id', email: 'test@example.com', userName: 'Test', save: vi.fn() };
       (User.findById as any).mockResolvedValue(mockUser);
       
-      const { mailService } = require('../../../src/services/mail.service');
+      vi.spyOn(mailService, 'sendPaymentSuccessNotification').mockResolvedValue();
 
       const result = await PaymentService.handlePayOSReturn('user-id', { orderCode: 123, cancel: false });
       
