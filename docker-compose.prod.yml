@@ -5,25 +5,8 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
-    environment:
-      - PORT=5000
-      - NODE_ENV=production
-      - MONGO_URI=mongodb+srv://datdat2kk5:datdat2kk5@historytalkdb.l3pzqfp.mongodb.net/?appName=HistoryTalkDB
-      - CORS_ORIGIN=http://localhost:3000
-      - JWT_SECRET=hellowdp301letsgetthehighestgradepossible
-      - JWT_EXPIRES_IN=7d
-      - AI_SERVICE_URL=http://historytalk-ai:8001
-      - PAYOS_CLIENT_ID=de1aadc9-b92e-4d96-98a1-1bc69b57b12e
-      - PAYOS_API_KEY=7e67c4fc-4759-4ad5-bd33-c62f0ce02846
-      - PAYOS_CHECKSUM_KEY=d45569890e1c1ce91bdb366ecdaf8bf625f1f6ace713a88ba54a0b403f0981da
-      - PAYOS_BASE_URL=https://api-merchant.payos.vn
-      - PAYOS_RETURN_URL=https://history-talk-fe-topaz.vercel.app/payment/result
-      - PAYOS_CANCEL_URL=https://history-talk-fe-topaz.vercel.app/payment/result
-      - MAIL_HOST=smtp.gmail.com
-      - MAIL_PORT=587
-      - MAIL_USERNAME=historicaltalk108@gmail.com
-      - MAIL_PASSWORD=swmw kgkm dprw unvo
-      - MAIL_FROM=historicaltalk108@gmail.com
+    env_file:
+      - .env.prod
     networks:
       - historytalk-net
     logging:

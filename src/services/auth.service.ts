@@ -77,6 +77,10 @@ export class AuthService {
     const isMatch = await bcrypt.compare(data.password, user.password);
     if (!isMatch) throw new AppError('Email hoặc mật khẩu không chính xác', 401);
 
+    if (user.deletedAt) {
+      throw new AppError('Tài khoản đã bị vô hiệu hóa', 401);
+    }
+
     await User.findByIdAndUpdate(user._id, { lastActiveDate: new Date() });
 
     const tokens = this.generateTokens(user._id.toString(), user.email, user.role);
@@ -157,6 +161,10 @@ export class AuthService {
       mailService.sendLoginNotificationWithPassword(email, user.userName, randomPassword).catch(console.error);
     } else if (!user.googleId) {
       await User.findByIdAndUpdate(user._id, { googleId });
+    }
+
+    if (user.deletedAt) {
+      throw new AppError('Tài khoản đã bị vô hiệu hóa', 401);
     }
 
     const tokens = this.generateTokens(user._id.toString(), user.email, user.role);

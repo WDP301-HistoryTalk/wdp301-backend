@@ -13,7 +13,7 @@ router.use(authenticate);
  *     UserProfile:
  *       type: object
  *       properties:
- *         _id:
+ *         uid:
  *           type: string
  *           example: 64a1b2c3d4e5f6789abcdef0
  *         userName:
@@ -27,12 +27,36 @@ router.use(authenticate);
  *           type: string
  *           enum: [CUSTOMER, CONTENT_ADMIN, SYSTEM_ADMIN]
  *           example: CUSTOMER
- *         token:
- *           type: integer
- *           example: 10
+ *         fullName:
+ *           type: string
+ *           example: Nguyen Van A Full
+ *         dob:
+ *           type: string
+ *           format: date
+ *         gender:
+ *           type: string
+ *           example: MALE
+ *         phoneNumber:
+ *           type: string
+ *           example: "0123456789"
+ *         address:
+ *           type: string
+ *           example: "123 Street"
+ *         avatarUrl:
+ *           type: string
+ *           example: "https://example.com/avatar.jpg"
  *         tierId:
  *           type: string
  *           example: 64a1b2c3d4e5f6789abcdef1
+ *         tierTitle:
+ *           type: string
+ *           example: Premium
+ *         subscriptionEndTime:
+ *           type: string
+ *           format: date-time
+ *         token:
+ *           type: integer
+ *           example: 10
  *         lastActiveDate:
  *           type: string
  *           format: date-time
@@ -40,6 +64,9 @@ router.use(authenticate);
  *           type: string
  *           format: date-time
  *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *         deletedAt:
  *           type: string
  *           format: date-time
  *     UpdateProfileBody:
