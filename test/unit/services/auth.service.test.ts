@@ -135,6 +135,7 @@ describe('AuthService', () => {
 
       const result = await AuthService.googleAuth('token');
       expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('isNewUser', true);
       expect(User.create).toHaveBeenCalled();
       expect(mailService.sendLoginNotificationWithPassword).toHaveBeenCalled();
     });

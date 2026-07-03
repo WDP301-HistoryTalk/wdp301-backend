@@ -133,6 +133,7 @@ export class AuthService {
     const { email, name, sub: googleId } = payload;
 
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
+    let isNewUser = false;
 
     if (!user) {
       const freeTier = await Tier.findOne({ title: TierTitle.Free });
@@ -150,6 +151,7 @@ export class AuthService {
         token: freeTier?.limitedToken ?? 10,
         lastTokenResetAt: new Date(),
       });
+      isNewUser = true;
 
       // Gửi mail thông báo đăng nhập và mật khẩu ngẫu nhiên
       mailService.sendLoginNotificationWithPassword(email, user.userName, randomPassword).catch(console.error);
@@ -169,6 +171,7 @@ export class AuthService {
       refreshToken: tokens.refreshToken,
       tokenType: 'Bearer',
       expiresIn: parseExpiresInToSeconds(config.jwt.accessExpiresIn),
+      isNewUser,
     };
   }
 
