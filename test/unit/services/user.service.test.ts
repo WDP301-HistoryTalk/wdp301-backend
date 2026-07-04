@@ -10,6 +10,20 @@ vi.mock('../../../src/models/user.model', () => ({
   },
 }));
 
+vi.mock('../../../src/models/tier.model', () => ({
+  __esModule: true,
+  default: {
+    findOne: vi.fn(),
+  },
+}));
+
+vi.mock('../../../src/models/order.model', () => ({
+  __esModule: true,
+  default: {
+    find: vi.fn(),
+  },
+}));
+
 const mockUser = {
   _id: 'user-id-123',
   userName: 'Test User',
@@ -23,6 +37,10 @@ describe('UserService', () => {
   describe('findUserById', () => {
     it('returns user when found', async () => {
       (User.findById as Mock).mockReturnValue({ populate: vi.fn().mockResolvedValue(mockUser) });
+      const { default: Tier } = await import('../../../src/models/tier.model');
+      const { default: Order } = await import('../../../src/models/order.model');
+      (Tier.findOne as Mock).mockResolvedValue(null);
+      (Order.find as Mock).mockReturnValue({ populate: vi.fn().mockResolvedValue([]) });
 
       const result = await UserService.findUserById('user-id-123');
       expect(result).toEqual(mockUser);
