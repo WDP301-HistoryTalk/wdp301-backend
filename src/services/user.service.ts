@@ -4,7 +4,9 @@ import Character from '../models/character.model';
 import HistoricalContext from '../models/historical-context.model';
 import QuizSession from '../models/quiz-session.model';
 import { AppError } from '../utils/app-error';
-import { UserRole } from '../types/enums';
+import { UserRole, TierTitle, OrderStatus } from '../types/enums';
+import Order from '../models/order.model';
+import Tier from '../models/tier.model';
 import bcrypt from 'bcryptjs';
 
 export class UserService {
@@ -22,9 +24,29 @@ export class UserService {
     if (lastReset) lastReset.setHours(0, 0, 0, 0);
 
     if (!lastReset || lastReset.getTime() !== today.getTime()) {
-      const tier: any = user.tierId;
-      if (tier && tier.limitedToken != null) {
-        user.token = (user.token || 0) + tier.limitedToken;
+      let totalTokensToAdd = 0;
+
+      // 1. Add free tier tokens
+      const freeTier = await Tier.findOne({ title: TierTitle.Free, isActive: true });
+      if (freeTier && freeTier.limitedToken != null) {
+        totalTokensToAdd += freeTier.limitedToken;
+      }
+
+      // 2. Add all active paid tiers from orders
+      const orders = await Order.find({ uid: user._id, status: OrderStatus.Paid }).populate('tierId');
+      for (const order of orders) {
+        const tier: any = order.tierId;
+        if (tier && order.paidAt && tier.limitedToken != null) {
+          const expiresAt = new Date(order.paidAt);
+          expiresAt.setMonth(expiresAt.getMonth() + tier.noMonth);
+          if (expiresAt.getTime() > today.getTime()) {
+            totalTokensToAdd += tier.limitedToken;
+          }
+        }
+      }
+
+      if (totalTokensToAdd > 0) {
+        user.token = (user.token || 0) + totalTokensToAdd;
       }
       user.lastTokenResetAt = new Date();
       await user.save();
