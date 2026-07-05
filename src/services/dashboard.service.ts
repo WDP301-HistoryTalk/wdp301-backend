@@ -335,7 +335,7 @@ export class DashboardService {
         currentFreeUsers: freeUsers, 
         activeSubscriptions: paidUsers, 
         expiringSoonSubscriptions, 
-        freeToPaidConversionRate: (freeUsers + paidUsers) > 0 ? paidUsers / (freeUsers + paidUsers) : 0 
+        freeToPaidConversionRate: (freeUsers + paidUsers) > 0 ? (paidUsers * 100) / (freeUsers + paidUsers) : 0 
       },
       usersByTier,
       purchasesByTier: [] // Complex to calculate exactly without historical tier links
@@ -430,14 +430,14 @@ export class DashboardService {
         quizTitle: question?.quizId?.title || 'Unknown',
         wrongAnswers: q.wrongAnswers,
         totalAnswers: q.totalAnswers,
-        wrongRate: q.totalAnswers > 0 ? q.wrongAnswers / q.totalAnswers : 0
+        wrongRate: q.totalAnswers > 0 ? (q.wrongAnswers * 100) / q.totalAnswers : 0
       };
     });
 
     return {
       summary: {
         totalQuizzes, publishedQuizzes, draftQuizzes, deletedQuizzes, startedSessions, completedSessions,
-        completionRate: startedSessions > 0 ? (completedSessions / startedSessions) : 0,
+        completionRate: startedSessions > 0 ? (completedSessions * 100 / startedSessions) : 0,
         averageScorePercentage
       },
       sessionsTrend: trendDates.map(date => trendMap[date] || { date, started: 0, completed: 0 }),
