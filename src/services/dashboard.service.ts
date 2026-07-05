@@ -70,7 +70,9 @@ export class DashboardService {
     const publishedHistoricalContexts = await HistoricalContext.countDocuments({ isPublished: true });
     const characters = await Character.countDocuments();
     const publishedCharacters = await Character.countDocuments({ isPublished: true });
-    const documents = 0;
+    
+    const DocumentModel = (await import('../models/document.model')).default;
+    const documents = await DocumentModel.countDocuments();
 
     const sessions = await ChatSession.countDocuments();
     const messages = await Message.countDocuments();
@@ -132,10 +134,14 @@ export class DashboardService {
     const publishedCharacters = await Character.countDocuments({ isPublished: true });
     const activeCharacters = await Character.countDocuments({ deletedAt: { $exists: false } });
 
+    const DocumentModel = (await import('../models/document.model')).default;
+    const totalDocuments = await DocumentModel.countDocuments();
+    const activeDocuments = await DocumentModel.countDocuments({ deletedAt: { $exists: false } });
+
     return {
       historicalContexts: { total: totalContexts, published: publishedContexts, active: activeContexts },
       characters: { total: totalCharacters, published: publishedCharacters, active: activeCharacters },
-      documents: { total: 0, published: 0, active: 0 }
+      documents: { total: totalDocuments, active: activeDocuments }
     };
   }
 
@@ -147,8 +153,8 @@ export class DashboardService {
     const sessions = await ChatSession.countDocuments();
     const activeSessions = sessions;
     const messages = await Message.countDocuments();
-    const userMessages = await Message.countDocuments({ sender: 'user' });
-    const aiMessages = await Message.countDocuments({ sender: 'character' });
+    const userMessages = await Message.countDocuments({ isFromAi: false });
+    const aiMessages = await Message.countDocuments({ isFromAi: true });
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -346,30 +352,97 @@ export class DashboardService {
     const draftQuizzes = await Quiz.countDocuments({ isPublished: false });
     const deletedQuizzes = await Quiz.countDocuments({ deletedAt: { $exists: true } });
     
-    const startedSessions = await QuizSession.countDocuments();
-    const completedSessions = await QuizSession.countDocuments({ status: 'completed' });
+    const startedSessions = await QuizSession.countDocuments({ createdAt: { $gte: from, $lte: to } });
+    const completedSessions = await QuizSession.countDocuments({ createdAt: { $gte: from, $lte: to }, endTime: { $exists: true } });
+
+    const avgScoreAggr = await QuizSession.aggregate([
+      { $match: { createdAt: { $gte: from, $lte: to }, percentage: { $exists: true } } },
+      { $group: { _id: null, avg: { $avg: '$percentage' } } }
+    ]);
+    const averageScorePercentage = avgScoreAggr[0]?.avg || 0;
 
     const sessionsTrendAggr = await QuizSession.aggregate([
       { $match: { createdAt: { $gte: from, $lte: to } } },
-      { $group: { _id: { date: { $dateToString: { format, date: '$createdAt' } }, status: '$status' }, count: { $sum: 1 } } }
+      { $group: { _id: { date: { $dateToString: { format, date: '$createdAt' } }, isCompleted: { $cond: [{ $ifNull: ['$endTime', false] }, true, false] } }, count: { $sum: 1 } } }
     ]);
     const trendMap: Record<string, any> = {};
     sessionsTrendAggr.forEach(t => {
       const date = t._id.date;
       if (!trendMap[date]) trendMap[date] = { date, started: 0, completed: 0 };
-      if (t._id.status === 'completed') trendMap[date].completed += t.count;
-      else trendMap[date].started += t.count;
+      trendMap[date].started += t.count;
+      if (t._id.isCompleted) trendMap[date].completed += t.count;
+    });
+
+    const topQuizzesAggr = await QuizSession.aggregate([
+      { $match: { createdAt: { $gte: from, $lte: to } } },
+      { $group: {
+          _id: '$quizId',
+          startedSessions: { $sum: 1 },
+          completedSessions: { $sum: { $cond: [{ $ifNull: ['$endTime', false] }, 1, 0] } },
+          totalPercentage: { $sum: { $ifNull: ['$percentage', 0] } },
+          scoredSessions: { $sum: { $cond: [{ $ne: [{ $type: '$percentage' }, 'missing'] }, 1, 0] } }
+        }
+      },
+      { $sort: { startedSessions: -1 } },
+      { $limit: 5 }
+    ]);
+
+    const quizIds = topQuizzesAggr.map(q => q._id);
+    const quizzes = await Quiz.find({ _id: { $in: quizIds } });
+    const quizMap = Object.fromEntries(quizzes.map(q => [q._id.toString(), q]));
+    
+    const topQuizzes = topQuizzesAggr.map(q => {
+      const quiz = quizMap[q._id.toString()];
+      return {
+        quizId: q._id,
+        title: quiz?.title || 'Unknown',
+        level: quiz?.level || 'Medium',
+        startedSessions: q.startedSessions,
+        completedSessions: q.completedSessions,
+        averageScorePercentage: q.scoredSessions > 0 ? q.totalPercentage / q.scoredSessions : 0
+      };
+    });
+
+    const AnswerDetail = (await import('../models/answer-detail.model')).default;
+    const Question = (await import('../models/question.model')).default;
+
+    const topWrongQuestionsAggr = await AnswerDetail.aggregate([
+      { $match: { createdAt: { $gte: from, $lte: to } } },
+      { $group: {
+          _id: '$questionId',
+          totalAnswers: { $sum: 1 },
+          wrongAnswers: { $sum: { $cond: [{ $eq: ['$isCorrect', false] }, 1, 0] } }
+        }
+      },
+      { $sort: { wrongAnswers: -1 } },
+      { $limit: 5 }
+    ]);
+
+    const questionIds = topWrongQuestionsAggr.map(q => q._id);
+    const questions = await Question.find({ _id: { $in: questionIds } }).populate('quizId');
+    const questionMap = Object.fromEntries(questions.map(q => [q._id.toString(), q]));
+    
+    const topWrongQuestions = topWrongQuestionsAggr.map(q => {
+      const question = questionMap[q._id.toString()] as any;
+      return {
+        questionId: q._id,
+        quizId: question?.quizId?._id || null,
+        quizTitle: question?.quizId?.title || 'Unknown',
+        wrongAnswers: q.wrongAnswers,
+        totalAnswers: q.totalAnswers,
+        wrongRate: q.totalAnswers > 0 ? q.wrongAnswers / q.totalAnswers : 0
+      };
     });
 
     return {
       summary: {
         totalQuizzes, publishedQuizzes, draftQuizzes, deletedQuizzes, startedSessions, completedSessions,
         completionRate: startedSessions > 0 ? (completedSessions / startedSessions) : 0,
-        averageScorePercentage: 0
+        averageScorePercentage
       },
       sessionsTrend: trendDates.map(date => trendMap[date] || { date, started: 0, completed: 0 }),
-      topQuizzes: [],
-      topWrongQuestions: []
+      topQuizzes,
+      topWrongQuestions
     };
   }
 
@@ -380,22 +453,85 @@ export class DashboardService {
 
     const messagesAggr = await Message.aggregate([
       { $match: { createdAt: { $gte: from, $lte: to } } },
-      { $group: { _id: { $dateToString: { format, date: '$createdAt' } }, tokens: { $sum: '$tokensUsed' } } }
+      { $group: { _id: { $dateToString: { format, date: '$createdAt' } }, 
+                  promptTokens: { $sum: { $cond: [{ $eq: ['$isFromAi', false] }, { $ifNull: ['$token', 0] }, 0] } },
+                  completionTokens: { $sum: { $cond: [{ $eq: ['$isFromAi', true] }, { $ifNull: ['$token', 0] }, 0] } },
+                  totalTokens: { $sum: { $ifNull: ['$token', 0] } } } }
     ]);
-    const trendMap = Object.fromEntries(messagesAggr.map(d => [d._id, d.tokens]));
+    const trendMap = Object.fromEntries(messagesAggr.map(d => [d._id, d]));
 
     const usersAggr = await User.aggregate([
+      { $match: { role: UserRole.Customer, deletedAt: { $exists: false } } },
       { $group: { _id: null, totalRemaining: { $sum: '$token' }, usersZero: { $sum: { $cond: [{ $lte: ['$token', 0] }, 1, 0] } }, count: { $sum: 1 } } }
     ]);
     const totalRemaining = usersAggr.length > 0 ? usersAggr[0].totalRemaining : 0;
     const usersOutOfTokens = usersAggr.length > 0 ? usersAggr[0].usersZero : 0;
     const count = usersAggr.length > 0 ? usersAggr[0].count : 1;
 
+    const allTiers = await Tier.find();
+    const paidTierIds = allTiers.filter(t => t.amount > 0).map(t => t._id);
+    const freeTierId = allTiers.find(t => t.amount === 0)?._id;
+
+    const tokenBalanceByTierAggr = await User.aggregate([
+      { $match: { role: UserRole.Customer, deletedAt: { $exists: false } } },
+      { $group: {
+          _id: { $cond: [{ $in: ['$tierId', paidTierIds] }, '$tierId', freeTierId] },
+          users: { $sum: 1 },
+          remainingTokens: { $sum: { $ifNull: ['$token', 0] } },
+          usersOutOfTokens: { $sum: { $cond: [{ $lte: [{ $ifNull: ['$token', 0] }, 0] }, 1, 0] } }
+        }
+      }
+    ]);
+    const tierMap = Object.fromEntries(allTiers.map(t => [t._id.toString(), t.title]));
+    const tokenBalanceByTier = tokenBalanceByTierAggr.map(r => ({
+      tierId: r._id,
+      tierTitle: tierMap[r._id?.toString()] || 'free',
+      users: r.users,
+      remainingTokens: r.remainingTokens,
+      averageRemainingTokens: r.users > 0 ? r.remainingTokens / r.users : 0,
+      usersOutOfTokens: r.usersOutOfTokens
+    })).sort((a, b) => b.users - a.users);
+
+    const topUsersAggr = await Message.aggregate([
+      { $match: { createdAt: { $gte: from, $lte: to } } },
+      { $lookup: { from: 'chatsessions', localField: 'sessionId', foreignField: '_id', as: 'session' } },
+      { $unwind: '$session' },
+      { $group: {
+          _id: '$session.uid',
+          promptTokens: { $sum: { $cond: [{ $eq: ['$isFromAi', false] }, { $ifNull: ['$token', 0] }, 0] } },
+          completionTokens: { $sum: { $cond: [{ $eq: ['$isFromAi', true] }, { $ifNull: ['$token', 0] }, 0] } },
+          totalTokens: { $sum: { $ifNull: ['$token', 0] } }
+        }
+      },
+      { $sort: { totalTokens: -1, promptTokens: -1 } },
+      { $limit: 10 }
+    ]);
+    
+    const userIds = topUsersAggr.map(u => u._id);
+    const users = await User.find({ _id: { $in: userIds } });
+    const userMap = Object.fromEntries(users.map(u => [u._id.toString(), u]));
+
+    const topUsersByTokenUsage = topUsersAggr.map(u => {
+      const user = userMap[u._id.toString()];
+      const tId = (user?.tierId && paidTierIds.find(p => p.toString() === user.tierId.toString())) ? user.tierId : freeTierId;
+      return {
+        uid: u._id,
+        userName: user?.username || user?.fullName || 'Unknown',
+        email: user?.email || '',
+        tierId: tId,
+        tierTitle: tierMap[tId?.toString()] || 'free',
+        promptTokens: u.promptTokens,
+        completionTokens: u.completionTokens,
+        totalTokens: u.totalTokens,
+        remainingTokens: user?.token || 0
+      };
+    });
+
     return {
       summary: { 
-        promptTokens: 0, 
-        completionTokens: 0, 
-        totalTokens: await Message.aggregate([{ $group: { _id: null, t: { $sum: '$tokensUsed' } } }]).then(r => r[0]?.t || 0), 
+        promptTokens: await Message.aggregate([{ $match: { isFromAi: false } }, { $group: { _id: null, t: { $sum: '$token' } } }]).then(r => r[0]?.t || 0), 
+        completionTokens: await Message.aggregate([{ $match: { isFromAi: true } }, { $group: { _id: null, t: { $sum: '$token' } } }]).then(r => r[0]?.t || 0), 
+        totalTokens: await Message.aggregate([{ $group: { _id: null, t: { $sum: '$token' } } }]).then(r => r[0]?.t || 0), 
         remainingTokens: totalRemaining, 
         averageRemainingTokens: totalRemaining / count, 
         usersOutOfTokens, 
@@ -403,12 +539,12 @@ export class DashboardService {
       },
       trend: trendDates.map(date => ({
         date,
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: trendMap[date] || 0
+        promptTokens: trendMap[date]?.promptTokens || 0,
+        completionTokens: trendMap[date]?.completionTokens || 0,
+        totalTokens: trendMap[date]?.totalTokens || 0
       })),
-      tokenBalanceByTier: [],
-      topUsersByTokenUsage: []
+      tokenBalanceByTier,
+      topUsersByTokenUsage
     };
   }
 }
