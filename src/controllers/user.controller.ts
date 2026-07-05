@@ -37,6 +37,15 @@ export class UserController {
     }
   }
 
+  static async getMyDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await UserService.getMyDashboard(req.user!.id);
+      sendSuccess(res, data, 'User dashboard retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.updateProfile(req.user!.id, req.body);

@@ -865,6 +865,11 @@ export class QuizService {
     const contextIdStr = (first['contextId'] || '').trim();
     if (!contextIdStr) throw new AppError('contextId không được để trống', 400);
 
+    const mongoose = (await import('mongoose')).default;
+    if (!mongoose.Types.ObjectId.isValid(contextIdStr)) {
+      throw new AppError(`HistoricalContext not found for contextId: ${contextIdStr}`, 404);
+    }
+
     const context = await HistoricalContext.findById(contextIdStr);
     if (!context) {
       throw new AppError(`HistoricalContext not found for contextId: ${contextIdStr}`, 404);
