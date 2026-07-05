@@ -513,13 +513,13 @@ export class DashboardService {
 
     const topUsersByTokenUsage = topUsersAggr.map(u => {
       const user = userMap[u._id.toString()];
-      const tId = (user?.tierId && paidTierIds.find(p => p.toString() === user.tierId.toString())) ? user.tierId : freeTierId;
+      const tId = (user?.tierId && paidTierIds.find(p => p.toString() === user.tierId?.toString())) ? user.tierId : freeTierId;
       return {
         uid: u._id,
-        userName: user?.username || user?.fullName || 'Unknown',
+        userName: user?.userName || user?.fullName || 'Unknown',
         email: user?.email || '',
         tierId: tId,
-        tierTitle: tierMap[tId?.toString()] || 'free',
+        tierTitle: tierMap[tId?.toString() || ''] || 'free',
         promptTokens: u.promptTokens,
         completionTokens: u.completionTokens,
         totalTokens: u.totalTokens,
