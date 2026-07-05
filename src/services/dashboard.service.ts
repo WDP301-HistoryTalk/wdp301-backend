@@ -297,20 +297,25 @@ export class DashboardService {
   static async getTiers(fromStr?: string, toStr?: string, _granularity: string = 'day') {
     const activeTiers = await Tier.countDocuments({ isActive: true });
     
-    const paidUsers = await User.countDocuments({ tierId: { $ne: null }, role: UserRole.Customer });
-    const freeUsers = await User.countDocuments({ tierId: null, role: UserRole.Customer });
+    const allTiers = await Tier.find();
+    const paidTierIds = allTiers.filter(t => t.amount > 0).map(t => t._id);
+    const freeTierIds = allTiers.filter(t => t.amount === 0).map(t => t._id);
+    
+    const paidUsers = await User.countDocuments({ tierId: { $in: paidTierIds }, role: UserRole.Customer });
+    const freeUsers = await User.countDocuments({ 
+      role: UserRole.Customer, 
+      $or: [{ tierId: { $in: freeTierIds } }, { tierId: null }] 
+    });
     
     const expiringSoonDate = new Date();
     expiringSoonDate.setDate(expiringSoonDate.getDate() + 7);
-    const expiringSoonSubscriptions = await User.countDocuments({ tierId: { $ne: null }, tierExpiresAt: { $lt: expiringSoonDate, $gt: new Date() } });
+    const expiringSoonSubscriptions = await User.countDocuments({ tierId: { $in: paidTierIds }, tierExpiresAt: { $lt: expiringSoonDate, $gt: new Date() } });
 
     const usersByTierAggr = await User.aggregate([
-      { $match: { tierId: { $ne: null } } },
+      { $match: { tierId: { $ne: null }, role: UserRole.Customer } },
       { $group: { _id: '$tierId', count: { $sum: 1 } } }
     ]);
-    const tierIds = usersByTierAggr.map(r => r._id);
-    const tiers = await Tier.find({ _id: { $in: tierIds } });
-    const tierMap = Object.fromEntries(tiers.map(t => [t._id.toString(), t.title]));
+    const tierMap = Object.fromEntries(allTiers.map(t => [t._id.toString(), t.title]));
 
     const usersByTier = usersByTierAggr.map(r => ({
       tierId: r._id,
