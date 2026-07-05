@@ -273,10 +273,9 @@ export class DashboardService {
     const trendMap: Record<string, any> = {};
     trendAggr.forEach(t => {
       const date = t._id.date;
-      if (!trendMap[date]) trendMap[date] = { date, total: 0, successful: 0, failed: 0 };
-      trendMap[date].total += t.count;
-      if (t._id.status === OrderStatus.Paid) trendMap[date].successful += t.count;
-      if (t._id.status === 'failed' || t._id.status === OrderStatus.Cancelled) trendMap[date].failed += t.count;
+      if (!trendMap[date]) trendMap[date] = { date, success: 0, failed: 0 };
+      if (t._id.status === OrderStatus.Paid) trendMap[date].success += t.count;
+      if (t._id.status === 'failed') trendMap[date].failed += t.count;
     });
 
     return {
@@ -288,9 +287,9 @@ export class DashboardService {
         expiredOrders: counts[OrderStatus.Expired] || 0,
         failedOrders: counts['failed'] || 0,
         successfulTransactions: counts[OrderStatus.Paid] || 0,
-        failedTransactions: (counts['failed'] || 0) + (counts[OrderStatus.Cancelled] || 0)
+        failedTransactions: counts['failed'] || 0
       },
-      transactionTrend: trendDates.map(date => trendMap[date] || { date, total: 0, successful: 0, failed: 0 })
+      transactionTrend: trendDates.map(date => trendMap[date] || { date, success: 0, failed: 0 })
     };
   }
 
