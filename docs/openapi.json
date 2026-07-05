@@ -197,6 +197,240 @@
           }
         }
       },
+      "CreatedByInfo": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "uid": {
+            "type": "string"
+          },
+          "userName": {
+            "type": "string"
+          }
+        }
+      },
+      "ContextInfo": {
+        "type": "object",
+        "properties": {
+          "contextId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "CharacterEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "era": {
+            "type": "string",
+            "enum": [
+              "ANCIENT",
+              "MEDIEVAL",
+              "MODERN",
+              "CONTEMPORARY"
+            ]
+          },
+          "year": {
+            "type": "integer"
+          }
+        }
+      },
+      "CharacterSummary": {
+        "type": "object",
+        "properties": {
+          "characterId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "background": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "modelUrl": {
+            "type": "string"
+          },
+          "personality": {
+            "type": "string"
+          },
+          "bornYear": {
+            "type": "integer"
+          },
+          "bornMonth": {
+            "type": "integer"
+          },
+          "bornDay": {
+            "type": "integer"
+          },
+          "isBornBc": {
+            "type": "boolean"
+          },
+          "deathYear": {
+            "type": "integer"
+          },
+          "deathMonth": {
+            "type": "integer"
+          },
+          "deathDay": {
+            "type": "integer"
+          },
+          "isDeathBc": {
+            "type": "boolean"
+          },
+          "isPublished": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DRAFT",
+              "INACTIVE"
+            ]
+          },
+          "era": {
+            "type": "string",
+            "enum": [
+              "ANCIENT",
+              "MEDIEVAL",
+              "MODERN",
+              "CONTEMPORARY"
+            ],
+            "nullable": true
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharacterEvent"
+            }
+          },
+          "context": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContextInfo"
+              }
+            ],
+            "nullable": true
+          },
+          "contexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextInfo"
+            }
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/CreatedByInfo"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "HistoricalContextSummary": {
+        "type": "object",
+        "properties": {
+          "contextId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "era": {
+            "type": "string",
+            "enum": [
+              "ANCIENT",
+              "MEDIEVAL",
+              "MODERN",
+              "CONTEMPORARY"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "WAR",
+              "POLITICS",
+              "CULTURE",
+              "SCIENCE",
+              "RELIGION",
+              "OTHER"
+            ],
+            "nullable": true
+          },
+          "year": {
+            "type": "integer"
+          },
+          "startYear": {
+            "type": "integer"
+          },
+          "endYear": {
+            "type": "integer"
+          },
+          "period": {
+            "type": "string",
+            "nullable": true
+          },
+          "yearLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "isBC": {
+            "type": "boolean"
+          },
+          "location": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "videoUrl": {
+            "type": "string"
+          },
+          "isPublished": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DRAFT",
+              "INACTIVE"
+            ]
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/CreatedByInfo"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedDate": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ErrorResponse": {
         "type": "object",
         "properties": {
@@ -1116,9 +1350,96 @@
           "Characters"
         ],
         "summary": "List characters",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "default": ""
+          },
+          {
+            "in": "query",
+            "name": "era",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ANCIENT",
+                "MEDIEVAL",
+                "MODERN",
+                "CONTEMPORARY"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 8
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/CharacterSummary"
+                          }
+                        },
+                        "totalElements": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        },
+                        "currentPage": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "hasNext": {
+                          "type": "boolean"
+                        },
+                        "hasPrevious": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -2382,9 +2703,111 @@
           "Historical Contexts"
         ],
         "summary": "List historical contexts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "default": ""
+          },
+          {
+            "in": "query",
+            "name": "era",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ANCIENT",
+                "MEDIEVAL",
+                "MODERN",
+                "CONTEMPORARY"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WAR",
+                "POLITICS",
+                "CULTURE",
+                "SCIENCE",
+                "RELIGION",
+                "OTHER"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 6
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Historical contexts retrieved successfully"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/HistoricalContextSummary"
+                          }
+                        },
+                        "totalElements": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        },
+                        "currentPage": {
+                          "type": "integer"
+                        },
+                        "pageSize": {
+                          "type": "integer"
+                        },
+                        "hasNext": {
+                          "type": "boolean"
+                        },
+                        "hasPrevious": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },

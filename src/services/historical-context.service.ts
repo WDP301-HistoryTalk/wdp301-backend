@@ -30,6 +30,7 @@ export interface ListHistoricalContextsQuery {
   page?: number;
   limit?: number;
   era?: EventEra;
+  category?: EventCategory;
   includeUnpublished?: boolean; // For admin/staff only
   includeInactive?: boolean; // For admin/staff only
 }
@@ -69,7 +70,7 @@ export class HistoricalContextService {
   }
 
   static async list(query: ListHistoricalContextsQuery): Promise<PaginationResult<any>> {
-    const { search, era, page = 1, limit = 6, includeUnpublished, includeInactive } = query;
+    const { search, era, category, page = 1, limit = 6, includeUnpublished, includeInactive } = query;
     // FE sends 1-indexed, convert to 0-indexed for DB
     const currentPage = Math.max(0, page - 1);
     const pageSize = limit;
@@ -92,6 +93,10 @@ export class HistoricalContextService {
 
     if (era) {
       filter.era = era;
+    }
+
+    if (category) {
+      filter.category = category;
     }
 
     const [contexts, totalElements] = await Promise.all([

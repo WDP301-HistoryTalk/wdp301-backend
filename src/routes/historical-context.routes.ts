@@ -20,9 +20,66 @@ const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
  *   get:
  *     tags: [Historical Contexts]
  *     summary: List historical contexts
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         default: ''
+ *       - in: query
+ *         name: era
+ *         schema:
+ *           type: string
+ *           enum: [ANCIENT, MEDIEVAL, MODERN, CONTEMPORARY]
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [WAR, POLITICS, CULTURE, SCIENCE, RELIGION, OTHER]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 6
  *     responses:
  *       200:
- *         description: Historical contexts retrieved successfully
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     content:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/HistoricalContextSummary'
+ *                     totalElements:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     pageSize:
+ *                       type: integer
+ *                     hasNext:
+ *                       type: boolean
+ *                     hasPrevious:
+ *                       type: boolean
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
  */
 router.get('/', optionalAuth, HistoricalContextController.list);
 

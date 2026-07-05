@@ -79,7 +79,7 @@ export class CharacterService {
       await character.populate({
         path: 'contextIds',
         model: 'HistoricalContext',
-        select: 'name description era',
+        select: 'name description era year',
       });
     }
     
@@ -114,7 +114,7 @@ export class CharacterService {
 
     const [characters, totalElements] = await Promise.all([
       Character.find(filter)
-        .populate('contextIds', 'name')
+        .populate('contextIds', 'name era year')
         .populate('createdBy', 'userName')
         .skip(skip)
         .limit(pageSize)
@@ -154,7 +154,7 @@ export class CharacterService {
     }
 
     const characters = await Character.find(filter)
-      .populate('contextIds', 'name')
+      .populate('contextIds', 'name era year')
       .populate('createdBy', 'userName');
 
     return characters.map(char => this.mapToResponse(char));
@@ -179,7 +179,7 @@ export class CharacterService {
       updateQuery,
       { returnDocument: 'after', runValidators: true }
     )
-      .populate('contextIds', 'name')
+      .populate('contextIds', 'name era year')
       .populate('createdBy', 'userName');
 
     if (!character) {
@@ -213,7 +213,7 @@ export class CharacterService {
       { deletedAt: new Date(), isActive: false },
       { returnDocument: 'after' }
     )
-      .populate('contextIds', 'name')
+      .populate('contextIds', 'name era year')
       .populate('createdBy', 'userName');
 
     if (!character) {
@@ -246,7 +246,7 @@ export class CharacterService {
       updateQuery,
       { returnDocument: 'after' }
     )
-      .populate('contextIds', 'name')
+      .populate('contextIds', 'name era year')
       .populate('createdBy', 'userName');
 
     if (!updated) {
@@ -348,6 +348,15 @@ export class CharacterService {
 
     const primaryContext = contexts.length > 0 ? contexts[0] : null;
 
+    const events = (char.contextIds || [])
+      .filter((ctx: any) => ctx != null && (ctx._id || ctx.id))
+      .map((ctx: any) => ({
+        id: (ctx._id || ctx.id).toString(),
+        name: ctx.name || 'Unknown',
+        era: ctx.era || null,
+        year: ctx.year ?? null,
+      }));
+
     return {
       characterId: charId,
       name: char.name,
@@ -366,8 +375,8 @@ export class CharacterService {
       isDeathBc: char.isDeathBc,
       isPublished: isPublished,
       status: status,
-      era: char.era || null,
-      events: [],
+      era: char.era || (events.length > 0 ? events[0].era : null),
+      events,
       context: primaryContext,
       contexts: contexts,
       createdBy: char.createdBy ? {

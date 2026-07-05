@@ -20,6 +20,61 @@ const staffOrAdmin = [UserRole.ContentAdmin, UserRole.SystemAdmin];
  *   get:
  *     tags: [Characters]
  *     summary: List characters
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         default: ''
+ *       - in: query
+ *         name: era
+ *         schema:
+ *           type: string
+ *           enum: [ANCIENT, MEDIEVAL, MODERN, CONTEMPORARY]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 8
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     content:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/CharacterSummary'
+ *                     totalElements:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     pageSize:
+ *                       type: integer
+ *                     hasNext:
+ *                       type: boolean
+ *                     hasPrevious:
+ *                       type: boolean
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
  */
 router.get('/', optionalAuth, CharacterController.list);
 

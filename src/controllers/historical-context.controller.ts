@@ -1,23 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
 import { HistoricalContextService } from '../services/historical-context.service';
 import { sendSuccess } from '../utils/response';
-import { EventEra, UserRole } from '../types/enums';
+import { EventEra, EventCategory, UserRole } from '../types/enums';
 
 export class HistoricalContextController {
   static async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { search, page = '1', limit = '10', era } = req.query;
+      const { search, page = '1', limit = '6', era, category } = req.query;
       // Check if user is admin/staff to include unpublished and inactive contexts
       const userRole = req.user?.role;
       const isAdmin = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
       const includeUnpublished = isAdmin;
       const includeInactive = false;
-      
+
       const result = await HistoricalContextService.list({
         search: search as string,
         page: parseInt(page as string, 10),
         limit: parseInt(limit as string, 10),
         era: era as EventEra,
+        category: category as EventCategory,
         includeUnpublished,
         includeInactive,
       });
