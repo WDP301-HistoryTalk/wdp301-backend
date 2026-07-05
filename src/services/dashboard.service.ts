@@ -315,7 +315,7 @@ export class DashboardService {
     const usersByTier = usersByTierAggr.map(r => ({
       tierId: r._id,
       tierTitle: tierMap[r._id.toString()] || 'Unknown',
-      activeUsers: r.count
+      users: r.count
     }));
 
     return {
