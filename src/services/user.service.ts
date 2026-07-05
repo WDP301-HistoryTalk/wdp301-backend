@@ -8,7 +8,8 @@ import { UserRole, TierTitle, OrderStatus } from '../types/enums';
 import Order from '../models/order.model';
 import Tier from '../models/tier.model';
 import bcrypt from 'bcryptjs';
-
+import mongoose from 'mongoose';
+import Message from '../models/message.model';
 export class UserService {
 
 
@@ -223,5 +224,109 @@ export class UserService {
       { $unset: { deletedAt: '' }, $set: { isActive: true } }
     );
     return result.modifiedCount;
+  }
+
+  static async getMyDashboard(userId: string) {
+    const uid = new mongoose.Types.ObjectId(userId);
+
+    // 1. Learning Analytics (Quiz)
+    const quizSessions = await QuizSession.find({ uid, endTime: { $exists: true } }).populate('quizId');
+    const totalQuizzesAttempted = quizSessions.length;
+    
+    let totalScorePercentage = 0;
+    const eraCounts: Record<string, number> = {};
+    const recentQuizzes = quizSessions
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 5)
+      .map(s => ({
+        sessionId: s._id,
+        quizTitle: (s.quizId as any)?.title || 'Unknown',
+        percentage: s.percentage,
+        completedAt: s.endTime,
+      }));
+
+    for (const s of quizSessions) {
+      totalScorePercentage += s.percentage || 0;
+      const era = (s.quizId as any)?.era;
+      if (era) {
+        eraCounts[era] = (eraCounts[era] || 0) + 1;
+      }
+    }
+
+    const averageQuizScore = totalQuizzesAttempted > 0 ? Math.round(totalScorePercentage / totalQuizzesAttempted) : 0;
+
+    // 2. AI Usage & Token Analytics
+    const user = await User.findById(uid).populate('tierId');
+    
+    const chatSessions = await ChatSession.find({ uid }).select('_id characterId');
+    const sessionIds = chatSessions.map(s => s._id);
+
+    const tokenConsumption = await Message.aggregate([
+      { $match: { sessionId: { $in: sessionIds } } },
+      {
+        $group: {
+          _id: null,
+          totalTokens: { $sum: '$token' },
+          promptTokens: { $sum: { $cond: [{ $eq: ['$isFromAi', false] }, '$token', 0] } },
+          completionTokens: { $sum: { $cond: [{ $eq: ['$isFromAi', true] }, '$token', 0] } }
+        }
+      }
+    ]);
+
+    // Top Characters
+    const topCharactersAggr = await Message.aggregate([
+      { $match: { sessionId: { $in: sessionIds } } },
+      {
+        $lookup: {
+          from: 'chatsessions',
+          localField: 'sessionId',
+          foreignField: '_id',
+          as: 'session'
+        }
+      },
+      { $unwind: '$session' },
+      {
+        $group: {
+          _id: '$session.characterId',
+          messageCount: { $sum: 1 },
+          tokenUsed: { $sum: '$token' }
+        }
+      },
+      { $sort: { messageCount: -1 } },
+      { $limit: 3 },
+      {
+        $lookup: {
+          from: 'characters',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'character'
+        }
+      },
+      { $unwind: { path: '$character', preserveNullAndEmptyArrays: true } }
+    ]);
+
+    const topCharacters = topCharactersAggr.map(c => ({
+      characterId: c._id,
+      name: c.character?.name || 'Unknown Character',
+      messageCount: c.messageCount,
+      tokenUsed: c.tokenUsed
+    }));
+
+    return {
+      learning: {
+        totalQuizzesAttempted,
+        averageScorePercentage: averageQuizScore,
+        eraDistribution: eraCounts,
+        recentQuizzes
+      },
+      aiUsage: {
+        currentBalance: user?.token || 0,
+        tier: (user?.tierId as any)?.title || 'free',
+        totalTokensUsed: tokenConsumption[0]?.totalTokens || 0,
+        promptTokens: tokenConsumption[0]?.promptTokens || 0,
+        completionTokens: tokenConsumption[0]?.completionTokens || 0,
+        topCharacters
+      }
+    };
   }
 }

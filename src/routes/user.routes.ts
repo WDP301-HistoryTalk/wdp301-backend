@@ -164,6 +164,68 @@ router.use(authenticate);
  *       400:
  *         description: Passwords do not match or incorrect current password
  */
+
+/**
+ * @openapi
+ * /users/me/dashboard:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get the authenticated user's personalized dashboard analytics (learning and token usage)
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User dashboard retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: "User dashboard retrieved successfully" }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     learning:
+ *                       type: object
+ *                       properties:
+ *                         totalQuizzesAttempted: { type: integer, example: 15 }
+ *                         averageScorePercentage: { type: number, example: 78 }
+ *                         eraDistribution:
+ *                           type: object
+ *                           additionalProperties:
+ *                             type: integer
+ *                           example: { "MODERN": 10, "MEDIEVAL": 5 }
+ *                         recentQuizzes:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               sessionId: { type: string, example: "64a1b2..." }
+ *                               quizTitle: { type: string, example: "Điện Biên Phủ" }
+ *                               percentage: { type: number, example: 85 }
+ *                               completedAt: { type: string, format: "date-time" }
+ *                     aiUsage:
+ *                       type: object
+ *                       properties:
+ *                         currentBalance: { type: integer, example: 1500 }
+ *                         tier: { type: string, example: "Premium" }
+ *                         totalTokensUsed: { type: integer, example: 4500 }
+ *                         promptTokens: { type: integer, example: 1000 }
+ *                         completionTokens: { type: integer, example: 3500 }
+ *                         topCharacters:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               characterId: { type: string, example: "64a1b..." }
+ *                               name: { type: string, example: "Hồ Chí Minh" }
+ *                               messageCount: { type: integer, example: 42 }
+ *                               tokenUsed: { type: integer, example: 3000 }
+ *       401:
+ *         description: Missing or invalid token
+ */
+router.get('/me/dashboard', UserController.getMyDashboard);
 router.get('/me', UserController.getProfile);
 router.patch('/me', UserController.updateProfile);
 router.patch('/me/password', UserController.changePassword);
