@@ -135,7 +135,7 @@ export class DashboardService {
     return {
       historicalContexts: { total: totalContexts, published: publishedContexts, active: activeContexts },
       characters: { total: totalCharacters, published: publishedCharacters, active: activeCharacters },
-      documents: { total: 0, active: 0 }
+      documents: { total: 0, published: 0, active: 0 }
     };
   }
 
@@ -356,9 +356,9 @@ export class DashboardService {
     const trendMap: Record<string, any> = {};
     sessionsTrendAggr.forEach(t => {
       const date = t._id.date;
-      if (!trendMap[date]) trendMap[date] = { date, startedSessions: 0, completedSessions: 0 };
-      if (t._id.status === 'completed') trendMap[date].completedSessions += t.count;
-      else trendMap[date].startedSessions += t.count;
+      if (!trendMap[date]) trendMap[date] = { date, started: 0, completed: 0 };
+      if (t._id.status === 'completed') trendMap[date].completed += t.count;
+      else trendMap[date].started += t.count;
     });
 
     return {
@@ -367,7 +367,7 @@ export class DashboardService {
         completionRate: startedSessions > 0 ? (completedSessions / startedSessions) : 0,
         averageScorePercentage: 0
       },
-      sessionsTrend: trendDates.map(date => trendMap[date] || { date, startedSessions: 0, completedSessions: 0 }),
+      sessionsTrend: trendDates.map(date => trendMap[date] || { date, started: 0, completed: 0 }),
       topQuizzes: [],
       topWrongQuestions: []
     };
@@ -403,8 +403,9 @@ export class DashboardService {
       },
       trend: trendDates.map(date => ({
         date,
-        tokensUsed: trendMap[date] || 0,
-        estimatedCost: 0
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: trendMap[date] || 0
       })),
       tokenBalanceByTier: [],
       topUsersByTokenUsage: []
