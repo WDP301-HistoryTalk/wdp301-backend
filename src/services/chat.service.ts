@@ -347,7 +347,7 @@ export class ChatService {
         messageHistory: [],
         characterData: buildCharacterPayload(character),
         contextData: context ? buildContextPayload(context) : null,
-        skipSuggestions: false,
+        skipSuggestions: true,
       };
 
       const aiRes = await axios.post(`${AI_SERVICE_URL}/v1/ai/chat`, payload, {
@@ -356,8 +356,15 @@ export class ChatService {
       });
 
       const data = aiRes.data?.data || aiRes.data;
-      const greetingContent: string = data?.message || data?.response || data?.content || '';
-      const suggestedQuestions: string[] = data?.suggestedQuestions || [];
+      const greetingContent: string = data?.message || data?.response || data?.content || `Xin chào, ta là ${character.name}. Ngươi muốn biết điều gì về ta?`;
+      const aiSuggested: string[] = data?.suggestedQuestions || [];
+
+      // Inject default questions if AI skipped generating them
+      const suggestedQuestions = aiSuggested.length > 0 ? aiSuggested : [
+        `Ngài có thể kể cho ta nghe về cuộc đời của ngài không?`,
+        `Chiến công hoặc sự kiện đáng nhớ nhất của ngài là gì?`,
+        `Ngài có thể chia sẻ thêm về bối cảnh lịch sử thời đó không?`
+      ];
 
       if (greetingContent) {
         await Message.create({
