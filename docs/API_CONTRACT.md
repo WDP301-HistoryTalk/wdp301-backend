@@ -683,6 +683,7 @@ Lấy lịch sử chat của user đang auth, **đã group theo context**.
   durationSeconds: number
   playCount: number
   rating: number
+  contextId?: string
   contextTitle?: string
   grade?: 10 | 11 | 12
   chapterNumber?: number
@@ -733,6 +734,7 @@ Lấy lịch sử chat của user đang auth, **đã group theo context**.
       "durationSeconds": 900,
       "playCount": 3241,
       "rating": 4.8,
+      "contextId": "string",
       "contextTitle": "string"
     }
   ]
