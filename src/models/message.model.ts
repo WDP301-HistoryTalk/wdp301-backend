@@ -7,6 +7,7 @@ export interface IMessage extends Document {
   content: string;
   messageType?: string;
   suggestedQuestions?: string[];
+  quotes?: string[];
   token?: number;
   isActive: boolean;
   deletedAt?: Date;
@@ -21,6 +22,7 @@ const messageSchema = new Schema<IMessage>(
     content: { type: String, required: true },
     messageType: { type: String, default: 'TEXT' },
     suggestedQuestions: { type: [String] },
+    quotes: { type: [String] },
     token: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     deletedAt: { type: Date },

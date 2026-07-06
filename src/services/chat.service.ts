@@ -17,6 +17,7 @@ export interface MessageResponse {
   role: 'USER' | 'ASSISTANT';
   content: string;
   messageType: string;
+  quotes?: string[];
   createdAt: Date;
 }
 
@@ -86,6 +87,7 @@ function mapToMessageResponse(msg: IMessage): MessageResponse {
     role: msg.isFromAi ? 'ASSISTANT' : 'USER',
     content: msg.content,
     messageType: msg.messageType || 'TEXT',
+    quotes: msg.quotes || [],
     createdAt: msg.createdAt,
   };
 }
@@ -639,6 +641,7 @@ export class ChatService {
       let promptToken = 0;
       let completionToken = 0;
       let suggestedQuestions: string[] = [];
+      let quotesUsed: string[] = [];
 
       const response = await axios.post(`${AI_SERVICE_URL}/v1/ai/chat/stream`, payload, {
         headers: { 'Content-Type': 'application/json' },
@@ -667,6 +670,7 @@ export class ChatService {
                 promptToken = node.data.promptTokens || 0;
                 completionToken = node.data.completionTokens || 0;
                 suggestedQuestions = node.data.suggestedQuestions || [];
+                quotesUsed = node.data.quotes_used || [];
                 onData(line + '\n\n');
               } else if (node.type === 'error') {
                 onData(line + '\n\n');
@@ -688,6 +692,7 @@ export class ChatService {
             isFromAi: true,
             content: fullMessage,
             suggestedQuestions,
+            quotes: quotesUsed,
             token: completionToken,
             messageType: messageType || 'TEXT',
           });
