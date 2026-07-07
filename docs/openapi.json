@@ -1749,6 +1749,32 @@
         }
       }
     },
+    "/characters/{id}/documents": {
+      "get": {
+        "tags": [
+          "Characters"
+        ],
+        "summary": "Get documents for a character",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documents retrieved successfully"
+          },
+          "404": {
+            "description": "Character not found"
+          }
+        }
+      }
+    },
     "/chat/history": {
       "get": {
         "tags": [
@@ -3004,6 +3030,32 @@
         "responses": {
           "200": {
             "description": "Historical context active status toggled successfully"
+          },
+          "404": {
+            "description": "Historical context not found"
+          }
+        }
+      }
+    },
+    "/historical-contexts/{id}/documents": {
+      "get": {
+        "tags": [
+          "Historical Contexts"
+        ],
+        "summary": "Get documents for a historical context",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documents retrieved successfully"
           },
           "404": {
             "description": "Historical context not found"
