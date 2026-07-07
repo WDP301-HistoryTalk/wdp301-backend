@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { HistoricalContextService } from '../services/historical-context.service';
+import DocumentService from '../services/document.service';
 import { sendSuccess } from '../utils/response';
 import { EventEra, EventCategory, UserRole } from '../types/enums';
 
@@ -89,6 +90,17 @@ export class HistoricalContextController {
       const { id } = req.params;
       const context = await HistoricalContextService.toggleActive(id as string);
       sendSuccess(res, context, 'Historical context active status toggled');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getDocuments(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      // We can reuse the DocumentService to fetch documents for this context ID
+      const docs = await DocumentService.getDocumentsByContext(id as string);
+      sendSuccess(res, docs, 'Documents retrieved successfully');
     } catch (error) {
       next(error);
     }

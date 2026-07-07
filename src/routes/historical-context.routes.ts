@@ -227,4 +227,24 @@ router.patch('/:id/soft-delete', authenticate, authorize(...staffOrAdmin), Histo
  */
 router.patch('/:id/toggle-active', authenticate, authorize(...staffOrAdmin), HistoricalContextController.toggleActive);
 
+/**
+ * @openapi
+ * /historical-contexts/{id}/documents:
+ *   get:
+ *     tags: [Historical Contexts]
+ *     summary: Get documents for a historical context
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Documents retrieved successfully
+ *       404:
+ *         description: Historical context not found
+ */
+router.get('/:id/documents', optionalAuth, HistoricalContextController.getDocuments);
+
 export default router;
