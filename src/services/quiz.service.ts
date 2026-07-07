@@ -30,6 +30,7 @@ export class QuizService {
     
     return quizzes.map(q => {
       const contextTitle = (q.contextId as any)?.name || '';
+      const contextId = (q.contextId as any)?._id?.toString() || q.contextId?.toString() || '';
       return {
         quizId: q._id.toString(),
         title: q.title,
@@ -42,6 +43,7 @@ export class QuizService {
         durationSeconds: q.durationSeconds || 0,
         playCount: q.playCount || 0,
         rating: q.rating || 0,
+        contextId,
         contextTitle,
       };
     });
@@ -80,6 +82,7 @@ export class QuizService {
       playCount: quiz.playCount || 0,
       userPlayCount,
       rating: quiz.rating || 0,
+      contextId: (quiz.contextId as any)?._id?.toString() || quiz.contextId?.toString() || '',
       contextTitle: (quiz.contextId as any)?.name || '',
     };
   }

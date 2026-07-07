@@ -114,6 +114,9 @@
           "rating": {
             "type": "number"
           },
+          "contextId": {
+            "type": "string"
+          },
           "contextTitle": {
             "type": "string"
           }
@@ -137,9 +140,6 @@
                   "DRAFT",
                   "DELETED"
                 ]
-              },
-              "contextId": {
-                "type": "string"
               },
               "createdBy": {
                 "type": "string"

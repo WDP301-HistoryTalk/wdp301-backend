@@ -51,6 +51,7 @@ const spec = swaggerJsdoc({
             durationSeconds: { type: 'integer', example: 900 },
             playCount: { type: 'integer' },
             rating: { type: 'number' },
+            contextId: { type: 'string' },
             contextTitle: { type: 'string' },
           },
         },
@@ -62,7 +63,6 @@ const spec = swaggerJsdoc({
               properties: {
                 isPublished: { type: 'boolean' },
                 status: { type: 'string', enum: ['ACTIVE', 'DRAFT', 'DELETED'] },
-                contextId: { type: 'string' },
                 createdBy: { type: 'string' },
                 createdDate: { type: 'string', format: 'date-time' },
                 updatedDate: { type: 'string', format: 'date-time' },
