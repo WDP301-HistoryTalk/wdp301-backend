@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CharacterService } from '../services/character.service';
+import DocumentService from '../services/document.service';
 import { sendSuccess } from '../utils/response';
 import { EventEra, UserRole } from '../types/enums';
 
@@ -141,6 +142,16 @@ export class CharacterController {
       }));
       
       sendSuccess(res, transformedContexts, 'Character contexts fetched successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getDocuments(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const docs = await DocumentService.getDocumentsByCharacter(id as string);
+      sendSuccess(res, docs, 'Documents retrieved successfully');
     } catch (error) {
       next(error);
     }

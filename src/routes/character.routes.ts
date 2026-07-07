@@ -275,4 +275,24 @@ router.delete('/:characterId/contexts/:contextId', authenticate, authorize(...st
  */
 router.get('/:characterId/contexts', optionalAuth, CharacterController.getContexts);
 
+/**
+ * @openapi
+ * /characters/{id}/documents:
+ *   get:
+ *     tags: [Characters]
+ *     summary: Get documents for a character
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Documents retrieved successfully
+ *       404:
+ *         description: Character not found
+ */
+router.get('/:id/documents', optionalAuth, CharacterController.getDocuments);
+
 export default router;
