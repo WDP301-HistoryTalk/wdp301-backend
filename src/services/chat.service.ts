@@ -6,6 +6,7 @@ import Character from '../models/character.model';
 import HistoricalContext from '../models/historical-context.model';
 import User from '../models/user.model';
 import { AppError } from '../utils/app-error';
+import { GamificationService } from './gamification.service';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
 
@@ -529,6 +530,9 @@ export class ChatService {
     session.lastMessageAt = new Date();
     await session.save();
 
+    // Gamification: tính quest "trò chuyện" (best-effort, không chặn response)
+    setImmediate(() => void GamificationService.recordProgress(uid, 'CHAT'));
+
     // Async title generation on first user message
     if (isFirstUserMessage) {
       setImmediate(() =>
@@ -707,6 +711,9 @@ export class ChatService {
 
           session.lastMessageAt = new Date();
           await session.save();
+
+          // Gamification: tính quest "trò chuyện" (best-effort)
+          setImmediate(() => void GamificationService.recordProgress(uid, 'CHAT'));
 
           if (isFirstUserMessage) {
             setImmediate(() =>

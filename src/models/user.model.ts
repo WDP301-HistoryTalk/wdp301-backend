@@ -17,6 +17,14 @@ export interface IUser extends Document {
   token: number;
   lastActiveDate?: Date;
   lastTokenResetAt?: Date;
+  /** Chuỗi ngày học liên tiếp (gamification). */
+  streakCount: number;
+  /** Ngày học gần nhất, dạng 'YYYY-MM-DD' theo giờ server. */
+  lastStudyDate?: string;
+  /** Chuỗi ngày học dài nhất từng đạt được. */
+  longestStreak: number;
+  /** Tổng số ngày có hoạt động học (mỗi ngày tính 1 lần). */
+  totalStudyDays: number;
   isActive: boolean;
   googleId?: string;
   refreshToken?: string;
@@ -55,6 +63,10 @@ const userSchema = new Schema<IUser>(
     token: { type: Number, default: 0 },
     lastActiveDate: { type: Date },
     lastTokenResetAt: { type: Date },
+    streakCount: { type: Number, default: 0 },
+    lastStudyDate: { type: String },
+    longestStreak: { type: Number, default: 0 },
+    totalStudyDays: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     googleId: { type: String, select: false },
     refreshToken: { type: String, select: false },

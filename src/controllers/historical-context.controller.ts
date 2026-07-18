@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { GamificationService } from '../services/gamification.service';
 import { HistoricalContextService } from '../services/historical-context.service';
 import DocumentService from '../services/document.service';
 import { sendSuccess } from '../utils/response';
@@ -39,6 +40,13 @@ export class HistoricalContextController {
       const includeInactive = isAdmin;
       
       const context = await HistoricalContextService.findById(id as string, includeUnpublished, includeInactive);
+
+      // Gamification: user đã đăng nhập mở chi tiết bối cảnh → tính quest "đọc"
+      const readerId = req.user?.id;
+      if (readerId) {
+        setImmediate(() => void GamificationService.recordProgress(readerId, 'READ_CONTEXT'));
+      }
+
       sendSuccess(res, context, 'Historical context fetched successfully');
     } catch (error) {
       next(error);

@@ -6,6 +6,7 @@ import AnswerDetail from '../models/answer-detail.model';
 import HistoricalContext from '../models/historical-context.model';
 import { AppError } from '../utils/app-error';
 import { QuizLevel, QuizStatus } from '../types/enums';
+import { GamificationService } from './gamification.service';
 
 export class QuizService {
   private static getQuizStatus(quiz: { deletedAt?: Date; isPublished?: boolean }): QuizStatus {
@@ -239,6 +240,9 @@ export class QuizService {
       session.save(),
       Quiz.findByIdAndUpdate(quizId, { $inc: { playCount: 1 } }),
     ]);
+
+    // Gamification: tính quest "làm quiz" (best-effort, không chặn response)
+    setImmediate(() => void GamificationService.recordProgress(userId, 'QUIZ'));
 
     return {
       resultId: session._id.toString(),
