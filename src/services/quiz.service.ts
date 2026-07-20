@@ -327,6 +327,27 @@ export class QuizService {
     const score = session.score ?? 0;
     const percentage = session.percentage ?? (totalQuestions > 0 ? Math.round((score / 10) * 100) : 0);
 
+    // Lan lam gan nhat truoc do cua CUNG quiz nay (de FE hien "so voi lan truoc").
+    const previousSession = quiz?._id
+      ? await QuizSession.findOne({
+          quizId: quiz._id,
+          uid: userId,
+          endTime: { $exists: true },
+          _id: { $ne: session._id },
+        }).sort({ endTime: -1 })
+      : null;
+    const previousAttempt = previousSession
+      ? {
+          score: previousSession.score ?? 0,
+          percentage:
+            previousSession.percentage ??
+            (previousSession.totalQuestions
+              ? Math.round(((previousSession.score ?? 0) / 10) * 100)
+              : 0),
+          completedAt: previousSession.endTime!.toISOString(),
+        }
+      : null;
+
     return {
       sessionId: session._id.toString(),
       quizId: quiz?._id?.toString() || '',
@@ -337,6 +358,7 @@ export class QuizService {
       limitedTime: session.limitedTime,
       startedAt: session.startTime.toISOString(),
       completedAt: session.endTime!.toISOString(),
+      previousAttempt,
       questions: questions.map(question => {
         const answer = answerMap.get(question._id.toString());
         return {

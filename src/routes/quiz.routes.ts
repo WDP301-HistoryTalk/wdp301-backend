@@ -111,6 +111,18 @@ router.get('/results/me', authenticate, QuizController.getMyResults);
  *                     completedAt:
  *                       type: string
  *                       format: date-time
+ *                     previousAttempt:
+ *                       type: object
+ *                       nullable: true
+ *                       description: Lan lam gan nhat truoc do cua cung quiz nay (null neu day la lan dau)
+ *                       properties:
+ *                         score:
+ *                           type: number
+ *                         percentage:
+ *                           type: integer
+ *                         completedAt:
+ *                           type: string
+ *                           format: date-time
  *                     questions:
  *                       type: array
  *                       items:
