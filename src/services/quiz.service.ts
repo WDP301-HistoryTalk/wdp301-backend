@@ -4,6 +4,8 @@ import Question from '../models/question.model';
 import QuizSession from '../models/quiz-session.model';
 import AnswerDetail from '../models/answer-detail.model';
 import HistoricalContext from '../models/historical-context.model';
+import QuizRating from '../models/quiz-rating.model';
+import QuestionReport from '../models/question-report.model';
 import { AppError } from '../utils/app-error';
 import { QuizLevel, QuizStatus } from '../types/enums';
 import { GamificationService } from './gamification.service';
@@ -44,6 +46,7 @@ export class QuizService {
         durationSeconds: q.durationSeconds || 0,
         playCount: q.playCount || 0,
         rating: q.rating || 0,
+        ratingCount: q.ratingCount || 0,
         contextId,
         contextTitle,
       };
@@ -62,13 +65,16 @@ export class QuizService {
       throw new AppError('Không tìm thấy quiz', 404);
     }
 
-    const userPlayCount = userId
-      ? await QuizSession.countDocuments({
-          quizId: quiz._id,
-          uid: userId,
-          endTime: { $exists: true },
-        })
-      : 0;
+    const [userPlayCount, myRating] = await Promise.all([
+      userId
+        ? QuizSession.countDocuments({
+            quizId: quiz._id,
+            uid: userId,
+            endTime: { $exists: true },
+          })
+        : 0,
+      userId ? QuizService.getMyRating(userId, quiz._id.toString()) : null,
+    ]);
 
     return {
       quizId: quiz._id.toString(),
@@ -83,6 +89,8 @@ export class QuizService {
       playCount: quiz.playCount || 0,
       userPlayCount,
       rating: quiz.rating || 0,
+      ratingCount: quiz.ratingCount || 0,
+      myRating,
       contextId: (quiz.contextId as any)?._id?.toString() || quiz.contextId?.toString() || '',
       contextTitle: (quiz.contextId as any)?.name || '',
     };
@@ -312,7 +320,7 @@ export class QuizService {
       endTime: { $exists: true },
     }).populate({
       path: 'quizId',
-      select: 'title',
+      select: 'title contextId',
     });
 
     if (!session) {
@@ -352,6 +360,7 @@ export class QuizService {
       sessionId: session._id.toString(),
       quizId: quiz?._id?.toString() || '',
       quizTitle: quiz?.title || 'Unknown Quiz',
+      contextId: quiz?.contextId?.toString() || '',
       score,
       totalQuestions,
       percentage,
@@ -372,6 +381,64 @@ export class QuizService {
         };
       }),
     };
+  }
+
+  /** Danh gia 1 quiz (1-5 sao). Moi user chi co 1 danh gia — danh gia lai se ghi de. */
+  static async rateQuiz(userId: string, quizId: string, value: number): Promise<{
+    rating: number;
+    ratingCount: number;
+    myRating: number;
+  }> {
+    if (!Number.isInteger(value) || value < 1 || value > 5) {
+      throw new AppError('value phai la so nguyen tu 1 den 5', 400);
+    }
+
+    const quiz = await Quiz.findOne({ _id: quizId, deletedAt: { $exists: false } });
+    if (!quiz) {
+      throw new AppError('Không tìm thấy quiz', 404);
+    }
+
+    await QuizRating.findOneAndUpdate(
+      { quizId: quiz._id, uid: userId },
+      { $set: { value } },
+      { upsert: true },
+    );
+
+    const stats = await QuizRating.aggregate<{ _id: null; avg: number; count: number }>([
+      { $match: { quizId: quiz._id } },
+      { $group: { _id: null, avg: { $avg: '$value' }, count: { $sum: 1 } } },
+    ]);
+
+    const avg = stats[0]?.avg ?? value;
+    const count = stats[0]?.count ?? 1;
+    const rounded = Math.round(avg * 10) / 10;
+
+    quiz.rating = rounded;
+    quiz.ratingCount = count;
+    await quiz.save();
+
+    return { rating: rounded, ratingCount: count, myRating: value };
+  }
+
+  /** Danh gia hien tai cua user nay cho 1 quiz (null neu chua danh gia). */
+  static async getMyRating(userId: string, quizId: string): Promise<number | null> {
+    const existing = await QuizRating.findOne({ quizId, uid: userId }).select('value');
+    return existing?.value ?? null;
+  }
+
+  /** Nguoi dung bao 1 cau hoi co van de (sai dap an, dich loi...) de staff xem lai. */
+  static async reportQuestion(userId: string, questionId: string, reason?: string): Promise<void> {
+    const question = await Question.findById(questionId).select('quizId');
+    if (!question) {
+      throw new AppError('Không tìm thấy câu hỏi', 404);
+    }
+
+    await QuestionReport.create({
+      questionId: question._id,
+      quizId: question.quizId,
+      uid: userId,
+      reason: reason?.trim() || undefined,
+    });
   }
 
   // --- Staff / Admin Methods ---

@@ -14,6 +14,7 @@ export interface IQuiz extends Document {
   era: EventEra;
   playCount: number;
   rating: number;
+  ratingCount: number;
   isActive: boolean;
   isPublished: boolean;
   deletedAt?: Date;
@@ -45,6 +46,7 @@ const quizSchema = new Schema<IQuiz>(
     era: { type: String, enum: Object.values(EventEra), required: true },
     playCount: { type: Number, default: 0 },
     rating: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     isPublished: { type: Boolean, default: true },
     deletedAt: { type: Date },

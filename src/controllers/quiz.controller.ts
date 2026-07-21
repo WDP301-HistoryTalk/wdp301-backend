@@ -66,6 +66,33 @@ export class QuizController {
     }
   }
 
+  static async rateQuiz(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await QuizService.rateQuiz(req.user!.id, req.params.quizId as string, Number(req.body.value));
+      sendSuccess(res, data, 'Đánh giá thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMyRating(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const myRating = await QuizService.getMyRating(req.user!.id, req.params.quizId as string);
+      sendSuccess(res, { myRating }, 'Lấy đánh giá thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async reportQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await QuizService.reportQuestion(req.user!.id, req.params.questionId as string, req.body.reason);
+      sendSuccess(res, {}, 'Đã gửi báo cáo, cảm ơn bạn');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // --- Staff / Admin Methods ---
 
   static async staffListQuizzes(req: Request, res: Response, next: NextFunction): Promise<void> {

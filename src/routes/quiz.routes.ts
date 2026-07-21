@@ -97,6 +97,8 @@ router.get('/results/me', authenticate, QuizController.getMyResults);
  *                       type: string
  *                     quizTitle:
  *                       type: string
+ *                     contextId:
+ *                       type: string
  *                     score:
  *                       type: number
  *                     totalQuestions:
@@ -313,5 +315,87 @@ router.get('/:quizId', optionalAuth, QuizController.getQuizById);
  *         description: Quiz not found
  */
 router.post('/:quizId/start', authenticate, QuizController.startSession);
+
+/**
+ * @openapi
+ * /quizzes/{quizId}/rating:
+ *   post:
+ *     tags: [Quizzes]
+ *     summary: Rate a quiz (1-5 stars) — rating lại sẽ ghi đè giá trị cũ
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: quizId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [value]
+ *             properties:
+ *               value:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *     responses:
+ *       200:
+ *         description: Rated successfully
+ */
+router.post('/:quizId/rating', authenticate, QuizController.rateQuiz);
+
+/**
+ * @openapi
+ * /quizzes/{quizId}/rating/me:
+ *   get:
+ *     tags: [Quizzes]
+ *     summary: Get the current user's own rating for a quiz (null if not rated yet)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: quizId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: My rating retrieved successfully
+ */
+router.get('/:quizId/rating/me', authenticate, QuizController.getMyRating);
+
+/**
+ * @openapi
+ * /quizzes/questions/{questionId}/report:
+ *   post:
+ *     tags: [Quizzes]
+ *     summary: Report a question as incorrect/unclear for staff review
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: questionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Report submitted successfully
+ *       404:
+ *         description: Question not found
+ */
+router.post('/questions/:questionId/report', authenticate, QuizController.reportQuestion);
 
 export default router;
