@@ -1044,4 +1044,60 @@ export class QuizService {
     // Return full quiz detail (same shape as staffGetQuizDetail)
     return this.staffGetQuizDetail(quiz._id.toString());
   }
+
+  /** Staff: liet ke report cau hoi (moi nhat truoc), kem ngu canh quiz/cau hoi/nguoi bao. */
+  static async staffListQuestionReports(query: {
+    status?: 'OPEN' | 'RESOLVED';
+    page?: number;
+    size?: number;
+  }): Promise<any> {
+    const { status, page = 0, size = 20 } = query;
+    const skip = page * size;
+
+    const filter: any = {};
+    if (status) filter.status = status;
+
+    const [reports, total] = await Promise.all([
+      QuestionReport.find(filter)
+        .populate('questionId', 'content')
+        .populate('quizId', 'title')
+        .populate('uid', 'userName')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(size),
+      QuestionReport.countDocuments(filter),
+    ]);
+
+    const content = reports.map((r: any) => ({
+      reportId: r._id.toString(),
+      questionId: r.questionId?._id?.toString() ?? '',
+      questionContent: r.questionId?.content ?? '',
+      quizId: r.quizId?._id?.toString() ?? '',
+      quizTitle: r.quizId?.title ?? '',
+      reportedBy: r.uid?.userName ?? '',
+      reason: r.reason ?? '',
+      status: r.status,
+      createdAt: r.createdAt,
+    }));
+
+    return {
+      content,
+      totalElements: total,
+      totalPages: Math.ceil(total / size) || 1,
+      currentPage: page,
+      pageSize: size,
+      hasNext: skip + size < total,
+      hasPrevious: page > 0,
+    };
+  }
+
+  /** Staff: danh dau 1 report da duoc xu ly xong. */
+  static async staffResolveQuestionReport(reportId: string): Promise<void> {
+    const report = await QuestionReport.findById(reportId);
+    if (!report) {
+      throw new AppError('Không tìm thấy báo cáo', 404);
+    }
+    report.status = 'RESOLVED';
+    await report.save();
+  }
 }

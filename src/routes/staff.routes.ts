@@ -160,6 +160,58 @@ router.get('/quizzes/sessions/:sessionId', QuizController.staffGetSessionDetail)
 
 /**
  * @openapi
+ * /staff/quizzes/reports:
+ *   get:
+ *     tags: [Staff Quizzes]
+ *     summary: List question reports submitted by users ("Câu này có vấn đề?")
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [OPEN, RESOLVED]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Question reports retrieved successfully
+ */
+router.get('/quizzes/reports', QuizController.staffListQuestionReports);
+
+/**
+ * @openapi
+ * /staff/quizzes/reports/{reportId}/resolve:
+ *   patch:
+ *     tags: [Staff Quizzes]
+ *     summary: Mark a question report as resolved
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reportId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Report marked as resolved
+ *       404:
+ *         description: Report not found
+ */
+router.patch('/quizzes/reports/:reportId/resolve', QuizController.staffResolveQuestionReport);
+
+/**
+ * @openapi
  * /staff/quizzes/{quizId}:
  *   get:
  *     tags: [Staff Quizzes]

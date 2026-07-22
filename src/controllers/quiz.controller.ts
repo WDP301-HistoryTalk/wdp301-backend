@@ -241,4 +241,26 @@ export class QuizController {
       next(error);
     }
   }
+
+  static async staffListQuestionReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const status = req.query.status as 'OPEN' | 'RESOLVED' | undefined;
+      const page = parseInt(req.query.page as string) || 0;
+      const size = parseInt(req.query.size as string) || 20;
+
+      const data = await QuizService.staffListQuestionReports({ status, page, size });
+      sendSuccess(res, data, 'Danh sách báo cáo câu hỏi');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async staffResolveQuestionReport(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await QuizService.staffResolveQuestionReport(req.params.reportId as string);
+      sendSuccess(res, {}, 'Đã đánh dấu xử lý');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
