@@ -180,10 +180,21 @@ export class PaymentService {
     if (tier && user) {
       const now = new Date();
       const base = user.tierExpiresAt && user.tierExpiresAt > now ? user.tierExpiresAt : now;
-      user.tierId = tier._id as mongoose.Types.ObjectId;
       user.tierExpiresAt = addMonths(base, tier.noMonth);
       user.token = (user.token || 0) + (tier.limitedToken || 0);
       user.lastTokenResetAt = now;
+
+      // Select highest amount tier among all user's paid orders (e.g. Pro > Plus > Free)
+      const paidOrders = await Order.find({ uid: user._id, status: OrderStatus.Paid }).populate('tierId');
+      let highestTier: any = tier;
+      for (const po of paidOrders) {
+        const t = po.tierId as any;
+        if (t && t.amount != null && (highestTier == null || t.amount > highestTier.amount)) {
+          highestTier = t;
+        }
+      }
+      user.tierId = highestTier._id as mongoose.Types.ObjectId;
+
       await user.save();
 
       // Gửi email sau khi thanh toán thành công
@@ -221,12 +232,23 @@ export class PaymentService {
     else if (order.status === OrderStatus.Cancelled) message = 'Payment has been cancelled.';
     else if (order.status === OrderStatus.Expired) message = 'Payment link has expired. Please create a new order.';
 
+    const updatedUser = await User.findById(userId).populate('tierId');
+    const tierObj = updatedUser?.tierId as any;
+
     return {
       orderCode: order.orderCode,
       resolvedStatus: order.status.toUpperCase(),
-      message
+      message,
+      user: updatedUser ? {
+        uid: updatedUser._id.toString(),
+        tierId: tierObj ? tierObj._id?.toString() : null,
+        tierTitle: tierObj ? tierObj.title : null,
+        subscriptionEndTime: updatedUser.tierExpiresAt ? updatedUser.tierExpiresAt.toISOString() : null,
+        token: updatedUser.token || 0,
+      } : null
     };
   }
+
 
   static async handleWebhook(data: WebhookData, rawPayload: Record<string, unknown>): Promise<void> {
     const order = await Order.findOne({ orderCode: data.orderCode });
