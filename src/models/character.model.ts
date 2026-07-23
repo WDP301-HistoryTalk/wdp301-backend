@@ -8,6 +8,7 @@ export interface ICharacter extends Document {
   background?: string;
   imageUrl?: string;
   modelUrl?: string;
+  videoUrl?: string;
   bornYear?: number;
   bornMonth?: number;
   bornDay?: number;
@@ -36,6 +37,7 @@ const characterSchema = new Schema<ICharacter>(
     background: { type: String },
     imageUrl: { type: String },
     modelUrl: { type: String },
+    videoUrl: { type: String },
     bornYear: { type: Number },
     bornMonth: { type: Number, min: 1, max: 12 },
     bornDay: { type: Number, min: 1, max: 31 },

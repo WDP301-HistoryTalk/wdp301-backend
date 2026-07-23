@@ -398,19 +398,31 @@ export class CharacterService {
     const character = await Character.findById(characterId);
     if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
-    const ext = file.originalname.split('.').pop() || (mediaType === 'MODEL_3D' ? 'glb' : 'jpg');
-    const filename = mediaType === 'MODEL_3D' ? `model_3d.${ext}` : `image_2d.${ext}`;
+    const ext = file.originalname.split('.').pop() || (mediaType === 'MODEL_3D' ? 'glb' : mediaType === 'VIDEO' ? 'mp4' : 'jpg');
+    let filename = `image_2d.${ext}`;
+    let defaultMimetype = 'image/jpeg';
+
+    if (mediaType === 'MODEL_3D') {
+      filename = `model_3d.${ext}`;
+      defaultMimetype = 'model/gltf-binary';
+    } else if (mediaType === 'VIDEO') {
+      filename = `video.${ext}`;
+      defaultMimetype = 'video/mp4';
+    }
+
     const storagePath = `characters/${characterId}/${filename}`;
 
     const { supabaseStorageService } = await import('./supabase.service');
     const uploadedPath = await supabaseStorageService.uploadFile(
       storagePath,
       file.buffer,
-      file.mimetype || (mediaType === 'MODEL_3D' ? 'model/gltf-binary' : 'image/jpeg')
+      file.mimetype || defaultMimetype
     );
 
     if (mediaType === 'MODEL_3D') {
       character.modelUrl = uploadedPath;
+    } else if (mediaType === 'VIDEO') {
+      character.videoUrl = uploadedPath;
     } else {
       character.imageUrl = uploadedPath;
     }
@@ -429,8 +441,8 @@ export class CharacterService {
     const character = await Character.findById(characterId);
     if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
-    const targetUrl = character.imageUrl || character.modelUrl;
-    if (!targetUrl) throw new AppError('Nhân vật chưa có media/hình ảnh', 400);
+    const targetUrl = character.imageUrl || character.videoUrl || character.modelUrl;
+    if (!targetUrl) throw new AppError('Nhân vật chưa có media/hình ảnh/video', 400);
 
     if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
       return { url: targetUrl, expiresIn: 3600 };
@@ -450,6 +462,10 @@ export class CharacterService {
       await supabaseStorageService.deleteFile(character.imageUrl);
       character.imageUrl = undefined;
     }
+    if (character.videoUrl && !character.videoUrl.startsWith('http')) {
+      await supabaseStorageService.deleteFile(character.videoUrl);
+      character.videoUrl = undefined;
+    }
     if (character.modelUrl && !character.modelUrl.startsWith('http')) {
       await supabaseStorageService.deleteFile(character.modelUrl);
       character.modelUrl = undefined;
@@ -458,4 +474,5 @@ export class CharacterService {
     await character.save();
   }
 }
+
 

@@ -447,9 +447,71 @@ router.patch('/:id/restore', authorizeRoles(UserRole.SystemAdmin), UserControlle
 // ── User Avatar Routes (Matches Java /api/v1/users/{userId}/avatar) ──
 import { uploadImage } from '../middlewares/upload.middleware';
 
+/**
+ * @openapi
+ * /users/{userId}/avatar:
+ *   post:
+ *     tags: [User Avatar]
+ *     summary: Upload user avatar directly via multipart/form-data
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file: { type: string, format: binary }
+ *     responses:
+ *       200:
+ *         description: Avatar uploaded successfully
+ */
 router.post('/:userId/avatar', uploadImage, UserController.uploadAvatarDirect);
+
+/**
+ * @openapi
+ * /users/{userId}/avatar/view-url:
+ *   get:
+ *     tags: [User Avatar]
+ *     summary: Get avatar signed view URL
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Signed view URL generated
+ */
 router.get('/:userId/avatar/view-url', UserController.generateAvatarViewUrl);
+
+/**
+ * @openapi
+ * /users/{userId}/avatar:
+ *   delete:
+ *     tags: [User Avatar]
+ *     summary: Delete user avatar
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204:
+ *         description: Avatar deleted
+ */
 router.delete('/:userId/avatar', UserController.deleteAvatar);
 
 export default router;
+
 

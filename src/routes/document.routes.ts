@@ -180,9 +180,52 @@ import { uploadPdf } from '../middlewares/upload.middleware';
 import { authorizeRoles } from '../middlewares/auth.middleware';
 import { UserRole } from '../types/enums';
 
+/**
+ * @openapi
+ * /documents/{docId}/upload-pdf:
+ *   post:
+ *     tags: [Documents]
+ *     summary: Upload PDF file for an existing document (Staff/Admin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: docId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file: { type: string, format: binary }
+ *     responses:
+ *       200:
+ *         description: PDF file uploaded successfully
+ */
 router.post('/documents/:docId/upload-pdf', authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAdmin), uploadPdf, DocumentController.uploadPdfFile.bind(DocumentController));
+
+/**
+ * @openapi
+ * /documents/{docId}/pdf-url:
+ *   get:
+ *     tags: [Documents]
+ *     summary: Create a signed Supabase URL for viewing/downloading document PDF
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: docId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Signed PDF URL generated
+ */
 router.get('/documents/:docId/pdf-url', authenticate, DocumentController.createPdfUrl.bind(DocumentController));
 
-
 export default router;
+
 

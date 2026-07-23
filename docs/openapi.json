@@ -2723,6 +2723,239 @@
         }
       }
     },
+    "/documents/{docId}/upload-pdf": {
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Upload PDF file for an existing document (Staff/Admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "docId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF file uploaded successfully"
+          }
+        }
+      }
+    },
+    "/documents/{docId}/pdf-url": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Create a signed Supabase URL for viewing/downloading document PDF",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "docId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed PDF URL generated"
+          }
+        }
+      }
+    },
+    "/gamification/today": {
+      "get": {
+        "tags": [
+          "Gamification"
+        ],
+        "summary": "Get today's streak and daily quests for the authenticated user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Today's gamification state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "date": {
+                          "type": "string",
+                          "example": "2026-07-17"
+                        },
+                        "streakCount": {
+                          "type": "integer",
+                          "example": 3
+                        },
+                        "studiedToday": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "claimableTokens": {
+                          "type": "integer",
+                          "example": 500
+                        },
+                        "quests": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "chat_once"
+                              },
+                              "title": {
+                                "type": "string",
+                                "example": "Trò chuyện với một nhân vật lịch sử"
+                              },
+                              "target": {
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "rewardTokens": {
+                                "type": "integer",
+                                "example": 500
+                              },
+                              "progress": {
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "completed": {
+                                "type": "boolean",
+                                "example": true
+                              },
+                              "claimed": {
+                                "type": "boolean",
+                                "example": false
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gamification/claim": {
+      "post": {
+        "tags": [
+          "Gamification"
+        ],
+        "summary": "Claim the token reward of a completed daily quest (idempotent per day)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "questId"
+                ],
+                "properties": {
+                  "questId": {
+                    "type": "string",
+                    "example": "chat_once"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reward claimed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "questId": {
+                          "type": "string",
+                          "example": "chat_once"
+                        },
+                        "rewardTokens": {
+                          "type": "integer",
+                          "example": 500
+                        },
+                        "tokenBalance": {
+                          "type": "integer",
+                          "example": 1500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Quest not completed yet, or already claimed today"
+          },
+          "404": {
+            "description": "Unknown questId"
+          }
+        }
+      }
+    },
     "/historical-contexts": {
       "get": {
         "tags": [
@@ -3378,6 +3611,9 @@
                         "quizTitle": {
                           "type": "string"
                         },
+                        "contextId": {
+                          "type": "string"
+                        },
                         "score": {
                           "type": "number"
                         },
@@ -3397,6 +3633,23 @@
                         "completedAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "previousAttempt": {
+                          "type": "object",
+                          "nullable": true,
+                          "description": "Lan lam gan nhat truoc do cua cung quiz nay (null neu day la lan dau)",
+                          "properties": {
+                            "score": {
+                              "type": "number"
+                            },
+                            "percentage": {
+                              "type": "integer"
+                            },
+                            "completedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
                         },
                         "questions": {
                           "type": "array",
@@ -3684,6 +3937,127 @@
           },
           "404": {
             "description": "Quiz not found"
+          }
+        }
+      }
+    },
+    "/quizzes/{quizId}/rating": {
+      "post": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "Rate a quiz (1-5 stars) — rating lại sẽ ghi đè giá trị cũ",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rated successfully"
+          }
+        }
+      }
+    },
+    "/quizzes/{quizId}/rating/me": {
+      "get": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "Get the current user's own rating for a quiz (null if not rated yet)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quizId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "My rating retrieved successfully"
+          }
+        }
+      }
+    },
+    "/quizzes/questions/{questionId}/report": {
+      "post": {
+        "tags": [
+          "Quizzes"
+        ],
+        "summary": "Report a question as incorrect/unclear for staff review",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "questionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report submitted successfully"
+          },
+          "404": {
+            "description": "Question not found"
           }
         }
       }
@@ -3999,6 +4373,84 @@
           },
           "404": {
             "description": "Completed quiz session not found"
+          }
+        }
+      }
+    },
+    "/staff/quizzes/reports": {
+      "get": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "List question reports submitted by users (\"Câu này có vấn đề?\")",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "RESOLVED"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Question reports retrieved successfully"
+          }
+        }
+      }
+    },
+    "/staff/quizzes/reports/{reportId}/resolve": {
+      "patch": {
+        "tags": [
+          "Staff Quizzes"
+        ],
+        "summary": "Mark a question report as resolved",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reportId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report marked as resolved"
+          },
+          "404": {
+            "description": "Report not found"
           }
         }
       }
@@ -5206,6 +5658,104 @@
           },
           "404": {
             "description": "User not found"
+          }
+        }
+      }
+    },
+    "/users/{userId}/avatar": {
+      "post": {
+        "tags": [
+          "User Avatar"
+        ],
+        "summary": "Upload user avatar directly via multipart/form-data",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar uploaded successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "User Avatar"
+        ],
+        "summary": "Delete user avatar",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Avatar deleted"
+          }
+        }
+      }
+    },
+    "/users/{userId}/avatar/view-url": {
+      "get": {
+        "tags": [
+          "User Avatar"
+        ],
+        "summary": "Get avatar signed view URL",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed view URL generated"
           }
         }
       }

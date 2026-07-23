@@ -270,19 +270,31 @@ export class HistoricalContextService {
     const context = await HistoricalContext.findById(contextId);
     if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
-    const ext = file.originalname.split('.').pop() || (mediaType === 'MODEL_3D' ? 'glb' : 'jpg');
-    const filename = mediaType === 'MODEL_3D' ? `model_3d.${ext}` : `image_2d.${ext}`;
+    const ext = file.originalname.split('.').pop() || (mediaType === 'MODEL_3D' ? 'glb' : mediaType === 'VIDEO' ? 'mp4' : 'jpg');
+    let filename = `image_2d.${ext}`;
+    let defaultMimetype = 'image/jpeg';
+
+    if (mediaType === 'MODEL_3D') {
+      filename = `model_3d.${ext}`;
+      defaultMimetype = 'model/gltf-binary';
+    } else if (mediaType === 'VIDEO') {
+      filename = `video.${ext}`;
+      defaultMimetype = 'video/mp4';
+    }
+
     const storagePath = `contexts/${contextId}/${filename}`;
 
     const { supabaseStorageService } = await import('./supabase.service');
     const uploadedPath = await supabaseStorageService.uploadFile(
       storagePath,
       file.buffer,
-      file.mimetype || (mediaType === 'MODEL_3D' ? 'model/gltf-binary' : 'image/jpeg')
+      file.mimetype || defaultMimetype
     );
 
     if (mediaType === 'MODEL_3D') {
       context.modelUrl = uploadedPath;
+    } else if (mediaType === 'VIDEO') {
+      context.videoUrl = uploadedPath;
     } else {
       context.imageUrl = uploadedPath;
     }
@@ -301,8 +313,8 @@ export class HistoricalContextService {
     const context = await HistoricalContext.findById(contextId);
     if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
-    const targetUrl = context.imageUrl || context.modelUrl;
-    if (!targetUrl) throw new AppError('Bối cảnh lịch sử chưa có media/hình ảnh', 400);
+    const targetUrl = context.imageUrl || context.videoUrl || context.modelUrl;
+    if (!targetUrl) throw new AppError('Bối cảnh lịch sử chưa có media/hình ảnh/video', 400);
 
     if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
       return { url: targetUrl, expiresIn: 3600 };
@@ -322,6 +334,10 @@ export class HistoricalContextService {
       await supabaseStorageService.deleteFile(context.imageUrl);
       context.imageUrl = undefined;
     }
+    if (context.videoUrl && !context.videoUrl.startsWith('http')) {
+      await supabaseStorageService.deleteFile(context.videoUrl);
+      context.videoUrl = undefined;
+    }
     if (context.modelUrl && !context.modelUrl.startsWith('http')) {
       await supabaseStorageService.deleteFile(context.modelUrl);
       context.modelUrl = undefined;
@@ -330,4 +346,5 @@ export class HistoricalContextService {
     await context.save();
   }
 }
+
 

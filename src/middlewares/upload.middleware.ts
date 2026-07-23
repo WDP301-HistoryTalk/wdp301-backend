@@ -57,22 +57,24 @@ export const uploadImage = multer({
 
 export const uploadMedia = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB for 3D models & larger media
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB for 3D models, Videos & larger media
   fileFilter: (_req, file, cb) => {
     const filename = file.originalname.toLowerCase();
     const isMedia =
       file.mimetype.startsWith('image/') ||
+      file.mimetype.startsWith('video/') ||
       file.mimetype === 'application/pdf' ||
       file.mimetype.includes('gltf') ||
       file.mimetype.includes('model') ||
       file.mimetype.includes('octet-stream') ||
       file.mimetype.includes('zip') ||
-      /\.(jpg|jpeg|png|webp|gif|pdf|glb|gltf|obj|fbx|zip)$/i.test(filename);
+      /\.(jpg|jpeg|png|webp|gif|pdf|glb|gltf|obj|fbx|zip|mp4|webm|mov|avi|mkv)$/i.test(filename);
 
     if (!isMedia) {
-      return cb(new AppError('File không đúng định dạng media hợp lệ (Ảnh, PDF, Model 3D)', 400));
+      return cb(new AppError('File không đúng định dạng media hợp lệ (Ảnh, PDF, Video, Model 3D)', 400));
     }
     cb(null, true);
   },
 }).single('file');
+
 
