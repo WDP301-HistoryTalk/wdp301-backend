@@ -60,11 +60,9 @@ class SupabaseStorageService {
     if (!filePath) return;
     const client = this.getClient();
 
-    // Remove bucket prefix if included
     let path = filePath;
-    if (path.startsWith(`${bucketName}/`)) {
-      path = path.substring(bucketName.length + 1);
-    } else if (path.startsWith('http://') || path.startsWith('https://')) {
+    // Only unwrap a full http(s) public/signed URL — stored paths are always bucket-relative already
+    if (path.startsWith('http://') || path.startsWith('https://')) {
       const parts = path.split(`/${bucketName}/`);
       if (parts.length > 1) {
         path = parts[1].split('?')[0];
@@ -89,9 +87,8 @@ class SupabaseStorageService {
     const client = this.getClient();
 
     let path = filePath;
-    if (path.startsWith(`${bucketName}/`)) {
-      path = path.substring(bucketName.length + 1);
-    } else if (path.startsWith('http://') || path.startsWith('https://')) {
+    // Only unwrap a full http(s) public/signed URL — stored paths are always bucket-relative already
+    if (path.startsWith('http://') || path.startsWith('https://')) {
       const parts = path.split(`/${bucketName}/`);
       if (parts.length > 1) {
         path = parts[1].split('?')[0];
@@ -122,13 +119,10 @@ class SupabaseStorageService {
    */
   getPublicUrl(filePath: string, bucketName: string = this.defaultBucket): string {
     const client = this.getClient();
-    let path = filePath;
-    if (path.startsWith(`${bucketName}/`)) {
-      path = path.substring(bucketName.length + 1);
-    }
-    const { data } = client.storage.from(bucketName).getPublicUrl(path);
+    const { data } = client.storage.from(bucketName).getPublicUrl(filePath);
     return data.publicUrl;
   }
 }
 
 export const supabaseStorageService = new SupabaseStorageService();
+

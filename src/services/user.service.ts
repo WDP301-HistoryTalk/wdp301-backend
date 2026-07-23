@@ -344,7 +344,7 @@ export class UserService {
       throw new AppError('ID người dùng không hợp lệ', 400);
     }
 
-    if (targetUserId !== currentUserId && userRole !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') {
+    if (targetUserId !== currentUserId && userRole !== 'CONTENT_ADMIN' && userRole !== 'SYSTEM_ADMIN') {
       throw new AppError('Bạn chỉ có thể thay đổi avatar của chính mình', 403);
     }
     if (!file || !file.buffer) throw new AppError('File ảnh avatar không được để trống', 400);
@@ -394,7 +394,7 @@ export class UserService {
       throw new AppError('ID người dùng không hợp lệ', 400);
     }
 
-    if (targetUserId !== currentUserId && userRole !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') {
+    if (targetUserId !== currentUserId && userRole !== 'CONTENT_ADMIN' && userRole !== 'SYSTEM_ADMIN') {
       throw new AppError('Bạn chỉ có quyền xóa avatar của chính mình', 403);
     }
 

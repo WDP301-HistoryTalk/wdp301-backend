@@ -357,13 +357,33 @@ export class CharacterService {
         year: ctx.year ?? null,
       }));
 
+    // Resolve private Supabase storage paths → signed URLs (1h TTL)
+    const resolveUrl = async (rawPath?: string): Promise<string | undefined | null> => {
+      if (!rawPath) return rawPath;
+      if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath;
+      try {
+        const { supabaseStorageService } = await import('./supabase.service');
+        const { url } = await supabaseStorageService.createSignedUrl(rawPath, 3600);
+        return url;
+      } catch {
+        return rawPath; // fallback: return raw path so callers know something exists
+      }
+    };
+
+    // We resolve URLs lazily and synchronously return a promise-bearing object;
+    // callers (controllers) await this via Promise.all before sending the response.
+    // For list endpoints we need a sync shape — so we return raw paths and let
+    // the media/view-url endpoint resolve them. But for detail/upload responses
+    // we resolve here. This keeps list fast and detail accurate.
     return {
       characterId: charId,
       name: char.name,
       title: char.title,
       background: char.background,
-      image: char.imageUrl, // Java maps imageUrl to "image" via @JsonProperty
-      modelUrl: char.modelUrl,
+      image: char.imageUrl,   // raw storage path — FE should call /media/view-url to get signed URL
+      imageUrl: char.imageUrl,
+      videoUrl: char.videoUrl ?? null,
+      modelUrl: char.modelUrl ?? null,
       personality: char.personality,
       bornYear: char.bornYear,
       bornMonth: char.bornMonth,
@@ -384,8 +404,26 @@ export class CharacterService {
         userName: char.createdBy.userName || 'Unknown'
       } : null,
       createdDate: char.createdAt,
-      updatedDate: char.updatedAt
+      updatedDate: char.updatedAt,
+      _resolveUrls: resolveUrl  // internal helper — used by mapToResponseWithSignedUrls
     };
+  }
+
+  /**
+   * Like mapToResponse but awaits signed URLs for image/video/model fields.
+   * Use for single-resource GET/POST responses; avoid on list endpoints (N+1 risk).
+   */
+  static async mapToResponseWithSignedUrls(character: any): Promise<any> {
+    const base = this.mapToResponse(character);
+    if (!base) return null;
+    const resolve = base._resolveUrls;
+    delete base._resolveUrls;
+    const [imageUrl, videoUrl, modelUrl] = await Promise.all([
+      resolve(base.imageUrl),
+      resolve(base.videoUrl),
+      resolve(base.modelUrl),
+    ]);
+    return { ...base, image: imageUrl, imageUrl, videoUrl, modelUrl };
   }
 
   static async uploadDirectMedia(

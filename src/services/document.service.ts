@@ -212,6 +212,9 @@ export class DocumentService {
     const docIdStr = rawId ? rawId.toString() : '';
     const document = typeof doc.toObject === 'function' ? doc.toObject() : doc;
 
+    // Derive type: use DB value if present; fall back based on whether a PDF was uploaded
+    const resolvedType = document.type || (document.fileUrl ? 'PDF' : 'TEXT');
+
     const baseResponse: any = {
       docId: docIdStr,
       uid: (document.uploadedBy?._id || document.uploadedBy?.id) ? (document.uploadedBy._id || document.uploadedBy.id).toString() : document.uploadedBy?.toString() || '',
@@ -219,7 +222,7 @@ export class DocumentService {
       title: document.title,
       content: document.content,
       fileUrl: document.fileUrl || null,
-      type: 'TEXT', // Defaulting to TEXT since type is not fully utilized yet
+      type: resolvedType,
       uploadDate: document.createdAt,
       updatedDate: document.updatedAt,
       deletedAt: document.deletedAt || null,
@@ -233,6 +236,7 @@ export class DocumentService {
 
     return baseResponse;
   }
+
 }
 
 export default DocumentService;

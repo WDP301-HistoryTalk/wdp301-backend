@@ -234,6 +234,19 @@ export class HistoricalContextService {
         ? `${ctx.year} ${ctx.isBC ? 'TCN' : 'SCN'}` 
         : null;
 
+    // Resolve private Supabase storage paths → signed URLs (1h TTL)
+    const resolveUrl = async (rawPath?: string): Promise<string | undefined | null> => {
+      if (!rawPath) return rawPath;
+      if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath;
+      try {
+        const { supabaseStorageService } = await import('./supabase.service');
+        const { url } = await supabaseStorageService.createSignedUrl(rawPath, 3600);
+        return url;
+      } catch {
+        return rawPath;
+      }
+    };
+
     return {
       contextId: ctxId,
       name: ctx.name,
@@ -247,8 +260,9 @@ export class HistoricalContextService {
       yearLabel: yearLabel,
       isBC: ctx.isBC || false,
       location: ctx.location,
-      imageUrl: ctx.imageUrl,
-      videoUrl: ctx.videoUrl,
+      imageUrl: ctx.imageUrl ?? null,   // raw path — use /media/view-url for signed URL
+      videoUrl: ctx.videoUrl ?? null,
+      modelUrl: ctx.modelUrl ?? null,
       isPublished: isPublished,
       status: status,
       createdBy: ctx.createdBy ? {
@@ -256,9 +270,29 @@ export class HistoricalContextService {
         userName: ctx.createdBy.userName || 'Unknown'
       } : null,
       createdDate: ctx.createdAt,
-      updatedDate: ctx.updatedAt
+      updatedDate: ctx.updatedAt,
+      _resolveUrls: resolveUrl
     };
   }
+
+  /**
+   * Like mapToResponse but resolves Supabase storage paths to signed URLs.
+   * Use for single-resource detail/upload responses; avoid on list endpoints.
+   */
+  static async mapToResponseWithSignedUrls(context: any): Promise<any> {
+    const base = this.mapToResponse(context);
+    if (!base) return null;
+    const resolve = base._resolveUrls;
+    delete base._resolveUrls;
+    const [imageUrl, videoUrl, modelUrl] = await Promise.all([
+      resolve(base.imageUrl),
+      resolve(base.videoUrl),
+      resolve(base.modelUrl),
+    ]);
+    return { ...base, imageUrl, videoUrl, modelUrl };
+  }
+
+
 
   static async uploadDirectMedia(
     contextId: string,
