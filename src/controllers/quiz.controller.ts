@@ -66,6 +66,33 @@ export class QuizController {
     }
   }
 
+  static async rateQuiz(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await QuizService.rateQuiz(req.user!.id, req.params.quizId as string, Number(req.body.value));
+      sendSuccess(res, data, 'Đánh giá thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMyRating(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const myRating = await QuizService.getMyRating(req.user!.id, req.params.quizId as string);
+      sendSuccess(res, { myRating }, 'Lấy đánh giá thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async reportQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await QuizService.reportQuestion(req.user!.id, req.params.questionId as string, req.body.reason);
+      sendSuccess(res, {}, 'Đã gửi báo cáo, cảm ơn bạn');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // --- Staff / Admin Methods ---
 
   static async staffListQuizzes(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -210,6 +237,28 @@ export class QuizController {
       );
 
       sendSuccess(res, data, 'Import file CSV thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async staffListQuestionReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const status = req.query.status as 'OPEN' | 'RESOLVED' | undefined;
+      const page = parseInt(req.query.page as string) || 0;
+      const size = parseInt(req.query.size as string) || 20;
+
+      const data = await QuizService.staffListQuestionReports({ status, page, size });
+      sendSuccess(res, data, 'Danh sách báo cáo câu hỏi');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async staffResolveQuestionReport(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await QuizService.staffResolveQuestionReport(req.params.reportId as string);
+      sendSuccess(res, {}, 'Đã đánh dấu xử lý');
     } catch (error) {
       next(error);
     }

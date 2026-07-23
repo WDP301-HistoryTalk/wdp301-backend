@@ -12,6 +12,10 @@ export { default as Quiz } from './quiz.model';
 export { default as Question } from './question.model';
 export { default as QuizSession } from './quiz-session.model';
 export { default as AnswerDetail } from './answer-detail.model';
+export { default as UserQuestLog } from './user-quest-log.model';
+export { default as DailyQuest } from './daily-quest.model';
+export { default as QuizRating } from './quiz-rating.model';
+export { default as QuestionReport } from './question-report.model';
 
 export type { ITier } from './tier.model';
 export type { IUser } from './user.model';
@@ -27,3 +31,7 @@ export type { IQuiz } from './quiz.model';
 export type { IQuestion } from './question.model';
 export type { IQuizSession } from './quiz-session.model';
 export type { IAnswerDetail } from './answer-detail.model';
+export type { IUserQuestLog } from './user-quest-log.model';
+export type { IDailyQuest } from './daily-quest.model';
+export type { IQuizRating } from './quiz-rating.model';
+export type { IQuestionReport } from './question-report.model';

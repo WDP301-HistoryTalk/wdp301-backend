@@ -11,6 +11,7 @@ import dashboardRoutes from './dashboard.routes';
 import paymentRoutes from './payment.routes';
 import systemTrashRoutes from './system-trash.routes';
 import tierRoutes from './tier.routes';
+import gamificationRoutes from './gamification.routes';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.use('/system-admin/dashboard', dashboardRoutes);
 router.use('/system-admin/tiers', tierRoutes);
 router.use('/tiers', tierRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/gamification', gamificationRoutes);
 router.use('/system/trash', systemTrashRoutes);
 router.use('/', documentRoutes); // historical-documents & character-documents
 
