@@ -58,10 +58,16 @@ describe('PaymentService', () => {
       const mockOrder = { _id: 'order-id', orderCode: 123, status: OrderStatus.Pending, save: vi.fn() };
       (Order.findOne as any).mockResolvedValue(mockOrder);
       (payos.getPaymentLinkInformation as any).mockResolvedValue({ status: 'PAID' });
-      (Order.findOneAndUpdate as any).mockResolvedValue({ ...mockOrder, amount: 10000 });
+      (Order.findOneAndUpdate as any).mockResolvedValue({ ...mockOrder, amount: 10000, tierId: 'tier-id', uid: 'user-id' });
+      (Order.find as any).mockReturnValue({ populate: vi.fn().mockResolvedValue([]) });
       (Tier.findById as any).mockResolvedValue({ _id: 'tier-id', title: 'Pro', amount: 10000, noMonth: 1 });
       const mockUser = { _id: 'user-id', email: 'test@example.com', userName: 'Test', save: vi.fn() };
-      (User.findById as any).mockResolvedValue(mockUser);
+      
+      (User.findById as any).mockImplementation(() => {
+        const promise = Promise.resolve(mockUser);
+        (promise as any).populate = vi.fn().mockResolvedValue({ ...mockUser, tierId: { _id: 'tier-id', title: 'Pro' } });
+        return promise;
+      });
       
       vi.spyOn(mailService, 'sendPaymentSuccessNotification').mockResolvedValue();
 
@@ -73,3 +79,4 @@ describe('PaymentService', () => {
     });
   });
 });
+
