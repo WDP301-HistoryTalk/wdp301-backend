@@ -259,4 +259,75 @@ export class HistoricalContextService {
       updatedDate: ctx.updatedAt
     };
   }
+
+  static async uploadDirectMedia(
+    contextId: string,
+    file: Express.Multer.File,
+    mediaType: string = 'IMAGE_2D'
+  ): Promise<{ objectPath: string; viewUrl: string; mediaType: string }> {
+    if (!file || !file.buffer) throw new AppError('File media không được để trống', 400);
+
+    const context = await HistoricalContext.findById(contextId);
+    if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
+
+    const ext = file.originalname.split('.').pop() || (mediaType === 'MODEL_3D' ? 'glb' : 'jpg');
+    const filename = mediaType === 'MODEL_3D' ? `model_3d.${ext}` : `image_2d.${ext}`;
+    const storagePath = `contexts/${contextId}/${filename}`;
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    const uploadedPath = await supabaseStorageService.uploadFile(
+      storagePath,
+      file.buffer,
+      file.mimetype || (mediaType === 'MODEL_3D' ? 'model/gltf-binary' : 'image/jpeg')
+    );
+
+    if (mediaType === 'MODEL_3D') {
+      context.modelUrl = uploadedPath;
+    } else {
+      context.imageUrl = uploadedPath;
+    }
+    await context.save();
+
+    const signedData = await supabaseStorageService.createSignedUrl(uploadedPath, 3600);
+
+    return {
+      objectPath: uploadedPath,
+      viewUrl: signedData.url,
+      mediaType,
+    };
+  }
+
+  static async generateSignedViewUrl(contextId: string): Promise<{ url: string; expiresIn: number }> {
+    const context = await HistoricalContext.findById(contextId);
+    if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
+
+    const targetUrl = context.imageUrl || context.modelUrl;
+    if (!targetUrl) throw new AppError('Bối cảnh lịch sử chưa có media/hình ảnh', 400);
+
+    if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
+      return { url: targetUrl, expiresIn: 3600 };
+    }
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    return await supabaseStorageService.createSignedUrl(targetUrl, 3600);
+  }
+
+  static async deleteMedia(contextId: string): Promise<void> {
+    const context = await HistoricalContext.findById(contextId);
+    if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
+
+    const { supabaseStorageService } = await import('./supabase.service');
+
+    if (context.imageUrl && !context.imageUrl.startsWith('http')) {
+      await supabaseStorageService.deleteFile(context.imageUrl);
+      context.imageUrl = undefined;
+    }
+    if (context.modelUrl && !context.modelUrl.startsWith('http')) {
+      await supabaseStorageService.deleteFile(context.modelUrl);
+      context.modelUrl = undefined;
+    }
+
+    await context.save();
+  }
 }
+

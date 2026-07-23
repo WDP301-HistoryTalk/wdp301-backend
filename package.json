@@ -35,6 +35,7 @@
   "homepage": "https://github.com/WDP301-HistoryTalk/wdp301-backend#readme",
   "description": "",
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.8",
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
     "chalk": "^5.4.1",

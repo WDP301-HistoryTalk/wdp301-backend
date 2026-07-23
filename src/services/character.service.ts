@@ -387,4 +387,75 @@ export class CharacterService {
       updatedDate: char.updatedAt
     };
   }
+
+  static async uploadDirectMedia(
+    characterId: string,
+    file: Express.Multer.File,
+    mediaType: string = 'IMAGE_2D'
+  ): Promise<{ objectPath: string; viewUrl: string; mediaType: string }> {
+    if (!file || !file.buffer) throw new AppError('File media không được để trống', 400);
+
+    const character = await Character.findById(characterId);
+    if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
+
+    const ext = file.originalname.split('.').pop() || (mediaType === 'MODEL_3D' ? 'glb' : 'jpg');
+    const filename = mediaType === 'MODEL_3D' ? `model_3d.${ext}` : `image_2d.${ext}`;
+    const storagePath = `characters/${characterId}/${filename}`;
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    const uploadedPath = await supabaseStorageService.uploadFile(
+      storagePath,
+      file.buffer,
+      file.mimetype || (mediaType === 'MODEL_3D' ? 'model/gltf-binary' : 'image/jpeg')
+    );
+
+    if (mediaType === 'MODEL_3D') {
+      character.modelUrl = uploadedPath;
+    } else {
+      character.imageUrl = uploadedPath;
+    }
+    await character.save();
+
+    const signedData = await supabaseStorageService.createSignedUrl(uploadedPath, 3600);
+
+    return {
+      objectPath: uploadedPath,
+      viewUrl: signedData.url,
+      mediaType,
+    };
+  }
+
+  static async generateSignedViewUrl(characterId: string): Promise<{ url: string; expiresIn: number }> {
+    const character = await Character.findById(characterId);
+    if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
+
+    const targetUrl = character.imageUrl || character.modelUrl;
+    if (!targetUrl) throw new AppError('Nhân vật chưa có media/hình ảnh', 400);
+
+    if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
+      return { url: targetUrl, expiresIn: 3600 };
+    }
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    return await supabaseStorageService.createSignedUrl(targetUrl, 3600);
+  }
+
+  static async deleteMedia(characterId: string): Promise<void> {
+    const character = await Character.findById(characterId);
+    if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
+
+    const { supabaseStorageService } = await import('./supabase.service');
+
+    if (character.imageUrl && !character.imageUrl.startsWith('http')) {
+      await supabaseStorageService.deleteFile(character.imageUrl);
+      character.imageUrl = undefined;
+    }
+    if (character.modelUrl && !character.modelUrl.startsWith('http')) {
+      await supabaseStorageService.deleteFile(character.modelUrl);
+      character.modelUrl = undefined;
+    }
+
+    await character.save();
+  }
 }
+

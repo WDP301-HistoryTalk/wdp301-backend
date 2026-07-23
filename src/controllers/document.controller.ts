@@ -106,6 +106,32 @@ export class DocumentController {
       next(error);
     }
   }
+
+  public async uploadPdfFile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      if (!userId) { throw new AppError('Không có quyền truy cập', 401); }
+
+      const file = req.file;
+      if (!file) { throw new AppError('Yêu cầu chọn file PDF', 400); }
+
+      const { docId } = req.params;
+      const doc = await DocumentService.uploadPdfFile(docId as string, file, userId);
+      sendSuccess(res, doc, 'PDF file uploaded successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async createPdfUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { docId } = req.params;
+      const signedUrlData = await DocumentService.createPdfUrl(docId as string);
+      sendSuccess(res, signedUrlData, 'PDF URL generated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new DocumentController();

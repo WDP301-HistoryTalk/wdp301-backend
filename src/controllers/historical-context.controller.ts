@@ -113,4 +113,43 @@ export class HistoricalContextController {
       next(error);
     }
   }
+
+  static async uploadDirectMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const contextId = (req.params.contextId || req.params.id) as string;
+      const file = req.file;
+      const mediaType = (req.query.mediaType as string) || (req.body.mediaType as string) || 'IMAGE_2D';
+
+      if (!file) {
+        res.status(400).json({ success: false, message: 'Yêu cầu đính kèm file media' });
+        return;
+      }
+
+      const response = await HistoricalContextService.uploadDirectMedia(contextId, file, mediaType);
+      sendSuccess(res, response, 'Media uploaded successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getViewUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const contextId = (req.params.contextId || req.params.id) as string;
+      const response = await HistoricalContextService.generateSignedViewUrl(contextId);
+      sendSuccess(res, response, 'View URL generated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const contextId = (req.params.contextId || req.params.id) as string;
+      await HistoricalContextService.deleteMedia(contextId);
+      sendSuccess(res, null, 'Media deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

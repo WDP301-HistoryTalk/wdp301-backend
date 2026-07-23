@@ -247,4 +247,16 @@ router.patch('/:id/toggle-active', authenticate, authorize(...staffOrAdmin), His
  */
 router.get('/:id/documents', optionalAuth, HistoricalContextController.getDocuments);
 
+// ── Historical Context Media Routes (Matches Java /api/v1/contexts/{contextId}/media/...) ──
+import { uploadMedia } from '../middlewares/upload.middleware';
+
+router.post('/:contextId/media/upload-direct', authenticate, authorize(...staffOrAdmin), uploadMedia, HistoricalContextController.uploadDirectMedia);
+router.get('/:contextId/media/view-url', authenticate, HistoricalContextController.getViewUrl);
+router.delete('/:contextId/media', authenticate, authorize(...staffOrAdmin), HistoricalContextController.deleteMedia);
+
+router.post('/:id/media/upload-direct', authenticate, authorize(...staffOrAdmin), uploadMedia, HistoricalContextController.uploadDirectMedia);
+router.get('/:id/media/view-url', authenticate, HistoricalContextController.getViewUrl);
+router.delete('/:id/media', authenticate, authorize(...staffOrAdmin), HistoricalContextController.deleteMedia);
+
 export default router;
+

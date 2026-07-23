@@ -20,6 +20,7 @@ router.use('/users', userRoutes);
 router.use('/admin/users', userRoutes); // Alias for Java compatibility
 router.use('/characters', characterRoutes);
 router.use('/historical-contexts', historicalContextRoutes);
+router.use('/contexts', historicalContextRoutes); // Alias for Java /api/v1/contexts/... compatibility
 router.use('/chat', chatRoutes);
 router.use('/quizzes', quizRoutes);
 router.use('/staff', staffRoutes);
