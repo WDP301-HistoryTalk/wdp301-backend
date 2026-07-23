@@ -158,7 +158,7 @@ export class DocumentService {
     return this.mapToResponse(doc, doc.entityType === EntityType.Context);
   }
 
-  static async uploadPdfFile(docId: string, file: Express.Multer.File, userId: string): Promise<any> {
+  static async uploadPdfFile(docId: string, file: Express.Multer.File, _userId: string): Promise<any> {
     if (!file || !file.buffer) throw new AppError('File PDF không được để trống', 400);
 
     const doc = await DocumentModel.findById(docId);
