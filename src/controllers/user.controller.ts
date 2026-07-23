@@ -174,17 +174,22 @@ export class UserController {
 
   static async uploadAvatarDirect(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { userId } = req.params;
-      const currentUserId = req.user!.id;
-      const userRole = req.user!.role;
+      const rawUserId = req.params.userId;
+      const currentUserId = req.user?.id;
+      const userRole = req.user?.role;
       const file = req.file;
+
+      let userId = typeof rawUserId === 'string' ? rawUserId : Array.isArray(rawUserId) ? rawUserId[0] : '';
+      if (!userId || userId === 'undefined' || userId === 'null' || userId === 'me') {
+        userId = currentUserId || '';
+      }
 
       if (!file) {
         res.status(400).json({ success: false, message: 'Yêu cầu đính kèm file ảnh avatar' });
         return;
       }
 
-      const response = await UserService.uploadAvatarDirect(userId as string, file, currentUserId, userRole);
+      const response = await UserService.uploadAvatarDirect(userId, file, currentUserId || '', userRole);
       sendSuccess(res, response, 'Avatar uploaded successfully');
     } catch (error) {
       next(error);
@@ -193,8 +198,13 @@ export class UserController {
 
   static async generateAvatarViewUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { userId } = req.params;
-      const response = await UserService.generateAvatarViewUrl(userId as string);
+      const rawUserId = req.params.userId;
+      const currentUserId = req.user?.id;
+      let userId = typeof rawUserId === 'string' ? rawUserId : Array.isArray(rawUserId) ? rawUserId[0] : '';
+      if (!userId || userId === 'undefined' || userId === 'null' || userId === 'me') {
+        userId = currentUserId || '';
+      }
+      const response = await UserService.generateAvatarViewUrl(userId, currentUserId);
       sendSuccess(res, response, 'Avatar view URL generated successfully');
     } catch (error) {
       next(error);
@@ -203,15 +213,21 @@ export class UserController {
 
   static async deleteAvatar(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { userId } = req.params;
-      const currentUserId = req.user!.id;
-      const userRole = req.user!.role;
+      const rawUserId = req.params.userId;
+      const currentUserId = req.user?.id;
+      const userRole = req.user?.role;
+      let userId = typeof rawUserId === 'string' ? rawUserId : Array.isArray(rawUserId) ? rawUserId[0] : '';
+      if (!userId || userId === 'undefined' || userId === 'null' || userId === 'me') {
+        userId = currentUserId || '';
+      }
 
-      await UserService.deleteAvatar(userId as string, currentUserId, userRole);
+      await UserService.deleteAvatar(userId, currentUserId || '', userRole);
       res.status(204).send();
     } catch (error) {
       next(error);
     }
   }
 }
+
+
 

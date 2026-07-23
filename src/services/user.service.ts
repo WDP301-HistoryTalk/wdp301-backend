@@ -336,16 +336,24 @@ export class UserService {
     currentUserId: string,
     userRole?: string
   ): Promise<{ url: string; expiresIn: number }> {
-    if (userId !== currentUserId && userRole !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') {
+    let targetUserId = userId;
+    if (!targetUserId || targetUserId === 'undefined' || targetUserId === 'null' || targetUserId === 'me') {
+      targetUserId = currentUserId;
+    }
+    if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
+      throw new AppError('ID người dùng không hợp lệ', 400);
+    }
+
+    if (targetUserId !== currentUserId && userRole !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') {
       throw new AppError('Bạn chỉ có thể thay đổi avatar của chính mình', 403);
     }
     if (!file || !file.buffer) throw new AppError('File ảnh avatar không được để trống', 400);
 
-    const user = await User.findById(userId);
+    const user = await User.findById(targetUserId);
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
 
     const ext = file.originalname.split('.').pop() || 'jpg';
-    const storagePath = `avatars/${userId}/avatar.${ext}`;
+    const storagePath = `avatars/${targetUserId}/avatar.${ext}`;
 
     const { supabaseStorageService } = await import('./supabase.service');
     const uploadedPath = await supabaseStorageService.uploadFile(storagePath, file.buffer, file.mimetype || 'image/jpeg');
@@ -356,8 +364,16 @@ export class UserService {
     return await supabaseStorageService.createSignedUrl(uploadedPath, 3600);
   }
 
-  static async generateAvatarViewUrl(userId: string): Promise<{ url: string; expiresIn: number }> {
-    const user = await User.findById(userId);
+  static async generateAvatarViewUrl(userId: string, currentUserId?: string): Promise<{ url: string; expiresIn: number }> {
+    let targetUserId = userId;
+    if (!targetUserId || targetUserId === 'undefined' || targetUserId === 'null' || targetUserId === 'me') {
+      targetUserId = currentUserId || '';
+    }
+    if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
+      throw new AppError('ID người dùng không hợp lệ', 400);
+    }
+
+    const user = await User.findById(targetUserId);
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
     if (!user.avatarUrl) throw new AppError('Người dùng chưa có avatar', 400);
 
@@ -370,11 +386,19 @@ export class UserService {
   }
 
   static async deleteAvatar(userId: string, currentUserId: string, userRole?: string): Promise<void> {
-    if (userId !== currentUserId && userRole !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') {
+    let targetUserId = userId;
+    if (!targetUserId || targetUserId === 'undefined' || targetUserId === 'null' || targetUserId === 'me') {
+      targetUserId = currentUserId;
+    }
+    if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
+      throw new AppError('ID người dùng không hợp lệ', 400);
+    }
+
+    if (targetUserId !== currentUserId && userRole !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') {
       throw new AppError('Bạn chỉ có quyền xóa avatar của chính mình', 403);
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(targetUserId);
     if (!user) throw new AppError('Không tìm thấy người dùng', 404);
 
     if (user.avatarUrl && !user.avatarUrl.startsWith('http')) {
@@ -386,4 +410,5 @@ export class UserService {
     await user.save();
   }
 }
+
 

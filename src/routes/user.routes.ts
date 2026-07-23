@@ -473,6 +473,7 @@ import { uploadImage } from '../middlewares/upload.middleware';
  *         description: Avatar uploaded successfully
  */
 router.post('/:userId/avatar', uploadImage, UserController.uploadAvatarDirect);
+router.post('/avatar', uploadImage, UserController.uploadAvatarDirect);
 
 /**
  * @openapi
@@ -492,6 +493,7 @@ router.post('/:userId/avatar', uploadImage, UserController.uploadAvatarDirect);
  *         description: Signed view URL generated
  */
 router.get('/:userId/avatar/view-url', UserController.generateAvatarViewUrl);
+router.get('/avatar/view-url', UserController.generateAvatarViewUrl);
 
 /**
  * @openapi
@@ -511,7 +513,9 @@ router.get('/:userId/avatar/view-url', UserController.generateAvatarViewUrl);
  *         description: Avatar deleted
  */
 router.delete('/:userId/avatar', UserController.deleteAvatar);
+router.delete('/avatar', UserController.deleteAvatar);
 
 export default router;
+
 
 
