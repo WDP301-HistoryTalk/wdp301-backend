@@ -147,6 +147,28 @@ class SupabaseStorageService {
     const { data } = client.storage.from(bucketName).getPublicUrl(filePath);
     return data.publicUrl;
   }
+
+  /**
+   * A GET response resolves stored paths into a freshly signed URL (see
+   * resolveViewUrl), and clients that echo that value back unchanged on a
+   * later save (e.g. an edit form that didn't touch the media field) would
+   * otherwise overwrite the bucket-relative path in the DB with a URL whose
+   * signature expires in 1h — breaking that record's media forever. Strip
+   * any of THIS project's own signed/public storage URLs back down to the
+   * bare path before persisting so it keeps getting re-signed on every read.
+   * Genuine external links (pasted from elsewhere) pass through untouched.
+   */
+  normalizeIncomingPath(value?: string | null, bucketName: string = this.defaultBucket): string | null | undefined {
+    if (!value) return value;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    if (!supabaseUrl || !value.startsWith(supabaseUrl)) return value;
+
+    const marker = `/${bucketName}/`;
+    const idx = value.indexOf(marker);
+    if (idx === -1) return value;
+
+    return value.slice(idx + marker.length).split('?')[0];
+  }
 }
 
 export const supabaseStorageService = new SupabaseStorageService();

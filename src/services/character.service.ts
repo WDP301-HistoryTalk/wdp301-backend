@@ -46,11 +46,27 @@ export interface PaginationResult<T> {
   hasPrevious: boolean;
 }
 
+// GET responses resolve stored media paths into freshly signed URLs; if a
+// client echoes one of those back unchanged on save (e.g. an edit form that
+// didn't touch the media field), naively persisting it would overwrite the
+// bucket-relative path with a URL that expires in 1h. Normalize any of our
+// own signed/public storage URLs back down to the bare path first.
+async function sanitizeMediaFields<T extends Record<string, unknown>>(data: T): Promise<T> {
+  const { supabaseStorageService } = await import('./supabase.service');
+  const sanitized: Record<string, unknown> = { ...data };
+  for (const key of ['image', 'imageUrl', 'modelUrl', 'videoUrl']) {
+    if (typeof sanitized[key] === 'string') {
+      sanitized[key] = supabaseStorageService.normalizeIncomingPath(sanitized[key] as string);
+    }
+  }
+  return sanitized as T;
+}
+
 export class CharacterService {
   static async create(userId: string, data: CreateCharacterInput): Promise<any> {
     const character = await Character.create({
       createdBy: new mongoose.Types.ObjectId(userId),
-      ...data,
+      ...(await sanitizeMediaFields(data)),
     });
     await character.populate('createdBy', 'userName');
     return await this.mapToResponse(character);
@@ -161,7 +177,7 @@ export class CharacterService {
   }
 
   static async update(id: string, data: UpdateCharacterInput): Promise<any> {
-    const updateFields: any = { ...data, updatedAt: new Date() };
+    const updateFields: any = { ...(await sanitizeMediaFields(data)), updatedAt: new Date() };
     const updateQuery: any = {};
     
     if (data.isActive !== undefined) {
