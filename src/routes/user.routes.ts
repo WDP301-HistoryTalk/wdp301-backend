@@ -444,4 +444,12 @@ router.patch('/:id/deactivate', authorizeRoles(UserRole.SystemAdmin), UserContro
  */
 router.patch('/:id/restore', authorizeRoles(UserRole.SystemAdmin), UserController.restoreUser);
 
+// ── User Avatar Routes (Matches Java /api/v1/users/{userId}/avatar) ──
+import { uploadImage } from '../middlewares/upload.middleware';
+
+router.post('/:userId/avatar', uploadImage, UserController.uploadAvatarDirect);
+router.get('/:userId/avatar/view-url', UserController.generateAvatarViewUrl);
+router.delete('/:userId/avatar', UserController.deleteAvatar);
+
 export default router;
+

@@ -176,4 +176,13 @@ router.put('/character-documents/:docId', authenticate, DocumentController.updat
  */
 router.delete('/character-documents/:docId', authenticate, DocumentController.deleteDocument.bind(DocumentController));
 
+import { uploadPdf } from '../middlewares/upload.middleware';
+import { authorizeRoles } from '../middlewares/auth.middleware';
+import { UserRole } from '../types/enums';
+
+router.post('/documents/:docId/upload-pdf', authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAdmin), uploadPdf, DocumentController.uploadPdfFile.bind(DocumentController));
+router.get('/documents/:docId/pdf-url', authenticate, DocumentController.createPdfUrl.bind(DocumentController));
+
+
 export default router;
+

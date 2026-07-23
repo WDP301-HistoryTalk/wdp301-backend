@@ -329,4 +329,61 @@ export class UserService {
       }
     };
   }
+
+  static async uploadAvatarDirect(
+    userId: string,
+    file: Express.Multer.File,
+    currentUserId: string,
+    userRole?: string
+  ): Promise<{ url: string; expiresIn: number }> {
+    if (userId !== currentUserId && userRole !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') {
+      throw new AppError('Bạn chỉ có thể thay đổi avatar của chính mình', 403);
+    }
+    if (!file || !file.buffer) throw new AppError('File ảnh avatar không được để trống', 400);
+
+    const user = await User.findById(userId);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+
+    const ext = file.originalname.split('.').pop() || 'jpg';
+    const storagePath = `avatars/${userId}/avatar.${ext}`;
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    const uploadedPath = await supabaseStorageService.uploadFile(storagePath, file.buffer, file.mimetype || 'image/jpeg');
+
+    user.avatarUrl = uploadedPath;
+    await user.save();
+
+    return await supabaseStorageService.createSignedUrl(uploadedPath, 3600);
+  }
+
+  static async generateAvatarViewUrl(userId: string): Promise<{ url: string; expiresIn: number }> {
+    const user = await User.findById(userId);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+    if (!user.avatarUrl) throw new AppError('Người dùng chưa có avatar', 400);
+
+    if (user.avatarUrl.startsWith('http://') || user.avatarUrl.startsWith('https://')) {
+      return { url: user.avatarUrl, expiresIn: 3600 };
+    }
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    return await supabaseStorageService.createSignedUrl(user.avatarUrl, 3600);
+  }
+
+  static async deleteAvatar(userId: string, currentUserId: string, userRole?: string): Promise<void> {
+    if (userId !== currentUserId && userRole !== 'ADMIN' && userRole !== 'SYSTEM_ADMIN') {
+      throw new AppError('Bạn chỉ có quyền xóa avatar của chính mình', 403);
+    }
+
+    const user = await User.findById(userId);
+    if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+
+    if (user.avatarUrl && !user.avatarUrl.startsWith('http')) {
+      const { supabaseStorageService } = await import('./supabase.service');
+      await supabaseStorageService.deleteFile(user.avatarUrl);
+    }
+
+    user.avatarUrl = undefined;
+    await user.save();
+  }
 }
+

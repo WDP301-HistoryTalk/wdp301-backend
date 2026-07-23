@@ -4,8 +4,11 @@ import Question from '../models/question.model';
 import QuizSession from '../models/quiz-session.model';
 import AnswerDetail from '../models/answer-detail.model';
 import HistoricalContext from '../models/historical-context.model';
+import QuizRating from '../models/quiz-rating.model';
+import QuestionReport from '../models/question-report.model';
 import { AppError } from '../utils/app-error';
 import { QuizLevel, QuizStatus } from '../types/enums';
+import { GamificationService } from './gamification.service';
 
 export class QuizService {
   private static getQuizStatus(quiz: { deletedAt?: Date; isPublished?: boolean }): QuizStatus {
@@ -43,6 +46,7 @@ export class QuizService {
         durationSeconds: q.durationSeconds || 0,
         playCount: q.playCount || 0,
         rating: q.rating || 0,
+        ratingCount: q.ratingCount || 0,
         contextId,
         contextTitle,
       };
@@ -61,13 +65,16 @@ export class QuizService {
       throw new AppError('Không tìm thấy quiz', 404);
     }
 
-    const userPlayCount = userId
-      ? await QuizSession.countDocuments({
-          quizId: quiz._id,
-          uid: userId,
-          endTime: { $exists: true },
-        })
-      : 0;
+    const [userPlayCount, myRating] = await Promise.all([
+      userId
+        ? QuizSession.countDocuments({
+            quizId: quiz._id,
+            uid: userId,
+            endTime: { $exists: true },
+          })
+        : 0,
+      userId ? QuizService.getMyRating(userId, quiz._id.toString()) : null,
+    ]);
 
     return {
       quizId: quiz._id.toString(),
@@ -82,6 +89,8 @@ export class QuizService {
       playCount: quiz.playCount || 0,
       userPlayCount,
       rating: quiz.rating || 0,
+      ratingCount: quiz.ratingCount || 0,
+      myRating,
       contextId: (quiz.contextId as any)?._id?.toString() || quiz.contextId?.toString() || '',
       contextTitle: (quiz.contextId as any)?.name || '',
     };
@@ -240,6 +249,9 @@ export class QuizService {
       Quiz.findByIdAndUpdate(quizId, { $inc: { playCount: 1 } }),
     ]);
 
+    // Gamification: tính quest "làm quiz" (best-effort, không chặn response)
+    setImmediate(() => void GamificationService.recordProgress(userId, 'QUIZ'));
+
     return {
       resultId: session._id.toString(),
       score,
@@ -308,7 +320,7 @@ export class QuizService {
       endTime: { $exists: true },
     }).populate({
       path: 'quizId',
-      select: 'title',
+      select: 'title contextId',
     });
 
     if (!session) {
@@ -323,16 +335,39 @@ export class QuizService {
     const score = session.score ?? 0;
     const percentage = session.percentage ?? (totalQuestions > 0 ? Math.round((score / 10) * 100) : 0);
 
+    // Lan lam gan nhat truoc do cua CUNG quiz nay (de FE hien "so voi lan truoc").
+    const previousSession = quiz?._id
+      ? await QuizSession.findOne({
+          quizId: quiz._id,
+          uid: userId,
+          endTime: { $exists: true },
+          _id: { $ne: session._id },
+        }).sort({ endTime: -1 })
+      : null;
+    const previousAttempt = previousSession
+      ? {
+          score: previousSession.score ?? 0,
+          percentage:
+            previousSession.percentage ??
+            (previousSession.totalQuestions
+              ? Math.round(((previousSession.score ?? 0) / 10) * 100)
+              : 0),
+          completedAt: previousSession.endTime!.toISOString(),
+        }
+      : null;
+
     return {
       sessionId: session._id.toString(),
       quizId: quiz?._id?.toString() || '',
       quizTitle: quiz?.title || 'Unknown Quiz',
+      contextId: quiz?.contextId?.toString() || '',
       score,
       totalQuestions,
       percentage,
       limitedTime: session.limitedTime,
       startedAt: session.startTime.toISOString(),
       completedAt: session.endTime!.toISOString(),
+      previousAttempt,
       questions: questions.map(question => {
         const answer = answerMap.get(question._id.toString());
         return {
@@ -346,6 +381,64 @@ export class QuizService {
         };
       }),
     };
+  }
+
+  /** Danh gia 1 quiz (1-5 sao). Moi user chi co 1 danh gia — danh gia lai se ghi de. */
+  static async rateQuiz(userId: string, quizId: string, value: number): Promise<{
+    rating: number;
+    ratingCount: number;
+    myRating: number;
+  }> {
+    if (!Number.isInteger(value) || value < 1 || value > 5) {
+      throw new AppError('value phai la so nguyen tu 1 den 5', 400);
+    }
+
+    const quiz = await Quiz.findOne({ _id: quizId, deletedAt: { $exists: false } });
+    if (!quiz) {
+      throw new AppError('Không tìm thấy quiz', 404);
+    }
+
+    await QuizRating.findOneAndUpdate(
+      { quizId: quiz._id, uid: userId },
+      { $set: { value } },
+      { upsert: true },
+    );
+
+    const stats = await QuizRating.aggregate<{ _id: null; avg: number; count: number }>([
+      { $match: { quizId: quiz._id } },
+      { $group: { _id: null, avg: { $avg: '$value' }, count: { $sum: 1 } } },
+    ]);
+
+    const avg = stats[0]?.avg ?? value;
+    const count = stats[0]?.count ?? 1;
+    const rounded = Math.round(avg * 10) / 10;
+
+    quiz.rating = rounded;
+    quiz.ratingCount = count;
+    await quiz.save();
+
+    return { rating: rounded, ratingCount: count, myRating: value };
+  }
+
+  /** Danh gia hien tai cua user nay cho 1 quiz (null neu chua danh gia). */
+  static async getMyRating(userId: string, quizId: string): Promise<number | null> {
+    const existing = await QuizRating.findOne({ quizId, uid: userId }).select('value');
+    return existing?.value ?? null;
+  }
+
+  /** Nguoi dung bao 1 cau hoi co van de (sai dap an, dich loi...) de staff xem lai. */
+  static async reportQuestion(userId: string, questionId: string, reason?: string): Promise<void> {
+    const question = await Question.findById(questionId).select('quizId');
+    if (!question) {
+      throw new AppError('Không tìm thấy câu hỏi', 404);
+    }
+
+    await QuestionReport.create({
+      questionId: question._id,
+      quizId: question.quizId,
+      uid: userId,
+      reason: reason?.trim() || undefined,
+    });
   }
 
   // --- Staff / Admin Methods ---
@@ -950,5 +1043,61 @@ export class QuizService {
 
     // Return full quiz detail (same shape as staffGetQuizDetail)
     return this.staffGetQuizDetail(quiz._id.toString());
+  }
+
+  /** Staff: liet ke report cau hoi (moi nhat truoc), kem ngu canh quiz/cau hoi/nguoi bao. */
+  static async staffListQuestionReports(query: {
+    status?: 'OPEN' | 'RESOLVED';
+    page?: number;
+    size?: number;
+  }): Promise<any> {
+    const { status, page = 0, size = 20 } = query;
+    const skip = page * size;
+
+    const filter: any = {};
+    if (status) filter.status = status;
+
+    const [reports, total] = await Promise.all([
+      QuestionReport.find(filter)
+        .populate('questionId', 'content')
+        .populate('quizId', 'title')
+        .populate('uid', 'userName')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(size),
+      QuestionReport.countDocuments(filter),
+    ]);
+
+    const content = reports.map((r: any) => ({
+      reportId: r._id.toString(),
+      questionId: r.questionId?._id?.toString() ?? '',
+      questionContent: r.questionId?.content ?? '',
+      quizId: r.quizId?._id?.toString() ?? '',
+      quizTitle: r.quizId?.title ?? '',
+      reportedBy: r.uid?.userName ?? '',
+      reason: r.reason ?? '',
+      status: r.status,
+      createdAt: r.createdAt,
+    }));
+
+    return {
+      content,
+      totalElements: total,
+      totalPages: Math.ceil(total / size) || 1,
+      currentPage: page,
+      pageSize: size,
+      hasNext: skip + size < total,
+      hasPrevious: page > 0,
+    };
+  }
+
+  /** Staff: danh dau 1 report da duoc xu ly xong. */
+  static async staffResolveQuestionReport(reportId: string): Promise<void> {
+    const report = await QuestionReport.findById(reportId);
+    if (!report) {
+      throw new AppError('Không tìm thấy báo cáo', 404);
+    }
+    report.status = 'RESOLVED';
+    await report.save();
   }
 }

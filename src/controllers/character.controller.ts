@@ -156,4 +156,43 @@ export class CharacterController {
       next(error);
     }
   }
+
+  static async uploadDirectMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { characterId } = req.params;
+      const file = req.file;
+      const mediaType = (req.query.mediaType as string) || (req.body.mediaType as string) || 'IMAGE_2D';
+
+      if (!file) {
+        res.status(400).json({ success: false, message: 'Yêu cầu đính kèm file media' });
+        return;
+      }
+
+      const response = await CharacterService.uploadDirectMedia(characterId as string, file, mediaType);
+      sendSuccess(res, response, 'Media uploaded successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getViewUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { characterId } = req.params;
+      const response = await CharacterService.generateSignedViewUrl(characterId as string);
+      sendSuccess(res, response, 'View URL generated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { characterId } = req.params;
+      await CharacterService.deleteMedia(characterId as string);
+      sendSuccess(res, null, 'Media deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

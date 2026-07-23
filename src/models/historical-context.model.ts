@@ -15,6 +15,7 @@ export interface IHistoricalContext extends Document {
   location?: string;
   imageUrl?: string;
   videoUrl?: string;
+  modelUrl?: string;
   characterIds: mongoose.Types.ObjectId[];
   isPublished: boolean;
   isActive: boolean;
@@ -22,8 +23,6 @@ export interface IHistoricalContext extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-
-
 
 const historicalContextSchema = new Schema<IHistoricalContext>(
   {
@@ -40,6 +39,7 @@ const historicalContextSchema = new Schema<IHistoricalContext>(
     location: { type: String },
     imageUrl: { type: String },
     videoUrl: { type: String },
+    modelUrl: { type: String },
     characterIds: [{ type: Schema.Types.ObjectId, ref: 'Character' }],
     isPublished: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },

@@ -23,4 +23,56 @@ export const uploadCsv = multer({
     }
     cb(null, true);
   },
-}).single('file'); // field name = 'file'  (matches Java @RequestPart("file"))
+}).single('file');
+
+export const uploadPdf = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+  fileFilter: (_req, file, cb) => {
+    const isPdf =
+      file.mimetype === 'application/pdf' ||
+      file.originalname.toLowerCase().endsWith('.pdf');
+
+    if (!isPdf) {
+      return cb(new AppError('Chỉ chấp nhận file .pdf (Only .pdf files are accepted)', 400));
+    }
+    cb(null, true);
+  },
+}).single('file');
+
+export const uploadImage = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  fileFilter: (_req, file, cb) => {
+    const isImage =
+      file.mimetype.startsWith('image/') ||
+      /\.(jpg|jpeg|png|webp|gif)$/i.test(file.originalname);
+
+    if (!isImage) {
+      return cb(new AppError('Chỉ chấp nhận file hình ảnh (JPEG, PNG, WEBP, GIF)', 400));
+    }
+    cb(null, true);
+  },
+}).single('file');
+
+export const uploadMedia = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB for 3D models & larger media
+  fileFilter: (_req, file, cb) => {
+    const filename = file.originalname.toLowerCase();
+    const isMedia =
+      file.mimetype.startsWith('image/') ||
+      file.mimetype === 'application/pdf' ||
+      file.mimetype.includes('gltf') ||
+      file.mimetype.includes('model') ||
+      file.mimetype.includes('octet-stream') ||
+      file.mimetype.includes('zip') ||
+      /\.(jpg|jpeg|png|webp|gif|pdf|glb|gltf|obj|fbx|zip)$/i.test(filename);
+
+    if (!isMedia) {
+      return cb(new AppError('File không đúng định dạng media hợp lệ (Ảnh, PDF, Model 3D)', 400));
+    }
+    cb(null, true);
+  },
+}).single('file');
+

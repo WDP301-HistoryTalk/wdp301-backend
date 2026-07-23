@@ -158,9 +158,43 @@ export class DocumentService {
     return this.mapToResponse(doc, doc.entityType === EntityType.Context);
   }
 
+  static async uploadPdfFile(docId: string, file: Express.Multer.File, userId: string): Promise<any> {
+    if (!file || !file.buffer) throw new AppError('File PDF không được để trống', 400);
+
+    const doc = await DocumentModel.findById(docId);
+    if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
+
+    const entityTypeStr = doc.entityType ? doc.entityType.toLowerCase() : 'context';
+    const storagePath = `documents/${entityTypeStr}/${doc.entityId}/${doc._id}.pdf`;
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    const uploadedPath = await supabaseStorageService.uploadFile(storagePath, file.buffer, 'application/pdf');
+
+    doc.fileUrl = uploadedPath;
+    doc.type = 'PDF' as any;
+    await doc.save();
+
+    await doc.populate('uploadedBy', 'userName');
+    return this.mapToResponse(doc, doc.entityType === EntityType.Context);
+  }
+
+  static async createPdfUrl(docId: string): Promise<{ url: string; expiresIn: number }> {
+    const doc = await DocumentModel.findById(docId);
+    if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
+    if (!doc.fileUrl) throw new AppError('Tài liệu chưa có file PDF được tải lên', 400);
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    const downloadName = `${doc.title || 'document'}.pdf`;
+    return await supabaseStorageService.createSignedUrl(doc.fileUrl, 300, downloadName);
+  }
+
   static async deleteDocument(docId: string): Promise<void> {
     const doc = await DocumentModel.findByIdAndDelete(docId);
     if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
+    if (doc.fileUrl) {
+      const { supabaseStorageService } = await import('./supabase.service');
+      await supabaseStorageService.deleteFile(doc.fileUrl);
+    }
     setImmediate(() => triggerAiDelete(docId));
   }
 

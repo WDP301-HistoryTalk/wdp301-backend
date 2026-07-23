@@ -171,4 +171,47 @@ export class UserController {
       next(error);
     }
   }
+
+  static async uploadAvatarDirect(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const currentUserId = req.user!.id;
+      const userRole = req.user!.role;
+      const file = req.file;
+
+      if (!file) {
+        res.status(400).json({ success: false, message: 'Yêu cầu đính kèm file ảnh avatar' });
+        return;
+      }
+
+      const response = await UserService.uploadAvatarDirect(userId as string, file, currentUserId, userRole);
+      sendSuccess(res, response, 'Avatar uploaded successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async generateAvatarViewUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const response = await UserService.generateAvatarViewUrl(userId as string);
+      sendSuccess(res, response, 'Avatar view URL generated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteAvatar(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const currentUserId = req.user!.id;
+      const userRole = req.user!.role;
+
+      await UserService.deleteAvatar(userId as string, currentUserId, userRole);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

@@ -295,4 +295,12 @@ router.get('/:characterId/contexts', optionalAuth, CharacterController.getContex
  */
 router.get('/:id/documents', optionalAuth, CharacterController.getDocuments);
 
+// ── Character Media Routes (Matches Java /api/v1/characters/{characterId}/media/...) ──
+import { uploadMedia } from '../middlewares/upload.middleware';
+
+router.post('/:characterId/media/upload-direct', authenticate, authorize(...staffOrAdmin), uploadMedia, CharacterController.uploadDirectMedia);
+router.get('/:characterId/media/view-url', authenticate, CharacterController.getViewUrl);
+router.delete('/:characterId/media', authenticate, authorize(...staffOrAdmin), CharacterController.deleteMedia);
+
 export default router;
+

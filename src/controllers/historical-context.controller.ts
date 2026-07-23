@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { GamificationService } from '../services/gamification.service';
 import { HistoricalContextService } from '../services/historical-context.service';
 import DocumentService from '../services/document.service';
 import { sendSuccess } from '../utils/response';
@@ -39,6 +40,13 @@ export class HistoricalContextController {
       const includeInactive = isAdmin;
       
       const context = await HistoricalContextService.findById(id as string, includeUnpublished, includeInactive);
+
+      // Gamification: user đã đăng nhập mở chi tiết bối cảnh → tính quest "đọc"
+      const readerId = req.user?.id;
+      if (readerId) {
+        setImmediate(() => void GamificationService.recordProgress(readerId, 'READ_CONTEXT'));
+      }
+
       sendSuccess(res, context, 'Historical context fetched successfully');
     } catch (error) {
       next(error);
@@ -105,4 +113,43 @@ export class HistoricalContextController {
       next(error);
     }
   }
+
+  static async uploadDirectMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const contextId = (req.params.contextId || req.params.id) as string;
+      const file = req.file;
+      const mediaType = (req.query.mediaType as string) || (req.body.mediaType as string) || 'IMAGE_2D';
+
+      if (!file) {
+        res.status(400).json({ success: false, message: 'Yêu cầu đính kèm file media' });
+        return;
+      }
+
+      const response = await HistoricalContextService.uploadDirectMedia(contextId, file, mediaType);
+      sendSuccess(res, response, 'Media uploaded successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getViewUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const contextId = (req.params.contextId || req.params.id) as string;
+      const response = await HistoricalContextService.generateSignedViewUrl(contextId);
+      sendSuccess(res, response, 'View URL generated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const contextId = (req.params.contextId || req.params.id) as string;
+      await HistoricalContextService.deleteMedia(contextId);
+      sendSuccess(res, null, 'Media deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+
