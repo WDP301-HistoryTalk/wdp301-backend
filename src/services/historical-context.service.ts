@@ -43,7 +43,7 @@ export class HistoricalContextService {
       ...data,
     });
     await context.populate('createdBy', 'userName');
-    return this.mapToResponse(context);
+    return await this.mapToResponse(context);
   }
 
   static async findById(id: string, includeUnpublished = false, includeInactive = false): Promise<any> {
@@ -66,7 +66,7 @@ export class HistoricalContextService {
     if (!context) {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
-    return this.mapToResponse(context);
+    return await this.mapToResponse(context);
   }
 
   static async list(query: ListHistoricalContextsQuery): Promise<PaginationResult<any>> {
@@ -109,7 +109,7 @@ export class HistoricalContextService {
       HistoricalContext.countDocuments(filter),
     ]);
 
-    const content = contexts.map(ctx => this.mapToResponse(ctx));
+    const content = await Promise.all(contexts.map(ctx => this.mapToResponse(ctx)));
 
     const totalPages = Math.ceil(totalElements / pageSize);
 
@@ -150,7 +150,7 @@ export class HistoricalContextService {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
-    return this.mapToResponse(context);
+    return await this.mapToResponse(context);
   }
 
   static async delete(id: string): Promise<void> {
@@ -176,7 +176,7 @@ export class HistoricalContextService {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
-    return this.mapToResponse(context);
+    return await this.mapToResponse(context);
   }
 
   static async toggleActive(id: string): Promise<any> {
@@ -207,12 +207,12 @@ export class HistoricalContextService {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
 
-    return this.mapToResponse(updated);
+    return await this.mapToResponse(updated);
   }
 
-  private static mapToResponse(context: any): any {
+  private static async mapToResponse(context: any): Promise<any> {
     if (!context) return null;
-    
+
     const rawId = context._id || context.id;
     const ctxId = rawId ? rawId.toString() : '';
     // Support both mongoose Document and raw object
@@ -234,18 +234,16 @@ export class HistoricalContextService {
         ? `${ctx.year} ${ctx.isBC ? 'TCN' : 'SCN'}` 
         : null;
 
-    // Resolve private Supabase storage paths → signed URLs (1h TTL)
-    const resolveUrl = async (rawPath?: string): Promise<string | undefined | null> => {
-      if (!rawPath) return rawPath;
-      if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath;
-      try {
-        const { supabaseStorageService } = await import('./supabase.service');
-        const { url } = await supabaseStorageService.createSignedUrl(rawPath, 3600);
-        return url;
-      } catch {
-        return rawPath;
-      }
-    };
+    // imageUrl/videoUrl/modelUrl are either legacy pasted http(s) links or
+    // private Supabase storage paths from the media upload-direct endpoint —
+    // resolve the latter into a signed URL so every consumer keeps getting
+    // a directly renderable URL.
+    const { supabaseStorageService } = await import('./supabase.service');
+    const [resolvedImageUrl, resolvedVideoUrl, resolvedModelUrl] = await Promise.all([
+      supabaseStorageService.resolveViewUrl(ctx.imageUrl),
+      supabaseStorageService.resolveViewUrl(ctx.videoUrl),
+      supabaseStorageService.resolveViewUrl(ctx.modelUrl),
+    ]);
 
     return {
       contextId: ctxId,
@@ -260,9 +258,9 @@ export class HistoricalContextService {
       yearLabel: yearLabel,
       isBC: ctx.isBC || false,
       location: ctx.location,
-      imageUrl: ctx.imageUrl ?? null,   // raw path — use /media/view-url for signed URL
-      videoUrl: ctx.videoUrl ?? null,
-      modelUrl: ctx.modelUrl ?? null,
+      imageUrl: resolvedImageUrl ?? null,
+      videoUrl: resolvedVideoUrl ?? null,
+      modelUrl: resolvedModelUrl ?? null,
       isPublished: isPublished,
       status: status,
       createdBy: ctx.createdBy ? {
@@ -270,29 +268,9 @@ export class HistoricalContextService {
         userName: ctx.createdBy.userName || 'Unknown'
       } : null,
       createdDate: ctx.createdAt,
-      updatedDate: ctx.updatedAt,
-      _resolveUrls: resolveUrl
+      updatedDate: ctx.updatedAt
     };
   }
-
-  /**
-   * Like mapToResponse but resolves Supabase storage paths to signed URLs.
-   * Use for single-resource detail/upload responses; avoid on list endpoints.
-   */
-  static async mapToResponseWithSignedUrls(context: any): Promise<any> {
-    const base = this.mapToResponse(context);
-    if (!base) return null;
-    const resolve = base._resolveUrls;
-    delete base._resolveUrls;
-    const [imageUrl, videoUrl, modelUrl] = await Promise.all([
-      resolve(base.imageUrl),
-      resolve(base.videoUrl),
-      resolve(base.modelUrl),
-    ]);
-    return { ...base, imageUrl, videoUrl, modelUrl };
-  }
-
-
 
   static async uploadDirectMedia(
     contextId: string,
@@ -358,21 +336,28 @@ export class HistoricalContextService {
     return await supabaseStorageService.createSignedUrl(targetUrl, 3600);
   }
 
-  static async deleteMedia(contextId: string): Promise<void> {
+  static async deleteMedia(contextId: string, mediaType?: string): Promise<void> {
     const context = await HistoricalContext.findById(contextId);
     if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
     const { supabaseStorageService } = await import('./supabase.service');
 
-    if (context.imageUrl && !context.imageUrl.startsWith('http')) {
+    // With no mediaType, clear every slot (legacy "reset all media" behavior).
+    // With mediaType, only touch that one slot so e.g. deleting the video
+    // doesn't also wipe out the context's image/3D model.
+    const clearImage = !mediaType || mediaType === 'IMAGE_2D';
+    const clearVideo = !mediaType || mediaType === 'VIDEO';
+    const clearModel = !mediaType || mediaType === 'MODEL_3D';
+
+    if (clearImage && context.imageUrl && !context.imageUrl.startsWith('http')) {
       await supabaseStorageService.deleteFile(context.imageUrl);
       context.imageUrl = undefined;
     }
-    if (context.videoUrl && !context.videoUrl.startsWith('http')) {
+    if (clearVideo && context.videoUrl && !context.videoUrl.startsWith('http')) {
       await supabaseStorageService.deleteFile(context.videoUrl);
       context.videoUrl = undefined;
     }
-    if (context.modelUrl && !context.modelUrl.startsWith('http')) {
+    if (clearModel && context.modelUrl && !context.modelUrl.startsWith('http')) {
       await supabaseStorageService.deleteFile(context.modelUrl);
       context.modelUrl = undefined;
     }

@@ -53,7 +53,7 @@ export class CharacterService {
       ...data,
     });
     await character.populate('createdBy', 'userName');
-    return this.mapToResponse(character);
+    return await this.mapToResponse(character);
   }
 
   static async findById(id: string, includeUnpublished = false, includeInactive = false): Promise<any> {
@@ -82,8 +82,8 @@ export class CharacterService {
         select: 'name description era year',
       });
     }
-    
-    return this.mapToResponse(character);
+
+    return await this.mapToResponse(character);
   }
 
   static async list(query: ListCharactersQuery): Promise<PaginationResult<any>> {
@@ -122,7 +122,7 @@ export class CharacterService {
       Character.countDocuments(filter),
     ]);
 
-    const content = characters.map(char => this.mapToResponse(char));
+    const content = await Promise.all(characters.map(char => this.mapToResponse(char)));
 
     const totalPages = Math.ceil(totalElements / pageSize);
 
@@ -157,7 +157,7 @@ export class CharacterService {
       .populate('contextIds', 'name era year')
       .populate('createdBy', 'userName');
 
-    return characters.map(char => this.mapToResponse(char));
+    return await Promise.all(characters.map(char => this.mapToResponse(char)));
   }
 
   static async update(id: string, data: UpdateCharacterInput): Promise<any> {
@@ -186,7 +186,7 @@ export class CharacterService {
       throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
-    return this.mapToResponse(character);
+    return await this.mapToResponse(character);
   }
 
   static async delete(id: string): Promise<void> {
@@ -220,7 +220,7 @@ export class CharacterService {
       throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
-    return this.mapToResponse(character);
+    return await this.mapToResponse(character);
   }
 
   static async toggleActive(id: string): Promise<any> {
@@ -253,7 +253,7 @@ export class CharacterService {
       throw new AppError('Không tìm thấy nhân vật', 404);
     }
 
-    return this.mapToResponse(updated);
+    return await this.mapToResponse(updated);
   }
 
   static async attachToContext(characterId: string, contextId: string): Promise<void> {
@@ -320,7 +320,7 @@ export class CharacterService {
     }));
   }
 
-  private static mapToResponse(character: any): any {
+  private static async mapToResponse(character: any): Promise<any> {
     if (!character) return null;
     const rawId = character._id || character.id;
     const charId = rawId ? rawId.toString() : '';
@@ -357,33 +357,26 @@ export class CharacterService {
         year: ctx.year ?? null,
       }));
 
-    // Resolve private Supabase storage paths → signed URLs (1h TTL)
-    const resolveUrl = async (rawPath?: string): Promise<string | undefined | null> => {
-      if (!rawPath) return rawPath;
-      if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath;
-      try {
-        const { supabaseStorageService } = await import('./supabase.service');
-        const { url } = await supabaseStorageService.createSignedUrl(rawPath, 3600);
-        return url;
-      } catch {
-        return rawPath; // fallback: return raw path so callers know something exists
-      }
-    };
+    // imageUrl/modelUrl/videoUrl are either legacy pasted http(s) links or
+    // private Supabase storage paths from the media upload-direct endpoint —
+    // resolve the latter into a signed URL so every consumer (character
+    // cards, chat, 3D viewer) gets a directly renderable URL.
+    const { supabaseStorageService } = await import('./supabase.service');
+    const [resolvedImageUrl, resolvedModelUrl, resolvedVideoUrl] = await Promise.all([
+      supabaseStorageService.resolveViewUrl(char.imageUrl),
+      supabaseStorageService.resolveViewUrl(char.modelUrl),
+      supabaseStorageService.resolveViewUrl(char.videoUrl),
+    ]);
 
-    // We resolve URLs lazily and synchronously return a promise-bearing object;
-    // callers (controllers) await this via Promise.all before sending the response.
-    // For list endpoints we need a sync shape — so we return raw paths and let
-    // the media/view-url endpoint resolve them. But for detail/upload responses
-    // we resolve here. This keeps list fast and detail accurate.
     return {
       characterId: charId,
       name: char.name,
       title: char.title,
       background: char.background,
-      image: char.imageUrl,   // raw storage path — FE should call /media/view-url to get signed URL
-      imageUrl: char.imageUrl,
-      videoUrl: char.videoUrl ?? null,
-      modelUrl: char.modelUrl ?? null,
+      image: resolvedImageUrl,
+      imageUrl: resolvedImageUrl,
+      videoUrl: resolvedVideoUrl ?? null,
+      modelUrl: resolvedModelUrl ?? null,
       personality: char.personality,
       bornYear: char.bornYear,
       bornMonth: char.bornMonth,
@@ -404,26 +397,8 @@ export class CharacterService {
         userName: char.createdBy.userName || 'Unknown'
       } : null,
       createdDate: char.createdAt,
-      updatedDate: char.updatedAt,
-      _resolveUrls: resolveUrl  // internal helper — used by mapToResponseWithSignedUrls
+      updatedDate: char.updatedAt
     };
-  }
-
-  /**
-   * Like mapToResponse but awaits signed URLs for image/video/model fields.
-   * Use for single-resource GET/POST responses; avoid on list endpoints (N+1 risk).
-   */
-  static async mapToResponseWithSignedUrls(character: any): Promise<any> {
-    const base = this.mapToResponse(character);
-    if (!base) return null;
-    const resolve = base._resolveUrls;
-    delete base._resolveUrls;
-    const [imageUrl, videoUrl, modelUrl] = await Promise.all([
-      resolve(base.imageUrl),
-      resolve(base.videoUrl),
-      resolve(base.modelUrl),
-    ]);
-    return { ...base, image: imageUrl, imageUrl, videoUrl, modelUrl };
   }
 
   static async uploadDirectMedia(
@@ -490,21 +465,28 @@ export class CharacterService {
     return await supabaseStorageService.createSignedUrl(targetUrl, 3600);
   }
 
-  static async deleteMedia(characterId: string): Promise<void> {
+  static async deleteMedia(characterId: string, mediaType?: string): Promise<void> {
     const character = await Character.findById(characterId);
     if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
     const { supabaseStorageService } = await import('./supabase.service');
 
-    if (character.imageUrl && !character.imageUrl.startsWith('http')) {
+    // With no mediaType, clear every slot (legacy "reset all media" behavior).
+    // With mediaType, only touch that one slot so e.g. deleting the video
+    // doesn't also wipe out the character's image/3D model.
+    const clearImage = !mediaType || mediaType === 'IMAGE_2D';
+    const clearVideo = !mediaType || mediaType === 'VIDEO';
+    const clearModel = !mediaType || mediaType === 'MODEL_3D';
+
+    if (clearImage && character.imageUrl && !character.imageUrl.startsWith('http')) {
       await supabaseStorageService.deleteFile(character.imageUrl);
       character.imageUrl = undefined;
     }
-    if (character.videoUrl && !character.videoUrl.startsWith('http')) {
+    if (clearVideo && character.videoUrl && !character.videoUrl.startsWith('http')) {
       await supabaseStorageService.deleteFile(character.videoUrl);
       character.videoUrl = undefined;
     }
-    if (character.modelUrl && !character.modelUrl.startsWith('http')) {
+    if (clearModel && character.modelUrl && !character.modelUrl.startsWith('http')) {
       await supabaseStorageService.deleteFile(character.modelUrl);
       character.modelUrl = undefined;
     }

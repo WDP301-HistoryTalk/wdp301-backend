@@ -3,8 +3,15 @@ import { UserService } from '../services/user.service';
 import { sendSuccess } from '../utils/response';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mapToUserProfile = (user: any) => {
+const mapToUserProfile = async (user: any) => {
   const tierObj = user.tierId;
+
+  // avatarUrl is either a legacy pasted http(s) link or a private Supabase
+  // storage path from the avatar upload-direct endpoint — resolve the
+  // latter into a signed URL so it's directly renderable as an <img> src.
+  const { supabaseStorageService } = await import('../services/supabase.service');
+  const resolvedAvatarUrl = await supabaseStorageService.resolveViewUrl(user.avatarUrl);
+
   return {
     uid: user._id.toString(),
     userName: user.userName,
@@ -15,7 +22,7 @@ const mapToUserProfile = (user: any) => {
     gender: user.gender || null,
     phoneNumber: user.phoneNumber || null,
     address: user.address || null,
-    avatarUrl: user.avatarUrl || null,
+    avatarUrl: resolvedAvatarUrl || null,
     tierId: tierObj ? tierObj._id?.toString() : null,
     tierTitle: tierObj ? tierObj.title : null,
     subscriptionEndTime: user.tierExpiresAt ? user.tierExpiresAt.toISOString() : null,
@@ -31,7 +38,7 @@ export class UserController {
   static async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.findUserById(req.user!.id);
-      sendSuccess(res, mapToUserProfile(user), 'User profile retrieved successfully');
+      sendSuccess(res, await mapToUserProfile(user), 'User profile retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -49,7 +56,7 @@ export class UserController {
   static async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.updateProfile(req.user!.id, req.body);
-      sendSuccess(res, mapToUserProfile(user), 'User profile updated successfully');
+      sendSuccess(res, await mapToUserProfile(user), 'User profile updated successfully');
     } catch (error) {
       next(error);
     }
@@ -72,7 +79,7 @@ export class UserController {
       const size = parseInt(req.query.size as string) || 10;
       const data: any = await UserService.listUsers(page, size);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data.content = data.content.map((u: any) => mapToUserProfile(u));
+      data.content = await Promise.all(data.content.map((u: any) => mapToUserProfile(u)));
       sendSuccess(res, data, 'Users retrieved successfully');
     } catch (error) {
       next(error);
@@ -82,7 +89,7 @@ export class UserController {
   static async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.findUserById(req.params.id as string);
-      sendSuccess(res, mapToUserProfile(user), 'User retrieved successfully');
+      sendSuccess(res, await mapToUserProfile(user), 'User retrieved successfully');
     } catch (error) {
       next(error);
     }
@@ -91,7 +98,7 @@ export class UserController {
   static async adminUpdateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.adminUpdateUser(req.params.id as string, req.body);
-      sendSuccess(res, mapToUserProfile(user), 'User updated successfully');
+      sendSuccess(res, await mapToUserProfile(user), 'User updated successfully');
     } catch (error) {
       next(error);
     }
@@ -100,7 +107,7 @@ export class UserController {
   static async updateUserRole(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.updateUserRole(req.params.id as string, req.body.role);
-      sendSuccess(res, mapToUserProfile(user), 'User role updated successfully');
+      sendSuccess(res, await mapToUserProfile(user), 'User role updated successfully');
     } catch (error) {
       next(error);
     }
@@ -132,7 +139,7 @@ export class UserController {
   static async restoreUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = await UserService.restoreUser(req.params.id as string);
-      sendSuccess(res, mapToUserProfile(user), 'User account restored successfully');
+      sendSuccess(res, await mapToUserProfile(user), 'User account restored successfully');
     } catch (error) {
       next(error);
     }

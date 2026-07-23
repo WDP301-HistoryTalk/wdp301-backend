@@ -115,6 +115,31 @@ class SupabaseStorageService {
   }
 
   /**
+   * Resolve a stored value into a URL usable directly as an <img>/<video> src.
+   * Values that are already absolute http(s) URLs (legacy pasted links) pass
+   * through untouched; private bucket paths (from direct-upload endpoints)
+   * are exchanged for a freshly signed URL. Falls back to undefined instead
+   * of throwing so a single broken/missing file can't fail an entire list
+   * response.
+   */
+  async resolveViewUrl(
+    filePath?: string | null,
+    expiresInSeconds: number = 3600,
+    bucketName: string = this.defaultBucket
+  ): Promise<string | undefined> {
+    if (!filePath) return undefined;
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+
+    try {
+      const { url } = await this.createSignedUrl(filePath, expiresInSeconds, undefined, bucketName);
+      return url;
+    } catch (err: any) {
+      console.warn(`[SupabaseStorageService] Failed to resolve view URL for ${filePath}:`, err.message);
+      return undefined;
+    }
+  }
+
+  /**
    * Get public URL of a file in Supabase storage
    */
   getPublicUrl(filePath: string, bucketName: string = this.defaultBucket): string {

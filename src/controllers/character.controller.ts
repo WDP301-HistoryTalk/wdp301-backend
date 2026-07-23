@@ -188,7 +188,8 @@ export class CharacterController {
   static async deleteMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { characterId } = req.params;
-      await CharacterService.deleteMedia(characterId as string);
+      const mediaType = (req.query.mediaType as string) || (req.body.mediaType as string) || undefined;
+      await CharacterService.deleteMedia(characterId as string, mediaType);
       sendSuccess(res, null, 'Media deleted successfully');
     } catch (error) {
       next(error);

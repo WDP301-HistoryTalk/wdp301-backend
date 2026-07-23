@@ -145,7 +145,8 @@ export class HistoricalContextController {
   static async deleteMedia(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const contextId = (req.params.contextId || req.params.id) as string;
-      await HistoricalContextService.deleteMedia(contextId);
+      const mediaType = (req.query.mediaType as string) || (req.body.mediaType as string) || undefined;
+      await HistoricalContextService.deleteMedia(contextId, mediaType);
       sendSuccess(res, null, 'Media deleted successfully');
     } catch (error) {
       next(error);
