@@ -12,7 +12,7 @@ export class CharacterController {
       const userRole = req.user?.role;
       const isAdmin = userRole === UserRole.ContentAdmin || userRole === UserRole.SystemAdmin;
       const includeUnpublished = isAdmin;
-      const includeInactive = isAdmin; // Admin can see trashed (isActive: false) items
+      const includeInactive = false; // Trashed items are only exposed via /system/trash
 
       const result = await CharacterService.list({
         search: search as string,
