@@ -125,4 +125,26 @@ router.get('/quiz', DashboardController.getQuiz);
  */
 router.get('/tokens', DashboardController.getTokens);
 
+/**
+ * @openapi
+ * /system-admin/dashboard/test-notification:
+ *   post:
+ *     tags: [System Admin Dashboard]
+ *     summary: Send a test push notification (of an existing type) to the current admin's own devices
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [type]
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [daily_reminder, payment_success, subscription_expired]
+ */
+router.post('/test-notification', DashboardController.testNotification);
+
 export default router;

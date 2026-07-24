@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/user.service';
+import { PushService } from '../services/push.service';
 import { sendSuccess } from '../utils/response';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -230,6 +231,26 @@ export class UserController {
 
       await UserService.deleteAvatar(userId, currentUserId || '', userRole);
       res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async registerDeviceToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { fcmToken, platform } = req.body;
+      await PushService.registerDeviceToken(req.user!.id, fcmToken, platform);
+      sendSuccess(res, {}, 'Device token registered successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async removeDeviceToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { fcmToken } = req.body;
+      await PushService.removeDeviceToken(fcmToken);
+      sendSuccess(res, {}, 'Device token removed successfully');
     } catch (error) {
       next(error);
     }

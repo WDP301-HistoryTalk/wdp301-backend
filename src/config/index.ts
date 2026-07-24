@@ -38,4 +38,10 @@ export const config = {
     pass: process.env.MAIL_PASS || '',
     from: process.env.MAIL_FROM || '"HistoryTalk" <noreply@historytalk.vn>',
   },
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID || '',
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
+    // .env stores the private key with literal "\n" (can't hold real newlines) — unescape here.
+    privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  },
 };
