@@ -46,11 +46,27 @@ export interface PaginationResult<T> {
   hasPrevious: boolean;
 }
 
+// GET responses resolve stored media paths into freshly signed URLs; if a
+// client echoes one of those back unchanged on save (e.g. an edit form that
+// didn't touch the media field), naively persisting it would overwrite the
+// bucket-relative path with a URL that expires in 1h. Normalize any of our
+// own signed/public storage URLs back down to the bare path first.
+async function sanitizeMediaFields<T extends object>(data: T): Promise<T> {
+  const { supabaseStorageService } = await import('./supabase.service');
+  const sanitized = { ...data } as Record<string, unknown>;
+  for (const key of ['image', 'imageUrl', 'modelUrl', 'videoUrl']) {
+    if (typeof sanitized[key] === 'string') {
+      sanitized[key] = supabaseStorageService.normalizeIncomingPath(sanitized[key] as string);
+    }
+  }
+  return sanitized as T;
+}
+
 export class CharacterService {
   static async create(userId: string, data: CreateCharacterInput): Promise<any> {
     const character = await Character.create({
       createdBy: new mongoose.Types.ObjectId(userId),
-      ...data,
+      ...(await sanitizeMediaFields(data)),
     });
     await character.populate('createdBy', 'userName');
     return await this.mapToResponse(character);
@@ -161,7 +177,7 @@ export class CharacterService {
   }
 
   static async update(id: string, data: UpdateCharacterInput): Promise<any> {
-    const updateFields: any = { ...data, updatedAt: new Date() };
+    const updateFields: any = { ...(await sanitizeMediaFields(data)), updatedAt: new Date() };
     const updateQuery: any = {};
     
     if (data.isActive !== undefined) {
@@ -358,15 +374,16 @@ export class CharacterService {
       }));
 
     // imageUrl/modelUrl/videoUrl are either legacy pasted http(s) links or
-    // private Supabase storage paths from the media upload-direct endpoint —
-    // resolve the latter into a signed URL so every consumer (character
-    // cards, chat, 3D viewer) gets a directly renderable URL.
+    // Supabase storage paths from the media upload-direct endpoint — resolve
+    // the latter into a public URL (the bucket already allows public reads,
+    // and this content has no access-control requirement) so every consumer
+    // (character cards, chat, 3D viewer) gets a stable, browser-cacheable
+    // URL instead of a freshly-signed one that changes — and forces a full
+    // re-download — on every single request.
     const { supabaseStorageService } = await import('./supabase.service');
-    const [resolvedImageUrl, resolvedModelUrl, resolvedVideoUrl] = await Promise.all([
-      supabaseStorageService.resolveViewUrl(char.imageUrl),
-      supabaseStorageService.resolveViewUrl(char.modelUrl),
-      supabaseStorageService.resolveViewUrl(char.videoUrl),
-    ]);
+    const resolvedImageUrl = supabaseStorageService.resolvePublicUrl(char.imageUrl);
+    const resolvedModelUrl = supabaseStorageService.resolvePublicUrl(char.modelUrl);
+    const resolvedVideoUrl = supabaseStorageService.resolvePublicUrl(char.videoUrl);
 
     return {
       characterId: charId,
@@ -441,11 +458,9 @@ export class CharacterService {
     }
     await character.save();
 
-    const signedData = await supabaseStorageService.createSignedUrl(uploadedPath, 3600);
-
     return {
       objectPath: uploadedPath,
-      viewUrl: signedData.url,
+      viewUrl: supabaseStorageService.getPublicUrl(uploadedPath),
       mediaType,
     };
   }

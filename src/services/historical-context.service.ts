@@ -35,12 +35,28 @@ export interface ListHistoricalContextsQuery {
   includeInactive?: boolean; // For admin/staff only
 }
 
+// GET responses resolve stored media paths into freshly signed URLs; if a
+// client echoes one of those back unchanged on save (e.g. an edit form that
+// didn't touch the media field), naively persisting it would overwrite the
+// bucket-relative path with a URL that expires in 1h. Normalize any of our
+// own signed/public storage URLs back down to the bare path first.
+async function sanitizeMediaFields<T extends object>(data: T): Promise<T> {
+  const { supabaseStorageService } = await import('./supabase.service');
+  const sanitized = { ...data } as Record<string, unknown>;
+  for (const key of ['image', 'imageUrl', 'modelUrl', 'videoUrl']) {
+    if (typeof sanitized[key] === 'string') {
+      sanitized[key] = supabaseStorageService.normalizeIncomingPath(sanitized[key] as string);
+    }
+  }
+  return sanitized as T;
+}
+
 export class HistoricalContextService {
   static async create(userId: string, data: CreateHistoricalContextInput): Promise<any> {
     const context = await HistoricalContext.create({
       createdBy: new mongoose.Types.ObjectId(userId),
       characterIds: [],
-      ...data,
+      ...(await sanitizeMediaFields(data)),
     });
     await context.populate('createdBy', 'userName');
     return await this.mapToResponse(context);
@@ -125,7 +141,7 @@ export class HistoricalContextService {
   }
 
   static async update(id: string, data: UpdateHistoricalContextInput): Promise<any> {
-    const updateFields: any = { ...data, updatedAt: new Date() };
+    const updateFields: any = { ...(await sanitizeMediaFields(data)), updatedAt: new Date() };
     const updateQuery: any = {};
     
     if (data.isActive !== undefined) {
