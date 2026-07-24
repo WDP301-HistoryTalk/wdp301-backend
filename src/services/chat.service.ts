@@ -193,6 +193,7 @@ export class ChatService {
     }
 
     // Build response, sorted by latest lastMessageAt DESC
+    const { supabaseStorageService } = await import('./supabase.service');
     const groups: ChatHistoryGroupResponse[] = [];
     for (const [charId, { character, sessions: groupSessions }] of grouped) {
       // Fetch message counts for each session
@@ -218,7 +219,7 @@ export class ChatService {
             characterId: charId,
             characterName: character.name || '[Deleted Character]',
             characterTitle: character.title ?? null,
-            characterImage: character.imageUrl ?? null,
+            characterImage: supabaseStorageService.resolvePublicUrl(character.imageUrl) ?? null,
             contextId: ctx?._id?.toString() ?? null,
             contextName: ctx?.name ?? null,
             sessionTitle: session.title || '',
