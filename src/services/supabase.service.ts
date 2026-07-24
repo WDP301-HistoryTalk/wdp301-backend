@@ -149,6 +149,20 @@ class SupabaseStorageService {
   }
 
   /**
+   * Same contract as resolveViewUrl, but for content that's meant to be
+   * publicly cacheable (character/context image, 3D model, video) — a
+   * public URL has no expiring token, so the browser can actually cache it
+   * across page loads instead of re-downloading on every render the way a
+   * freshly-signed URL forces. Only use this for content with no access
+   * control requirement; documents/avatars still go through resolveViewUrl.
+   */
+  resolvePublicUrl(filePath?: string | null, bucketName: string = this.defaultBucket): string | undefined {
+    if (!filePath) return undefined;
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+    return this.getPublicUrl(filePath, bucketName);
+  }
+
+  /**
    * A GET response resolves stored paths into a freshly signed URL (see
    * resolveViewUrl), and clients that echo that value back unchanged on a
    * later save (e.g. an edit form that didn't touch the media field) would

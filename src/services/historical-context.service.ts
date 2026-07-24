@@ -40,9 +40,9 @@ export interface ListHistoricalContextsQuery {
 // didn't touch the media field), naively persisting it would overwrite the
 // bucket-relative path with a URL that expires in 1h. Normalize any of our
 // own signed/public storage URLs back down to the bare path first.
-async function sanitizeMediaFields<T extends Record<string, unknown>>(data: T): Promise<T> {
+async function sanitizeMediaFields<T extends object>(data: T): Promise<T> {
   const { supabaseStorageService } = await import('./supabase.service');
-  const sanitized: Record<string, unknown> = { ...data };
+  const sanitized = { ...data } as Record<string, unknown>;
   for (const key of ['image', 'imageUrl', 'modelUrl', 'videoUrl']) {
     if (typeof sanitized[key] === 'string') {
       sanitized[key] = supabaseStorageService.normalizeIncomingPath(sanitized[key] as string);
