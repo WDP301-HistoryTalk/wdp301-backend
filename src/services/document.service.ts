@@ -1,5 +1,6 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
+import { PDFParse } from 'pdf-parse';
 import DocumentModel from '../models/document.model';
 import HistoricalContext from '../models/historical-context.model';
 import Character from '../models/character.model';
@@ -209,21 +210,22 @@ export class DocumentService {
       throw new AppError('Kích thước file PDF vượt quá giới hạn 50MB', 400);
     }
 
+    const parser = new PDFParse({ data: fileBuffer });
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require('pdf-parse');
-      const data = await pdfParse(fileBuffer);
+      const data = await parser.getText();
       const rawText = (data.text || '').trim();
       if (!rawText) {
         throw new AppError('Không thể trích xuất văn bản từ file PDF (file có thể là ảnh scan hoặc bị bảo vệ)', 400);
       }
       return {
         rawText,
-        pageCount: data.numpages || 1,
+        pageCount: data.total || 1,
       };
     } catch (err: any) {
       if (err instanceof AppError) throw err;
       throw new AppError(`Trích xuất văn bản từ PDF thất bại: ${err.message}`, 400);
+    } finally {
+      await parser.destroy();
     }
   }
 
