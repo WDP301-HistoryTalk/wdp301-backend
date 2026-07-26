@@ -104,6 +104,7 @@ export class QuizService {
     const quiz = await Quiz.findOne({
       _id: quizId,
       isActive: true,
+      isPublished: { $ne: false },
       deletedAt: { $exists: false },
     });
 
@@ -393,7 +394,12 @@ export class QuizService {
       throw new AppError('value phai la so nguyen tu 1 den 5', 400);
     }
 
-    const quiz = await Quiz.findOne({ _id: quizId, deletedAt: { $exists: false } });
+    const quiz = await Quiz.findOne({
+      _id: quizId,
+      isActive: true,
+      isPublished: { $ne: false },
+      deletedAt: { $exists: false },
+    });
     if (!quiz) {
       throw new AppError('Không tìm thấy quiz', 404);
     }
