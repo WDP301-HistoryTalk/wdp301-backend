@@ -1,6 +1,7 @@
 import multer, { MulterError } from 'multer';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { AppError } from '../utils/app-error';
+import { config } from '../config';
 
 /**
  * In-memory multer storage for file uploads.
@@ -103,10 +104,15 @@ export const uploadImage = withMulterErrorHandling(
   { label: 'ảnh', maxBytes: 10 * 1024 * 1024 }
 );
 
+// Matches config.storage.mediaMaxUploadMb (Supabase's project-wide upload
+// limit) — allowing more here would just mean multer accepts the file only
+// for Supabase to reject it after we've already buffered the whole thing.
+const mediaMaxBytes = config.storage.mediaMaxUploadMb * 1024 * 1024;
+
 export const uploadMedia = withMulterErrorHandling(
   multer({
     storage,
-    limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB for 3D models, Videos & larger media
+    limits: { fileSize: mediaMaxBytes },
     fileFilter: (_req, file, cb) => {
       const filename = file.originalname.toLowerCase();
       const isMedia =
@@ -125,5 +131,5 @@ export const uploadMedia = withMulterErrorHandling(
       cb(null, true);
     },
   }).single('file'),
-  { label: 'file media (ảnh/video/model)', maxBytes: 200 * 1024 * 1024 }
+  { label: 'file media (ảnh/video/model)', maxBytes: mediaMaxBytes }
 );

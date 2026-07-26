@@ -49,4 +49,12 @@ export const config = {
     // .env stores the private key with literal "\n" (can't hold real newlines) — unescape here.
     privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
   },
+  storage: {
+    // Supabase Storage's project-wide upload limit (Project Settings → Storage
+    // → "Upload file size limit"). The bucket itself has no override
+    // (file_size_limit: null), so this is the real ceiling for every upload —
+    // not discoverable via the storage API, so it's tracked here manually.
+    // Update this (and SUPABASE_MEDIA_MAX_UPLOAD_MB) if that setting changes.
+    mediaMaxUploadMb: parseInt(process.env.SUPABASE_MEDIA_MAX_UPLOAD_MB || '50', 10),
+  },
 };
