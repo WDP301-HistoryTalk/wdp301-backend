@@ -226,6 +226,83 @@ router.post('/documents/:docId/upload-pdf', authenticate, authorizeRoles(UserRol
  */
 router.get('/documents/:docId/pdf-url', authenticate, DocumentController.createPdfUrl.bind(DocumentController));
 
+/**
+ * @openapi
+ * /documents/pdf/extract:
+ *   post:
+ *     tags: [Documents]
+ *     summary: Extract raw text from PDF file for frontend drafting (Stateless - no DB persistence)
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file: { type: string, format: binary }
+ *     responses:
+ *       200:
+ *         description: PDF text extracted successfully
+ */
+router.post('/documents/pdf/extract', authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAdmin), uploadPdf, DocumentController.extractPdfText.bind(DocumentController));
+
+/**
+ * @openapi
+ * /documents/pdf/upload-and-extract:
+ *   post:
+ *     tags: [Documents]
+ *     summary: Upload PDF file to Supabase Storage AND extract text in one step for frontend drafting
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [file]
+ *             properties:
+ *               file: { type: string, format: binary }
+ *               entityType: { type: string, example: context }
+ *               entityId: { type: string }
+ *     responses:
+ *       200:
+ *         description: PDF uploaded to Supabase and text extracted successfully
+ */
+router.post('/documents/pdf/upload-and-extract', authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAdmin), uploadPdf, DocumentController.uploadAndExtractPdf.bind(DocumentController));
+
+/**
+ * @openapi
+ * /documents/pdf/{docId}/save-content:
+ *   post:
+ *     tags: [Documents]
+ *     summary: Save user-edited content to document
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: docId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [content]
+ *             properties:
+ *               content: { type: string }
+ *               status: { type: string }
+ *     responses:
+ *       200:
+ *         description: Document content saved successfully
+ */
+router.post('/documents/pdf/:docId/save-content', authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAdmin), DocumentController.saveDocumentContent.bind(DocumentController));
+router.post('/documents/pdf/save-content', authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAdmin), DocumentController.saveDocumentContent.bind(DocumentController));
+
 export default router;
 
 

@@ -188,7 +188,7 @@ export class DocumentService {
     if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
 
     const entityTypeStr = doc.entityType ? doc.entityType.toLowerCase() : 'context';
-    const storagePath = `documents/${entityTypeStr}/${doc.entityId}/${doc._id}.pdf`;
+    const storagePath = `${entityTypeStr}/${doc.entityId}/${doc._id}.pdf`;
 
     const { supabaseStorageService } = await import('./supabase.service');
     const uploadedPath = await supabaseStorageService.uploadFile(storagePath, file.buffer, 'application/pdf');
@@ -196,6 +196,79 @@ export class DocumentService {
     doc.fileUrl = uploadedPath;
     doc.type = 'PDF' as any;
     await doc.save();
+
+    await doc.populate('uploadedBy', 'userName');
+    return this.mapToResponse(doc, doc.entityType === EntityType.Context);
+  }
+
+  static async extractPdfText(fileBuffer: Buffer): Promise<{ rawText: string; pageCount: number }> {
+    if (!fileBuffer || fileBuffer.length === 0) {
+      throw new AppError('File PDF không được để trống', 400);
+    }
+    if (fileBuffer.length > 50 * 1024 * 1024) {
+      throw new AppError('Kích thước file PDF vượt quá giới hạn 50MB', 400);
+    }
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pdfParse = require('pdf-parse');
+      const data = await pdfParse(fileBuffer);
+      const rawText = (data.text || '').trim();
+      if (!rawText) {
+        throw new AppError('Không thể trích xuất văn bản từ file PDF (file có thể là ảnh scan hoặc bị bảo vệ)', 400);
+      }
+      return {
+        rawText,
+        pageCount: data.numpages || 1,
+      };
+    } catch (err: any) {
+      if (err instanceof AppError) throw err;
+      throw new AppError(`Trích xuất văn bản từ PDF thất bại: ${err.message}`, 400);
+    }
+  }
+
+  static async uploadAndExtractPdf(
+    file: Express.Multer.File,
+    entityType?: string,
+    entityId?: string
+  ): Promise<{ fileUrl: string; rawText: string; pageCount: number }> {
+    if (!file || !file.buffer) throw new AppError('File PDF không được để trống', 400);
+
+    const extraction = await this.extractPdfText(file.buffer);
+
+    const typeStr = entityType ? entityType.toLowerCase() : 'temp';
+    const idStr = entityId || 'pdf';
+    const sanitizeFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `documents/${typeStr}/${idStr}/${Date.now()}_${sanitizeFilename}`;
+
+    const { supabaseStorageService } = await import('./supabase.service');
+    const uploadedPath = await supabaseStorageService.uploadFile(storagePath, file.buffer, 'application/pdf');
+
+    return {
+      fileUrl: uploadedPath,
+      rawText: extraction.rawText,
+      pageCount: extraction.pageCount,
+    };
+  }
+
+  static async saveDocumentContent(docId: string, content: string, status?: string): Promise<any> {
+    if (!docId) throw new AppError('Yêu cầu truyền docId', 400);
+    if (!content) throw new AppError('Nội dung không được để trống', 400);
+
+    const doc = await DocumentModel.findById(docId);
+    if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
+
+    doc.content = content;
+    if (doc.type === ('TEXT' as any)) {
+      doc.type = 'MARKDOWN' as any;
+    }
+    if (status) {
+      (doc as any).status = status;
+    }
+    await doc.save();
+
+    const entityIdStr = doc.entityId.toString();
+    setImmediate(() => triggerAiProcess(doc._id.toString(), entityIdStr, content));
 
     await doc.populate('uploadedBy', 'userName');
     return this.mapToResponse(doc, doc.entityType === EntityType.Context);

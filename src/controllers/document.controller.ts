@@ -137,6 +137,45 @@ export class DocumentController {
       next(error);
     }
   }
+
+  public async extractPdfText(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const file = req.file;
+      if (!file) { throw new AppError('Yêu cầu chọn file PDF', 400); }
+
+      const result = await DocumentService.extractPdfText(file.buffer);
+      sendSuccess(res, result, 'PDF text extracted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async uploadAndExtractPdf(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const file = req.file;
+      if (!file) { throw new AppError('Yêu cầu chọn file PDF', 400); }
+
+      const { entityType, entityId } = req.body;
+      const result = await DocumentService.uploadAndExtractPdf(file, entityType, entityId);
+      sendSuccess(res, result, 'PDF file uploaded and text extracted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async saveDocumentContent(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const docId = req.params.docId || req.body.docId;
+      const { content, status } = req.body;
+      if (!docId) { throw new AppError('Yêu cầu cung cấp docId', 400); }
+      if (!content) { throw new AppError('Nội dung không được để trống', 400); }
+
+      const doc = await DocumentService.saveDocumentContent(docId as string, content, status);
+      sendSuccess(res, doc, 'Document content saved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new DocumentController();

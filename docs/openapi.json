@@ -2470,6 +2470,47 @@
         }
       }
     },
+    "/system-admin/dashboard/test-notification": {
+      "post": {
+        "tags": [
+          "System Admin Dashboard"
+        ],
+        "summary": "Send a test push notification (of an existing type) to the current admin's own devices",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "daily_reminder",
+                      "payment_success",
+                      "subscription_expired"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
     "/historical-documents": {
       "get": {
         "tags": [
@@ -2791,6 +2832,133 @@
         "responses": {
           "200": {
             "description": "Signed PDF URL generated"
+          }
+        }
+      }
+    },
+    "/documents/pdf/extract": {
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Extract raw text from PDF file for frontend drafting (Stateless - no DB persistence)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF text extracted successfully"
+          }
+        }
+      }
+    },
+    "/documents/pdf/upload-and-extract": {
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Upload PDF file to Supabase Storage AND extract text in one step for frontend drafting",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "example": "context"
+                  },
+                  "entityId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF uploaded to Supabase and text extracted successfully"
+          }
+        }
+      }
+    },
+    "/documents/pdf/{docId}/save-content": {
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Save user-edited content to document",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "docId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document content saved successfully"
           }
         }
       }
@@ -5756,6 +5924,85 @@
         "responses": {
           "200": {
             "description": "Signed view URL generated"
+          }
+        }
+      }
+    },
+    "/users/me/device-token": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Register an FCM device token for the current device",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fcmToken",
+                  "platform"
+                ],
+                "properties": {
+                  "fcmToken": {
+                    "type": "string",
+                    "example": "cSX9W0Y0T4y7...:APA91bH..."
+                  },
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "android",
+                      "ios"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Device token registered successfully"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Remove an FCM device token (called on logout / disable notifications)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fcmToken"
+                ],
+                "properties": {
+                  "fcmToken": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Device token removed successfully"
           }
         }
       }
