@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import chalk from 'chalk';
 import { ZodError } from 'zod';
+import { MulterError } from 'multer';
 import { logger } from '../utils/logger';
 
 export const errorHandler: ErrorRequestHandler = (
@@ -24,6 +25,15 @@ export const errorHandler: ErrorRequestHandler = (
       field: i.path.join('.'),
       message: i.message,
     }));
+  }
+
+  if (err instanceof MulterError) {
+    statusCode = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    message =
+      err.code === 'LIMIT_FILE_SIZE'
+        ? 'Dung lượng file vượt quá giới hạn cho phép'
+        : 'Tải file lên thất bại, vui lòng kiểm tra lại file';
+    errorCode = `MULTER_${err.code}`;
   }
 
   if (e.name === 'JsonWebTokenError') {
