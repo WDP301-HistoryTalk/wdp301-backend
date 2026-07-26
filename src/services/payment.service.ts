@@ -8,6 +8,7 @@ import { config } from '../config';
 import { OrderStatus, TransactionStatus } from '../types/enums';
 import { payos, WebhookData } from './payos.client';
 import { mailService } from './mail.service';
+import { PushService } from './push.service';
 
 async function generateOrderCode(): Promise<number> {
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -199,6 +200,13 @@ export class PaymentService {
 
       // Gửi email sau khi thanh toán thành công
       mailService.sendPaymentSuccessNotification(user.email, user.userName, tier.title, tier.amount).catch(console.error);
+
+      // Gửi push notification (best-effort, không ảnh hưởng luồng chính)
+      PushService.sendToUser(user._id.toString(), {
+        title: 'Thanh toán thành công 🎉',
+        body: `Gói ${tier.title} đã được kích hoạt cho tài khoản của bạn.`,
+        data: { route: '/payment/history' },
+      }).catch(console.error);
     }
   }
 

@@ -28,5 +28,19 @@ export const loginSchema = z.object({
   }),
 });
 
+export const deviceTokenSchema = z.object({
+  body: z.object({
+    fcmToken: z.string().min(10).max(300),
+    platform: z.enum(['android', 'ios']),
+  }),
+});
+
+export const removeDeviceTokenSchema = z.object({
+  body: z.object({
+    fcmToken: z.string().min(10).max(300),
+  }),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type DeviceTokenInput = z.infer<typeof deviceTokenSchema>;

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
 import { authenticate } from '../middlewares/auth.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { deviceTokenSchema, removeDeviceTokenSchema } from '../validations/user.validation';
 
 const router = Router();
 
@@ -514,6 +516,53 @@ router.get('/avatar/view-url', UserController.generateAvatarViewUrl);
  */
 router.delete('/:userId/avatar', UserController.deleteAvatar);
 router.delete('/avatar', UserController.deleteAvatar);
+
+/**
+ * @openapi
+ * /users/me/device-token:
+ *   post:
+ *     tags: [User]
+ *     summary: Register an FCM device token for the current device
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [fcmToken, platform]
+ *             properties:
+ *               fcmToken:
+ *                 type: string
+ *                 example: "cSX9W0Y0T4y7...:APA91bH..."
+ *               platform:
+ *                 type: string
+ *                 enum: [android, ios]
+ *     responses:
+ *       200:
+ *         description: Device token registered successfully
+ *   delete:
+ *     tags: [User]
+ *     summary: Remove an FCM device token (called on logout / disable notifications)
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [fcmToken]
+ *             properties:
+ *               fcmToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Device token removed successfully
+ */
+router.post('/me/device-token', validate(deviceTokenSchema), UserController.registerDeviceToken);
+router.delete('/me/device-token', validate(removeDeviceTokenSchema), UserController.removeDeviceToken);
 
 export default router;
 

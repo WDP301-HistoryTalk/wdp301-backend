@@ -1,6 +1,7 @@
 import User from '../models/user.model';
 import Tier from '../models/tier.model';
 import { TierTitle } from '../types/enums';
+import { PushService } from './push.service';
 
 export class SubscriptionService {
   /**
@@ -20,11 +21,24 @@ export class SubscriptionService {
   static async downgradeExpiredUsers(now: Date = new Date()): Promise<number> {
     const freeTier = await Tier.findOne({ title: TierTitle.Free });
 
+    // Lay danh sach id TRUOC khi updateMany, de biet chinh xac ai vua bi ha
+    // goi ma gui push (updateMany khong tra ve document da sua).
+    const expiredUsers = await User.find({ tierExpiresAt: { $lt: now } }).select('_id');
+
     const update = freeTier
       ? { $set: { tierId: freeTier._id }, $unset: { tierExpiresAt: 1 } }
       : { $unset: { tierExpiresAt: 1, tierId: 1 } };
 
     const result = await User.updateMany({ tierExpiresAt: { $lt: now } }, update);
+
+    for (const u of expiredUsers) {
+      PushService.sendToUser(u._id.toString(), {
+        title: 'Gói của bạn đã hết hạn',
+        body: 'Gói dịch vụ đã hết hạn và được chuyển về gói Miễn phí. Gia hạn ngay để tiếp tục sử dụng đầy đủ tính năng.',
+        data: { route: '/payment' },
+      }).catch(console.error);
+    }
+
     return result.modifiedCount ?? 0;
   }
 }
