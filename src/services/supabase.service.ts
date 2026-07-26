@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { AppError } from '../utils/app-error';
 
 class SupabaseStorageService {
   private client: SupabaseClient | null = null;
@@ -47,6 +48,9 @@ class SupabaseStorageService {
       });
 
     if (error) {
+      if (/exceeded the maximum allowed size/i.test(error.message)) {
+        throw new AppError('Dung lượng file vượt quá giới hạn cho phép của hệ thống lưu trữ', 413);
+      }
       throw new Error(`Failed to upload file to Supabase Storage: ${error.message}`);
     }
 
