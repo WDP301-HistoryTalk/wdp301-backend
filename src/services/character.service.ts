@@ -154,7 +154,16 @@ export class CharacterService {
   }
 
   static async listByContextId(contextId: string, includeUnpublished = false): Promise<any[]> {
-    const context = await HistoricalContext.findOne({ _id: contextId, deletedAt: { $exists: false } });
+    const contextFilter: Record<string, unknown> = {
+      _id: contextId,
+      deletedAt: { $exists: false },
+      isActive: true,
+    };
+    if (!includeUnpublished) {
+      contextFilter.isPublished = true;
+    }
+
+    const context = await HistoricalContext.findOne(contextFilter);
     if (!context) {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
     }
@@ -323,7 +332,16 @@ export class CharacterService {
   }
 
   static async getContextsOfCharacter(characterId: string, includeUnpublished = false): Promise<any[]> {
-    const character = await Character.findOne({ _id: characterId, deletedAt: { $exists: false } }).populate({
+    const characterFilter: Record<string, unknown> = {
+      _id: characterId,
+      deletedAt: { $exists: false },
+      isActive: true,
+    };
+    if (!includeUnpublished) {
+      characterFilter.isPublished = true;
+    }
+
+    const character = await Character.findOne(characterFilter).populate({
       path: 'contextIds',
       match: includeUnpublished ? { deletedAt: { $exists: false } } : { isPublished: true, isActive: true, deletedAt: { $exists: false } },
     });
