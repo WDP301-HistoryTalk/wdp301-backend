@@ -128,7 +128,7 @@ export class AuthService {
   static async googleAuth(idToken: string) {
     const ticket = await googleClient.verifyIdToken({
       idToken,
-      audience: config.google.clientId,
+      audience: [config.google.clientId, config.google.androidClientId, config.google.iosClientId].filter(Boolean),
     });
 
     const payload = ticket.getPayload();

@@ -16,7 +16,12 @@ export const config = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
   google: {
+    // Mobile requests the id_token using the platform-specific (Android/iOS)
+    // client ID, not the web one — Google sets that as the token's `aud`
+    // claim, so verifyIdToken() must accept all three as valid audiences.
     clientId: process.env.GOOGLE_CLIENT_ID || '',
+    androidClientId: process.env.GOOGLE_ANDROID_CLIENT_ID || '',
+    iosClientId: process.env.GOOGLE_IOS_CLIENT_ID || '',
   },
   payos: {
     clientId: process.env.PAYOS_CLIENT_ID || '',
