@@ -84,10 +84,17 @@ export class DocumentService {
     return this.mapToResponse(doc, true);
   }
 
-  static async getDocumentsByContext(contextId: string): Promise<any[]> {
-    const context = await HistoricalContext.findOne({
+  static async getDocumentsByContext(contextId: string, includeUnpublished = false): Promise<any[]> {
+    const contextFilter: Record<string, unknown> = {
       _id: contextId,
-    });
+      deletedAt: { $exists: false },
+      isActive: true,
+    };
+    if (!includeUnpublished) {
+      contextFilter.isPublished = true;
+    }
+
+    const context = await HistoricalContext.findOne(contextFilter);
     if (!context) throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
 
     const docs = await DocumentModel.find({ entityId: context._id, entityType: EntityType.Context })
@@ -121,10 +128,17 @@ export class DocumentService {
     return this.mapToResponse(doc, false);
   }
 
-  static async getDocumentsByCharacter(characterId: string): Promise<any[]> {
-    const character = await Character.findOne({
+  static async getDocumentsByCharacter(characterId: string, includeUnpublished = false): Promise<any[]> {
+    const characterFilter: Record<string, unknown> = {
       _id: characterId,
-    });
+      deletedAt: { $exists: false },
+      isActive: true,
+    };
+    if (!includeUnpublished) {
+      characterFilter.isPublished = true;
+    }
+
+    const character = await Character.findOne(characterFilter);
     if (!character) throw new AppError('Không tìm thấy nhân vật', 404);
 
     const docs = await DocumentModel.find({ entityId: character._id, entityType: EntityType.Character })
@@ -135,9 +149,18 @@ export class DocumentService {
 
   // ── Shared ────────────────────────────────────────────────────────────────
 
-  static async getDocumentById(docId: string): Promise<any> {
+  static async getDocumentById(docId: string, includeUnpublished = false): Promise<any> {
     const doc = await DocumentModel.findById(docId).populate('uploadedBy', 'userName');
     if (!doc) throw new AppError('Không tìm thấy tài liệu', 404);
+
+    if (!includeUnpublished) {
+      const visibleFilter = { _id: doc.entityId, deletedAt: { $exists: false }, isActive: true, isPublished: true };
+      const parentEntity = doc.entityType === EntityType.Context
+        ? await HistoricalContext.findOne(visibleFilter)
+        : await Character.findOne(visibleFilter);
+      if (!parentEntity) throw new AppError('Không tìm thấy tài liệu', 404);
+    }
+
     return this.mapToResponse(doc, doc.entityType === EntityType.Context);
   }
 
@@ -198,8 +221,18 @@ export class DocumentService {
     setImmediate(() => triggerAiDelete(docId));
   }
 
-  static async getAllDocuments(entityType?: EntityType): Promise<any[]> {
-    const filter = entityType ? { entityType } : {};
+  static async getAllDocuments(entityType?: EntityType, includeUnpublished = false): Promise<any[]> {
+    const filter: Record<string, unknown> = entityType ? { entityType } : {};
+
+    if (!includeUnpublished) {
+      const visibleFilter = { deletedAt: { $exists: false }, isActive: true, isPublished: true };
+      const [contextIds, characterIds] = await Promise.all([
+        entityType && entityType !== EntityType.Context ? [] : HistoricalContext.find(visibleFilter).distinct('_id'),
+        entityType && entityType !== EntityType.Character ? [] : Character.find(visibleFilter).distinct('_id'),
+      ]);
+      filter.entityId = { $in: [...contextIds, ...characterIds] };
+    }
+
     const docs = await DocumentModel.find(filter)
       .populate('uploadedBy', 'userName')
       .sort({ createdAt: -1 });

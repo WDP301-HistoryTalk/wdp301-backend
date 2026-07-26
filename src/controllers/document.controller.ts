@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import DocumentService from '../services/document.service';
-import { EntityType } from '../types/enums';
+import { EntityType, UserRole } from '../types/enums';
 import { sendSuccess } from '../utils/response';
 import { AppError } from '../utils/app-error';
+
+function isAdminRequest(req: Request): boolean {
+  const role = req.user?.role;
+  return role === UserRole.ContentAdmin || role === UserRole.SystemAdmin;
+}
 
 export class DocumentController {
 
@@ -28,7 +33,7 @@ export class DocumentController {
   public async getDocumentsByContext(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { contextId } = req.params;
-      const docs = await DocumentService.getDocumentsByContext(contextId as string);
+      const docs = await DocumentService.getDocumentsByContext(contextId as string, isAdminRequest(req));
       sendSuccess(res, docs, 'Documents retrieved successfully');
     } catch (error) {
       next(error);
@@ -57,7 +62,7 @@ export class DocumentController {
   public async getDocumentsByCharacter(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { characterId } = req.params;
-      const docs = await DocumentService.getDocumentsByCharacter(characterId as string);
+      const docs = await DocumentService.getDocumentsByCharacter(characterId as string, isAdminRequest(req));
       sendSuccess(res, docs, 'Documents retrieved successfully');
     } catch (error) {
       next(error);
@@ -68,7 +73,7 @@ export class DocumentController {
 
   public async getDocumentById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const doc = await DocumentService.getDocumentById(req.params.docId as string);
+      const doc = await DocumentService.getDocumentById(req.params.docId as string, isAdminRequest(req));
       sendSuccess(res, doc, 'Document retrieved successfully');
     } catch (error) {
       next(error);
@@ -100,7 +105,7 @@ export class DocumentController {
       const validType = entityType === EntityType.Context || entityType === EntityType.Character
         ? (entityType as EntityType)
         : undefined;
-      const docs = await DocumentService.getAllDocuments(validType);
+      const docs = await DocumentService.getAllDocuments(validType, isAdminRequest(req));
       sendSuccess(res, docs, 'Documents retrieved successfully');
     } catch (error) {
       next(error);

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, optionalAuth } from '../middlewares/auth.middleware';
 import DocumentController from '../controllers/document.controller';
 
 const router = Router();
@@ -29,7 +29,7 @@ const router = Router();
  *       200:
  *         description: List retrieved successfully
  */
-router.get('/historical-documents', DocumentController.getAllDocuments.bind(DocumentController));
+router.get('/historical-documents', optionalAuth, DocumentController.getAllDocuments.bind(DocumentController));
 
 /**
  * @openapi
@@ -38,7 +38,7 @@ router.get('/historical-documents', DocumentController.getAllDocuments.bind(Docu
  *     tags: [Historical Context Documents]
  *     summary: Get all documents by contextId
  */
-router.get('/historical-documents/context/:contextId', DocumentController.getDocumentsByContext.bind(DocumentController));
+router.get('/historical-documents/context/:contextId', optionalAuth, DocumentController.getDocumentsByContext.bind(DocumentController));
 
 /**
  * @openapi
@@ -47,7 +47,7 @@ router.get('/historical-documents/context/:contextId', DocumentController.getDoc
  *     tags: [Historical Context Documents]
  *     summary: Get a document by ID
  */
-router.get('/historical-documents/:docId', DocumentController.getDocumentById.bind(DocumentController));
+router.get('/historical-documents/:docId', optionalAuth, DocumentController.getDocumentById.bind(DocumentController));
 
 /**
  * @openapi
@@ -107,7 +107,7 @@ router.delete('/historical-documents/:docId', authenticate, DocumentController.d
  *     tags: [Character Documents]
  *     summary: Get all character documents
  */
-router.get('/character-documents', DocumentController.getAllDocuments.bind(DocumentController));
+router.get('/character-documents', optionalAuth, DocumentController.getAllDocuments.bind(DocumentController));
 
 /**
  * @openapi
@@ -116,7 +116,7 @@ router.get('/character-documents', DocumentController.getAllDocuments.bind(Docum
  *     tags: [Character Documents]
  *     summary: Get all documents by characterId
  */
-router.get('/character-documents/character/:characterId', DocumentController.getDocumentsByCharacter.bind(DocumentController));
+router.get('/character-documents/character/:characterId', optionalAuth, DocumentController.getDocumentsByCharacter.bind(DocumentController));
 
 /**
  * @openapi
@@ -125,7 +125,7 @@ router.get('/character-documents/character/:characterId', DocumentController.get
  *     tags: [Character Documents]
  *     summary: Get a character document by ID
  */
-router.get('/character-documents/:docId', DocumentController.getDocumentById.bind(DocumentController));
+router.get('/character-documents/:docId', optionalAuth, DocumentController.getDocumentById.bind(DocumentController));
 
 /**
  * @openapi
