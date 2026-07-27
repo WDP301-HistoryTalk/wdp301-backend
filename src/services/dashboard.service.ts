@@ -437,7 +437,7 @@ export class DashboardService {
       const quiz = quizMap[q._id.toString()];
       return {
         quizId: q._id,
-        title: quiz?.title || 'Unknown',
+        title: quiz?.title || 'Bài Quiz đã xoá',
         level: quiz?.level || 'Medium',
         startedSessions: q.startedSessions,
         completedSessions: q.completedSessions,
@@ -450,25 +450,31 @@ export class DashboardService {
 
     const topWrongQuestionsAggr = await AnswerDetail.aggregate([
       { $match: { createdAt: { $gte: from, $lte: to } } },
-      { $group: {
+      {
+        $group: {
           _id: '$questionId',
           totalAnswers: { $sum: 1 },
           wrongAnswers: { $sum: { $cond: [{ $eq: ['$isCorrect', false] }, 1, 0] } }
         }
       },
       { $sort: { wrongAnswers: -1 } },
-      { $limit: 5 }
+      { $limit: 20 }
     ]);
 
     const questionIds = topWrongQuestionsAggr.map(q => q._id);
     const questions = await Question.find({ _id: { $in: questionIds } });
     const questionMap = Object.fromEntries(questions.map(q => [q._id.toString(), q]));
-    
+
+    // Filter out deleted questions (questions no longer existing in Question collection)
+    const validWrongQuestionsAggr = topWrongQuestionsAggr
+      .filter(q => !!questionMap[q._id.toString()])
+      .slice(0, 5);
+
     const quizIdsFromQuestions = questions.map(q => q.quizId).filter(Boolean);
     const questionQuizzes = await Quiz.find({ _id: { $in: quizIdsFromQuestions } });
     const questionQuizMap = Object.fromEntries(questionQuizzes.map(q => [q._id.toString(), q]));
 
-    const topWrongQuestions = topWrongQuestionsAggr.map(q => {
+    const topWrongQuestions = validWrongQuestionsAggr.map(q => {
       const question = questionMap[q._id.toString()] as any;
       const rawQuizId = question?.quizId ? question.quizId.toString() : null;
       const quiz = rawQuizId ? questionQuizMap[rawQuizId] : null;
@@ -477,7 +483,7 @@ export class DashboardService {
         questionId: q._id,
         questionContent: question?.content || '',
         quizId: rawQuizId,
-        quizTitle: quiz?.title || 'Unknown',
+        quizTitle: quiz?.title || 'Bài Quiz đã xoá',
         wrongAnswers: q.wrongAnswers,
         totalAnswers: q.totalAnswers,
         wrongRate: q.totalAnswers > 0 ? (q.wrongAnswers * 100) / q.totalAnswers : 0
