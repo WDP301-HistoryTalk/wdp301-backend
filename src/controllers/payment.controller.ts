@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 export class PaymentController {
   static async createCheckout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const data = await PaymentService.createPayOSCheckout(req.user!.id, req.body.tierId);
+      const data = await PaymentService.createPayOSCheckout(req.user!.id, req.body.tierId, req.body.platform);
       sendSuccess(res, data, 'Payment checkout created successfully');
     } catch (error) {
       next(error);

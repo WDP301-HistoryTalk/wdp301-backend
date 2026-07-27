@@ -26,7 +26,7 @@ function addMonths(date: Date, months: number): Date {
 }
 
 export class PaymentService {
-  static async createPayOSCheckout(userId: string, tierId: string): Promise<Record<string, unknown>> {
+  static async createPayOSCheckout(userId: string, tierId: string, platform?: 'web' | 'mobile'): Promise<Record<string, unknown>> {
     const tier = await Tier.findOne({ _id: tierId, isActive: true });
     if (!tier) throw new AppError('Tier not found or inactive', 404);
     if (tier.amount <= 0) throw new AppError('Free tier requires no payment', 400);
@@ -44,13 +44,17 @@ export class PaymentService {
     });
 
     const description = ('Goi ' + tier.title).slice(0, 25);
+    // Mobile app khong the mo URL https cua web FE va tu dong quay lai app —
+    // no can PayOS redirect bang deep link (xem config.payos.mobileDeepLink,
+    // scheme dang ky trong mobile-historytalk/app.json).
+    const isMobile = platform === 'mobile';
     try {
       const link = await payos.createPaymentLink({
         orderCode,
         amount: tier.amount,
         description,
-        returnUrl: config.payos.returnUrl,
-        cancelUrl: config.payos.cancelUrl,
+        returnUrl: isMobile ? config.payos.mobileDeepLink : config.payos.returnUrl,
+        cancelUrl: isMobile ? config.payos.mobileDeepLink : config.payos.cancelUrl,
         buyerName: user.fullName || user.userName,
         buyerEmail: user.email,
         items: [{ name: 'Tier ' + tier.title, quantity: 1, price: tier.amount }],

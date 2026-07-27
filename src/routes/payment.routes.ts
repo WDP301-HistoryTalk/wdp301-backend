@@ -33,6 +33,10 @@ const router = Router();
  *             properties:
  *               tierId:
  *                 type: string
+ *               platform:
+ *                 type: string
+ *                 enum: [web, mobile]
+ *                 description: When "mobile", PayOS returnUrl/cancelUrl resolve to the mobile app's deep link instead of the web FE.
  *     responses:
  *       200:
  *         description: Checkout link created successfully

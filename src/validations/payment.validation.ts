@@ -5,6 +5,9 @@ const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid id');
 export const createOrderSchema = z.object({
   body: z.object({
     tierId: objectId,
+    // Quyet dinh PayOS redirect ve web (URL https) hay mobile app (deep link)
+    // sau khi thanh toan xong — xem PaymentService.createPayOSCheckout.
+    platform: z.enum(['web', 'mobile']).optional(),
   }),
 });
 
