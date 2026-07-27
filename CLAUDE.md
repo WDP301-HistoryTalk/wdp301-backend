@@ -199,8 +199,8 @@ TransactionStatus: pending | success | failed
 
 | Middleware | File | Purpose |
 |-----------|------|---------|
-| `globalLimiter` | rate-limit.middleware.ts | 100 req/min, skipped in test |
-| `authLimiter` | rate-limit.middleware.ts | 10 req/15min on auth routes, skipped in test |
+| `authLimiter` | rate-limit.middleware.ts | 30 req/15min on auth routes, skipped in test |
+| `paymentLimiter` | rate-limit.middleware.ts | 10 req/min on payment routes, keyed per user, skipped in test |
 | `authenticate` | auth.middleware.ts | JWT verification → req.user |
 | `optionalAuth` | auth.middleware.ts | JWT if present, else guest |
 | `authorizeRoles` | auth.middleware.ts | string role check |
