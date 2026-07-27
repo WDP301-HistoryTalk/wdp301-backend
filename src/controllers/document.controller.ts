@@ -163,6 +163,45 @@ export class DocumentController {
     }
   }
 
+  /**
+   * Ban SSE cua uploadAndExtractPdf — file scan nhieu trang phai OCR (~4-5s/trang,
+   * co the mat vai phut) nen stream tien do (trang nao xong / bao nhieu %) thay vi
+   * bat client cho mot request im lang toi khi xong. Mirrors ChatController.sendMessageStream.
+   */
+  public async uploadAndExtractPdfStream(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const file = req.file;
+      // Validate TRUOC khi commit SSE headers — de loi "thieu file" tra ve
+      // HTTP 400 binh thuong thay vi mot SSE error event.
+      if (!file) { throw new AppError('Yêu cầu chọn file PDF', 400); }
+
+      const { entityType, entityId } = req.body;
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('X-Accel-Buffering', 'no');
+      res.setHeader('Connection', 'keep-alive');
+
+      try {
+        const result = await DocumentService.uploadAndExtractPdf(
+          file,
+          entityType,
+          entityId,
+          (page: number, total: number) => {
+            res.write(`data: ${JSON.stringify({ type: 'progress', page, total })}\n\n`);
+          }
+        );
+        res.write(`data: ${JSON.stringify({ type: 'done', data: result })}\n\n`);
+      } catch (err: any) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message: err.message || 'Trích xuất PDF thất bại' })}\n\n`);
+      } finally {
+        res.end();
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public async saveDocumentContent(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const docId = req.params.docId || req.body.docId;

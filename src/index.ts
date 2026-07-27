@@ -7,6 +7,11 @@ import { startSchedulers } from './utils/scheduler';
 
 const server = http.createServer(app);
 
+// Node mac dinh requestTimeout = 5 phut (chong slow-loris) — qua ngan cho
+// request OCR PDF nhieu trang (Tesseract ~4-5s/trang, file 100+ trang co the
+// mat 9-10 phut). Noi rong de request khong bi Node tu ngat giua chung.
+server.requestTimeout = 15 * 60 * 1000; // 15 phut
+
 const startServer = async () => {
   await connectDB();
   startSchedulers();

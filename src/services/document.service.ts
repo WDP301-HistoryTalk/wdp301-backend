@@ -1,13 +1,48 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
 import { PDFParse } from 'pdf-parse';
+import { createWorker } from 'tesseract.js';
 import DocumentModel from '../models/document.model';
 import HistoricalContext from '../models/historical-context.model';
 import Character from '../models/character.model';
 import { AppError } from '../utils/app-error';
 import { EntityType } from '../types/enums';
+import { logger } from '../utils/logger';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
+
+// PDF scan (khong co text layer) can rat nhieu trang de OCR — gioi han so
+// trang de tranh mot request treo vo han (Tesseract chay CPU, ~4-5s/trang).
+// 150 du headroom cho cac file dai nhat hien co (120 trang) ma van co 1 tran
+// tren de chan file qua khong lo lam nghen server.
+const MAX_OCR_PAGES = 150;
+// Nguong mat do ky tu/trang de quyet dinh trang co "du chu that" hay khong,
+// tinh tren van ban DA LOC bo cac dong print-artifact (xem stripPrintArtifacts).
+const MIN_CHARS_PER_PAGE = 40;
+
+// Nhieu PDF thuc te la ban "Print to PDF" tu mot trinh xem web (vd Scribd
+// embed) voi tuy chon "Headers and footers" cua trinh duyet duoc bat — moi
+// trang se co THEM 1 lop text THAT (khong phai OCR) do trinh duyet tu chen:
+// ngay gio in, URL trang, va so trang dang "N/M". Lop text nay du dai de
+// "qua" mot ngu?ng mat do chu ngay tho, khien code tuong trang da co du noi
+// dung va bo qua OCR — trong khi anh that (noi dung sach) nam ben duoi chua
+// tung duoc doc. Loc bo cac dong nay truoc khi tinh mat do de tranh bi danh
+// lua boi rac lap lai deu dan nay.
+const PRINT_ARTIFACT_LINE_PATTERNS = [
+  /^https?:\/\/\S+$/i,
+  /^\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}\s*(AM|PM)?$/i,
+  /^\d+\s*\/\s*\d+$/,
+];
+
+export type OcrProgressCallback = (page: number, total: number) => void;
+
+function stripPrintArtifacts(text: string): string {
+  return text
+    .split('\n')
+    .filter((line) => !PRINT_ARTIFACT_LINE_PATTERNS.some((re) => re.test(line.trim())))
+    .join('\n')
+    .trim();
+}
 
 // ─── AI Service Async Helpers ─────────────────────────────────────────────────
 
@@ -202,29 +237,82 @@ export class DocumentService {
     return this.mapToResponse(doc, doc.entityType === EntityType.Context);
   }
 
-  static async extractPdfText(fileBuffer: Buffer): Promise<{ rawText: string; pageCount: number }> {
+  static async extractPdfText(
+    fileBuffer: Buffer,
+    onProgress?: OcrProgressCallback
+  ): Promise<{ rawText: string; pageCount: number }> {
     if (!fileBuffer || fileBuffer.length === 0) {
       throw new AppError('File PDF không được để trống', 400);
     }
-    if (fileBuffer.length > 50 * 1024 * 1024) {
-      throw new AppError('Kích thước file PDF vượt quá giới hạn 50MB', 400);
+    if (fileBuffer.length > 100 * 1024 * 1024) {
+      throw new AppError('Kích thước file PDF vượt quá giới hạn 100MB', 400);
     }
 
     const parser = new PDFParse({ data: fileBuffer });
+    let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
     try {
-      const data = await parser.getText();
-      const rawText = (data.text || '').trim();
-      if (!rawText) {
-        throw new AppError('Không thể trích xuất văn bản từ file PDF (file có thể là ảnh scan hoặc bị bảo vệ)', 400);
+      // pageJoiner: '' — mac dinh getText() chen marker "-- page N of M --"
+      // vao cuoi moi trang, gay nhieu them cho buoc tinh mat do chu ben duoi.
+      const data = await parser.getText({ pageJoiner: '' });
+      const pageCount = data.total || 1;
+      const pageTexts = new Array<string>(pageCount).fill('');
+      let ocrPageCount = 0;
+
+      // Xu ly tung trang mot va bao "hoan thanh" ngay sau moi trang (du la
+      // lay duoc text san co hay phai OCR rieng trang do), thay vi doi xet
+      // sparse tren ca tai lieu roi moi quyet dinh OCR toan bo nhu truoc.
+      // Nho vay FE luon thay tien do tang dan theo trang cho moi loai PDF,
+      // khong chi rieng file scan thuan can OCR ca tai lieu.
+      for (const page of data.pages) {
+        const raw = (page.text || '').trim();
+        const meaningful = stripPrintArtifacts(raw);
+        const isPageSparse = meaningful.length < MIN_CHARS_PER_PAGE;
+
+        let pageText = raw;
+        if (isPageSparse && ocrPageCount < MAX_OCR_PAGES) {
+          ocrPageCount += 1;
+          try {
+            worker ??= await createWorker(['vie', 'eng']);
+            const screenshot = await parser.getScreenshot({
+              first: page.num,
+              last: page.num,
+              scale: 3,
+              imageDataUrl: false,
+            });
+            const image = screenshot.pages[0];
+            if (image) {
+              const { data: ocrData } = await worker.recognize(Buffer.from(image.data));
+              const ocrText = ocrData.text.trim();
+              // OCR co the te hon text san co (vd trang co text that nhung
+              // ngan that su, khong phai do scan) — giu ket qua dai hon.
+              if (ocrText.length > pageText.length) pageText = ocrText;
+            }
+          } catch (err) {
+            // Loi 1 trang (anh hong, qua lon...) khong nen huy toan bo ket
+            // qua cua cac trang da xu ly thanh cong truoc do.
+            logger.warn(`OCR trang ${page.num} that bai, giu text san co`, err);
+          }
+        }
+
+        pageTexts[page.num - 1] = pageText;
+        onProgress?.(page.num, pageCount);
       }
-      return {
-        rawText,
-        pageCount: data.total || 1,
-      };
+
+      const rawText = pageTexts.join('\n\n').trim();
+      if (!rawText) {
+        throw new AppError('Không thể trích xuất văn bản từ file PDF (kể cả sau khi OCR — file có thể bị bảo vệ hoặc ảnh scan quá mờ)', 400);
+      }
+
+      logger.debug(
+        `extractPdfText: ${rawText.length} ky tu / ${pageCount} trang (${ocrPageCount} trang phai OCR)`
+      );
+      return { rawText, pageCount };
     } catch (err: any) {
       if (err instanceof AppError) throw err;
+      logger.error('extractPdfText that bai', err);
       throw new AppError(`Trích xuất văn bản từ PDF thất bại: ${err.message}`, 400);
     } finally {
+      if (worker) await worker.terminate();
       await parser.destroy();
     }
   }
@@ -232,11 +320,12 @@ export class DocumentService {
   static async uploadAndExtractPdf(
     file: Express.Multer.File,
     entityType?: string,
-    entityId?: string
+    entityId?: string,
+    onProgress?: OcrProgressCallback
   ): Promise<{ fileUrl: string; rawText: string; pageCount: number }> {
     if (!file || !file.buffer) throw new AppError('File PDF không được để trống', 400);
 
-    const extraction = await this.extractPdfText(file.buffer);
+    const extraction = await this.extractPdfText(file.buffer, onProgress);
 
     const typeStr = entityType ? entityType.toLowerCase() : 'temp';
     const idStr = entityId || 'pdf';

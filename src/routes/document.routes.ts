@@ -275,6 +275,31 @@ router.post('/documents/pdf/upload-and-extract', authenticate, authorizeRoles(Us
 
 /**
  * @openapi
+ * /documents/pdf/upload-and-extract/stream:
+ *   post:
+ *     tags: [Documents]
+ *     summary: Same as upload-and-extract but streams per-page progress via SSE (data:{type:"progress",page,total} after each page is processed, then {type:"done",data} or {type:"error",message})
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [file]
+ *             properties:
+ *               file: { type: string, format: binary }
+ *               entityType: { type: string, example: context }
+ *               entityId: { type: string }
+ *     responses:
+ *       200:
+ *         description: SSE stream of progress events, ending with done/error
+ */
+router.post('/documents/pdf/upload-and-extract/stream', authenticate, authorizeRoles(UserRole.ContentAdmin, UserRole.SystemAdmin), uploadPdf, DocumentController.uploadAndExtractPdfStream.bind(DocumentController));
+
+/**
+ * @openapi
  * /documents/pdf/{docId}/save-content:
  *   post:
  *     tags: [Documents]

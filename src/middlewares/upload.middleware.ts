@@ -71,7 +71,7 @@ export const uploadCsv = withMulterErrorHandling(
 export const uploadPdf = withMulterErrorHandling(
   multer({
     storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB — khop voi gioi han trong DocumentService.extractPdfText
     fileFilter: (_req, file, cb) => {
       const isPdf =
         file.mimetype === 'application/pdf' ||
@@ -83,7 +83,7 @@ export const uploadPdf = withMulterErrorHandling(
       cb(null, true);
     },
   }).single('file'),
-  { label: 'file PDF', maxBytes: 50 * 1024 * 1024 }
+  { label: 'file PDF', maxBytes: 100 * 1024 * 1024 }
 );
 
 export const uploadImage = withMulterErrorHandling(
