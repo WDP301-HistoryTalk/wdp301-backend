@@ -78,11 +78,53 @@ export class DashboardService {
     const messages = await Message.countDocuments();
     const messagesToday = await Message.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } });
 
+    const topCharactersAggr = await Message.aggregate([
+      {
+        $lookup: {
+          from: 'chatsessions',
+          localField: 'sessionId',
+          foreignField: '_id',
+          as: 'session'
+        }
+      },
+      { $unwind: '$session' },
+      {
+        $group: {
+          _id: '$session.characterId',
+          totalMessages: { $sum: 1 },
+          userMessages: { $sum: { $cond: [{ $eq: ['$isFromAi', false] }, 1, 0] } },
+          aiMessages: { $sum: { $cond: [{ $eq: ['$isFromAi', true] }, 1, 0] } }
+        }
+      },
+      { $sort: { totalMessages: -1 } },
+      { $limit: 10 }
+    ]);
+
+    const topCharacterIds = topCharactersAggr.map(c => c._id).filter(Boolean);
+    const topCharactersList = await Character.find({ _id: { $in: topCharacterIds } });
+    const characterMap = Object.fromEntries(topCharactersList.map(c => [c._id.toString(), c]));
+
+    const topCharacters = topCharactersAggr
+      .filter(c => c._id && characterMap[c._id.toString()])
+      .map(c => {
+        const char = characterMap[c._id.toString()];
+        return {
+          characterId: char._id,
+          name: char.name,
+          title: char.title || '',
+          imageUrl: char.imageUrl || '',
+          totalMessages: c.totalMessages,
+          userMessages: c.userMessages,
+          aiMessages: c.aiMessages
+        };
+      });
+
     return {
       users: { total: totalUsers, active: activeUsers, inactive: inactiveUsers, deleted: deletedUsers, newToday: newTodayUsers, newThisMonth: newThisMonthUsers },
       roles: { customers, contentAdmins, systemAdmins },
       content: { historicalContexts, publishedHistoricalContexts, characters, publishedCharacters, documents },
       chat: { sessions, messages, messagesToday },
+      topCharacters,
       systemHealth: { status: "UP", lastCheckedAt: new Date().toISOString() }
     };
   }

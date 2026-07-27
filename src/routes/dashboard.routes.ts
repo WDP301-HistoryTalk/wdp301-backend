@@ -17,12 +17,71 @@ router.use(authenticate, authorizeRoles(UserRole.SystemAdmin));
 
 /**
  * @openapi
- * /system-admin/overview:
+ * /system-admin/dashboard/overview:
  *   get:
  *     tags: [System Admin Dashboard]
  *     summary: Get dashboard overview
  *     security:
  *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard overview retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: "Dashboard overview retrieved successfully" }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     users:
+ *                       type: object
+ *                       properties:
+ *                         total: { type: integer, example: 100 }
+ *                         active: { type: integer, example: 80 }
+ *                         inactive: { type: integer, example: 20 }
+ *                         deleted: { type: integer, example: 5 }
+ *                         newToday: { type: integer, example: 2 }
+ *                         newThisMonth: { type: integer, example: 15 }
+ *                     roles:
+ *                       type: object
+ *                       properties:
+ *                         customers: { type: integer, example: 90 }
+ *                         contentAdmins: { type: integer, example: 8 }
+ *                         systemAdmins: { type: integer, example: 2 }
+ *                     content:
+ *                       type: object
+ *                       properties:
+ *                         historicalContexts: { type: integer, example: 10 }
+ *                         publishedHistoricalContexts: { type: integer, example: 8 }
+ *                         characters: { type: integer, example: 25 }
+ *                         publishedCharacters: { type: integer, example: 20 }
+ *                         documents: { type: integer, example: 12 }
+ *                     chat:
+ *                       type: object
+ *                       properties:
+ *                         sessions: { type: integer, example: 150 }
+ *                         messages: { type: integer, example: 1200 }
+ *                         messagesToday: { type: integer, example: 45 }
+ *                     topCharacters:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           characterId: { type: string, example: "60d5ec49f1b2c81184a7e9a1" }
+ *                           name: { type: string, example: "Quang Trung" }
+ *                           title: { type: string, example: "Hoàng đế Nguyễn Huệ" }
+ *                           imageUrl: { type: string, example: "https://example.com/avatar.jpg" }
+ *                           totalMessages: { type: integer, example: 250 }
+ *                           userMessages: { type: integer, example: 120 }
+ *                           aiMessages: { type: integer, example: 130 }
+ *                     systemHealth:
+ *                       type: object
+ *                       properties:
+ *                         status: { type: string, example: "UP" }
+ *                         lastCheckedAt: { type: string, example: "2026-07-27T15:00:00.000Z" }
  */
 router.get('/overview', DashboardController.getOverview);
 
