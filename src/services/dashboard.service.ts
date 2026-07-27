@@ -461,15 +461,23 @@ export class DashboardService {
     ]);
 
     const questionIds = topWrongQuestionsAggr.map(q => q._id);
-    const questions = await Question.find({ _id: { $in: questionIds } }).populate('quizId');
+    const questions = await Question.find({ _id: { $in: questionIds } });
     const questionMap = Object.fromEntries(questions.map(q => [q._id.toString(), q]));
     
+    const quizIdsFromQuestions = questions.map(q => q.quizId).filter(Boolean);
+    const questionQuizzes = await Quiz.find({ _id: { $in: quizIdsFromQuestions } });
+    const questionQuizMap = Object.fromEntries(questionQuizzes.map(q => [q._id.toString(), q]));
+
     const topWrongQuestions = topWrongQuestionsAggr.map(q => {
       const question = questionMap[q._id.toString()] as any;
+      const rawQuizId = question?.quizId ? question.quizId.toString() : null;
+      const quiz = rawQuizId ? questionQuizMap[rawQuizId] : null;
+
       return {
         questionId: q._id,
-        quizId: question?.quizId?._id || null,
-        quizTitle: question?.quizId?.title || 'Unknown',
+        questionContent: question?.content || '',
+        quizId: rawQuizId,
+        quizTitle: quiz?.title || 'Unknown',
         wrongAnswers: q.wrongAnswers,
         totalAnswers: q.totalAnswers,
         wrongRate: q.totalAnswers > 0 ? (q.wrongAnswers * 100) / q.totalAnswers : 0
