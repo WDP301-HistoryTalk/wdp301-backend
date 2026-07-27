@@ -32,6 +32,11 @@ const router = Router();
  *         schema:
  *           type: integer
  *           default: 10
+ *       - in: query
+ *         name: quizId
+ *         description: Optional — filter results to a single quiz's history
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Quiz results retrieved successfully

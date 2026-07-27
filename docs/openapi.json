@@ -3916,6 +3916,14 @@
               "type": "integer",
               "default": 10
             }
+          },
+          {
+            "in": "query",
+            "name": "quizId",
+            "description": "Optional — filter results to a single quiz's history",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {

@@ -281,9 +281,14 @@ export class QuizService {
     };
   }
 
-  static async getMyResults(userId: string, page = 0, size = 10): Promise<any> {
+  static async getMyResults(userId: string, page = 0, size = 10, quizId?: string): Promise<any> {
     const skip = page * size;
-    const sessions = await QuizSession.find({ uid: userId, endTime: { $exists: true } })
+    const filter: Record<string, unknown> = { uid: userId, endTime: { $exists: true } };
+    if (quizId) {
+      filter.quizId = quizId;
+    }
+
+    const sessions = await QuizSession.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(size)
@@ -292,7 +297,7 @@ export class QuizService {
         select: 'title',
       });
 
-    const total = await QuizSession.countDocuments({ uid: userId, endTime: { $exists: true } });
+    const total = await QuizSession.countDocuments(filter);
 
     const quizIds = sessions
       .map(s => (s.quizId as any)?._id)

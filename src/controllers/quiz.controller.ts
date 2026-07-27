@@ -50,7 +50,8 @@ export class QuizController {
     try {
       const page = parseInt(req.query.page as string) || 0;
       const size = parseInt(req.query.size as string) || 10;
-      const data = await QuizService.getMyResults(req.user!.id, page, size);
+      const quizId = req.query.quizId as string | undefined;
+      const data = await QuizService.getMyResults(req.user!.id, page, size, quizId);
       sendSuccess(res, data, 'Quiz results retrieved successfully');
     } catch (error) {
       next(error);
