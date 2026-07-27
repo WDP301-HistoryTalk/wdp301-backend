@@ -483,6 +483,7 @@ export class ChatService {
 
     let assistantContent = 'Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này.';
     let suggestedQuestions: string[] = [];
+    let quotes: string[] = [];
     let promptTokens = 0;
     let completionTokens = 0;
     let totalTokens = 0;
@@ -495,6 +496,7 @@ export class ChatService {
       const data = aiRes.data?.data || aiRes.data;
       assistantContent = data?.message || data?.response || data?.content || assistantContent;
       suggestedQuestions = data?.suggestedQuestions || [];
+      quotes = data?.quotes_used || data?.quotes || [];
       if (data?.tokenUsage) {
         promptTokens = data.tokenUsage.promptTokens || 0;
         completionTokens = data.tokenUsage.completionTokens || 0;
@@ -515,6 +517,7 @@ export class ChatService {
       isFromAi: true,
       content: assistantContent,
       suggestedQuestions,
+      quotes,
       token: completionTokens,
       messageType: messageType || 'TEXT',
     });

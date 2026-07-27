@@ -33,6 +33,17 @@ const router = Router();
  *         content:
  *           type: string
  *           example: "Xin chào! Ta là Nguyễn Du..."
+ *         suggestedQuestions:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Bạn muốn hỏi về Truyện Kiều?", "Bối cảnh lịch sử thời đó ra sao?"]
+ *         quotes:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Reference quotes from RAG documents used in constructing the AI response
+ *           example: ["Đoạn trường tân thanh được sáng tác vào đầu thế kỷ XIX..."]
  *         messageType:
  *           type: string
  *           enum: [TEXT, VOICE]
