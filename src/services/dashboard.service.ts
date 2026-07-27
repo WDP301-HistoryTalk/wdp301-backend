@@ -104,6 +104,10 @@ export class DashboardService {
     const topCharactersList = await Character.find({ _id: { $in: topCharacterIds } });
     const characterMap = Object.fromEntries(topCharactersList.map(c => [c._id.toString(), c]));
 
+    // char.imageUrl chỉ là path lưu trong bucket (vd "characters/<id>/image_2d.jpg"),
+    // phải resolve thành public URL giống character.service.ts, nếu không client
+    // nhận về path thô không load được ảnh.
+    const { supabaseStorageService } = await import('./supabase.service');
     const topCharacters = topCharactersAggr
       .filter(c => c._id && characterMap[c._id.toString()])
       .map(c => {
@@ -112,7 +116,7 @@ export class DashboardService {
           characterId: char._id,
           name: char.name,
           title: char.title || '',
-          imageUrl: char.imageUrl || '',
+          imageUrl: supabaseStorageService.resolvePublicUrl(char.imageUrl) || '',
           totalMessages: c.totalMessages,
           userMessages: c.userMessages,
           aiMessages: c.aiMessages
