@@ -31,9 +31,19 @@ export class QuizService {
 
     const quizzes = await Quiz.find(filter).populate('contextId', 'name');
     
+    const quizIds = quizzes.map(q => q._id);
+    const sessionCountsAggr = await QuizSession.aggregate([
+      { $match: { quizId: { $in: quizIds }, endTime: { $exists: true } } },
+      { $group: { _id: '$quizId', count: { $sum: 1 } } }
+    ]);
+    const playCountMap = Object.fromEntries(sessionCountsAggr.map(s => [s._id.toString(), s.count]));
+
     return quizzes.map(q => {
       const contextTitle = (q.contextId as any)?.name || '';
       const contextId = (q.contextId as any)?._id?.toString() || q.contextId?.toString() || '';
+      const actualCount = playCountMap[q._id.toString()] || 0;
+      const playCount = Math.max(q.playCount || 0, actualCount);
+
       return {
         quizId: q._id.toString(),
         title: q.title,
@@ -44,7 +54,7 @@ export class QuizService {
         chapterTitle: q.chapterTitle || '',
         era: q.era,
         durationSeconds: q.durationSeconds || 0,
-        playCount: q.playCount || 0,
+        playCount,
         rating: q.rating || 0,
         ratingCount: q.ratingCount || 0,
         contextId,
@@ -65,7 +75,11 @@ export class QuizService {
       throw new AppError('Không tìm thấy quiz', 404);
     }
 
-    const [userPlayCount, myRating] = await Promise.all([
+    const [completedPlayCount, userPlayCount, myRating] = await Promise.all([
+      QuizSession.countDocuments({
+        quizId: quiz._id,
+        endTime: { $exists: true },
+      }),
       userId
         ? QuizSession.countDocuments({
             quizId: quiz._id,
@@ -75,6 +89,8 @@ export class QuizService {
         : 0,
       userId ? QuizService.getMyRating(userId, quiz._id.toString()) : null,
     ]);
+
+    const playCount = Math.max(quiz.playCount || 0, completedPlayCount);
 
     return {
       quizId: quiz._id.toString(),
@@ -86,7 +102,7 @@ export class QuizService {
       chapterTitle: quiz.chapterTitle || '',
       era: quiz.era,
       durationSeconds: quiz.durationSeconds || 0,
-      playCount: quiz.playCount || 0,
+      playCount,
       userPlayCount,
       rating: quiz.rating || 0,
       ratingCount: quiz.ratingCount || 0,
@@ -473,9 +489,19 @@ export class QuizService {
 
     const total = await Quiz.countDocuments(filter);
 
+    const quizIds = quizzes.map(q => q._id);
+    const sessionCountsAggr = await QuizSession.aggregate([
+      { $match: { quizId: { $in: quizIds }, endTime: { $exists: true } } },
+      { $group: { _id: '$quizId', count: { $sum: 1 } } }
+    ]);
+    const playCountMap = Object.fromEntries(sessionCountsAggr.map(s => [s._id.toString(), s.count]));
+
     const content = await Promise.all(
       quizzes.map(async q => {
         const questions = await Question.find({ quizId: q._id }).sort({ orderIndex: 1 });
+        const actualCount = playCountMap[q._id.toString()] || 0;
+        const playCount = Math.max(q.playCount || 0, actualCount);
+
         return {
           quizId: q._id.toString(),
           title: q.title,
@@ -486,7 +512,7 @@ export class QuizService {
           chapterTitle: q.chapterTitle || '',
           era: q.era,
           durationSeconds: q.durationSeconds || 900,
-          playCount: q.playCount || 0,
+          playCount,
           rating: q.rating || 0,
           isPublished: q.isPublished ?? true,
           status: this.getQuizStatus(q),
