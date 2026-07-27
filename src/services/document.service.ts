@@ -44,6 +44,51 @@ function stripPrintArtifacts(text: string): string {
     .trim();
 }
 
+// PDFParse chen '\n' o cuoi MOI dong hien thi trong trang PDF (wrap tu
+// nhien do het chieu ngang), khong phai o cuoi doan van. Da thu 2 heuristic
+// khac truoc do va deu sai theo huong nguoc nhau:
+//  - Dua vao PDFParse thinh thoang chen THEM 1 '\n' o gian dong lon (ranh
+//    gioi doan that su) -> khong on dinh, nhieu trang khong co gian dong
+//    nao du lon, ca trang gop thanh 1 doan duy nhat.
+//  - Dua vao DO DAI dong (dong ngan hon dong dai nhat tren trang = dong
+//    cuoi doan/tieu de) -> sai vi PDFParse doi khi tach 1 dong hien thi
+//    that su thanh 2 dong trong text (do lech Y nho, vd dau thanh dieu
+//    tieng Viet), tao ra cap "dong dai + dong con lai rat ngan" NAM CHUNG
+//    1 dong that — dung do dai se hieu nham dong con lai la cuoi doan va
+//    cat doan giua chung.
+// Chi con tin hieu dang tin cay: mot dong THAT SU la cuoi cau/doan hau het
+// se ket thuc bang dau cau ket cau (. ! ? : ; dau ngoac/ngoac kep dong).
+// Vi vay gop 2 dong lien tiep tru khi dong truoc da ket thuc bang dau cau
+// do, hoac co dong trong (PDFParse thinh thoang van chen duoc) phan cach.
+const SENTENCE_END_RE = /[.!?:;"'”’)\]、。！？]$/;
+
+function unwrapLines(text: string): string {
+  const lines = text.split('\n').map((l) => l.trim());
+
+  const blocks: string[] = [];
+  let current = '';
+
+  for (const line of lines) {
+    if (!line) {
+      if (current) {
+        blocks.push(current);
+        current = '';
+      }
+      continue;
+    }
+
+    current = current ? `${current} ${line}` : line;
+
+    if (SENTENCE_END_RE.test(line)) {
+      blocks.push(current);
+      current = '';
+    }
+  }
+  if (current) blocks.push(current);
+
+  return blocks.join('\n\n').trim();
+}
+
 // ─── AI Service Async Helpers ─────────────────────────────────────────────────
 
 async function triggerAiProcess(docId: string, entityId: string, content: string): Promise<void> {
@@ -294,7 +339,7 @@ export class DocumentService {
           }
         }
 
-        pageTexts[page.num - 1] = pageText;
+        pageTexts[page.num - 1] = unwrapLines(pageText);
         onProgress?.(page.num, pageCount);
       }
 
