@@ -80,6 +80,9 @@ export class AuthService {
     if (user.deletedAt) {
       throw new AppError('Tài khoản đã bị vô hiệu hóa', 401);
     }
+    if (user.isActive === false) {
+      throw new AppError('Tài khoản đã bị vô hiệu hóa', 401);
+    }
 
     await User.findByIdAndUpdate(user._id, { lastActiveDate: new Date() });
 
@@ -112,9 +115,12 @@ export class AuthService {
       throw new AppError('Refresh token không hợp lệ hoặc đã hết hạn', 401);
     }
 
-    const user = await User.findById(decoded.id).select('+refreshToken');
+    const user = await User.findById(decoded.id).select('+refreshToken isActive deletedAt email role');
     if (!user || user.refreshToken !== incomingRefreshToken) {
       throw new AppError('Refresh token không hợp lệ hoặc đã bị thu hồi', 401);
+    }
+    if (user.deletedAt || user.isActive === false) {
+      throw new AppError('Tài khoản đã bị vô hiệu hóa', 401);
     }
 
     const tokens = this.generateTokens(user._id.toString(), user.email, user.role);
@@ -164,6 +170,9 @@ export class AuthService {
     }
 
     if (user.deletedAt) {
+      throw new AppError('Tài khoản đã bị vô hiệu hóa', 401);
+    }
+    if (user.isActive === false) {
       throw new AppError('Tài khoản đã bị vô hiệu hóa', 401);
     }
 

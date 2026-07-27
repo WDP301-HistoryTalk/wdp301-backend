@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { AppError } from '../utils/app-error';
+import User from '../models/user.model';
 
 interface DecodedToken {
   id: string;
@@ -11,7 +12,7 @@ interface DecodedToken {
   exp: number;
 }
 
-export const authenticate = (req: Request, _res: Response, next: NextFunction): void => {
+export const authenticate = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
@@ -20,6 +21,17 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction): 
 
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, config.jwt.secret) as DecodedToken;
+
+    const user = await User.findById(decoded.id).select('isActive deletedAt');
+    if (!user) {
+      throw new AppError('Người dùng không tồn tại', 404);
+    }
+    if (user.isActive === false) {
+      throw new AppError('Tài khoản của bạn đã bị vô hiệu hóa', 403);
+    }
+    if (user.deletedAt) {
+      throw new AppError('Tài khoản của bạn đã bị xóa', 403);
+    }
 
     req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
     next();
@@ -30,7 +42,7 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction): 
 };
 
 // Optional auth - sets req.user if token valid, otherwise continues without error
-export const optionalAuth = (req: Request, _res: Response, next: NextFunction): void => {
+export const optionalAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
@@ -40,7 +52,11 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction): 
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, config.jwt.secret) as DecodedToken;
 
-    req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
+    const user = await User.findById(decoded.id).select('isActive deletedAt');
+    if (user && user.isActive !== false && !user.deletedAt) {
+      req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
+    }
+
     next();
   } catch {
     next(new AppError('Token không hợp lệ hoặc đã hết hạn', 401));
