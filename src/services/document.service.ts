@@ -1,7 +1,9 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
-import { PDFParse } from 'pdf-parse';
-import { createWorker } from 'tesseract.js';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PDFParse } = require('pdf-parse');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { createWorker } = require('tesseract.js');
 import DocumentModel from '../models/document.model';
 import HistoricalContext from '../models/historical-context.model';
 import Character from '../models/character.model';
