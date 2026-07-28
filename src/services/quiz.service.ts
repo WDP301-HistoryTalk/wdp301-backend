@@ -18,7 +18,7 @@ export class QuizService {
 
   // --- Customer / Public Methods ---
 
-  static async listQuizzes(search?: string): Promise<any[]> {
+  static async listQuizzes(search?: string, contextId?: string): Promise<any[]> {
     const filter: any = {
       isActive: true,
       isPublished: { $ne: false },
@@ -27,6 +27,9 @@ export class QuizService {
 
     if (search) {
       filter.title = { $regex: search, $options: 'i' };
+    }
+    if (contextId) {
+      filter.contextId = contextId;
     }
 
     const quizzes = await Quiz.find(filter).populate('contextId', 'name');
@@ -113,8 +116,9 @@ export class QuizService {
   }
 
   static async startSession(userId: string, quizId: string, limitedTime?: number): Promise<any> {
-    if (limitedTime !== undefined && (!Number.isInteger(limitedTime) || limitedTime <= 0)) {
-      throw new AppError('limitedTime must be a positive integer', 400);
+    // 0 = no time limit (unlimited); undefined = fall back to the quiz's own default.
+    if (limitedTime !== undefined && (!Number.isInteger(limitedTime) || limitedTime < 0)) {
+      throw new AppError('limitedTime must be a non-negative integer', 400);
     }
 
     const quiz = await Quiz.findOne({
@@ -129,12 +133,12 @@ export class QuizService {
     }
 
     const questions = await Question.find({ quizId: quiz._id }).sort({ orderIndex: 1 });
-    const sessionLimitedTime = limitedTime ?? quiz.durationSeconds ?? 900;
+    const sessionLimitedTime = limitedTime ?? quiz.durationSeconds ?? 0;
 
     const session = await QuizSession.create({
       quizId: quiz._id,
       uid: new mongoose.Types.ObjectId(userId),
-      limitedTime: sessionLimitedTime > 0 ? sessionLimitedTime : 900,
+      limitedTime: sessionLimitedTime,
       startTime: new Date(),
       totalQuestions: questions.length,
     });
@@ -181,8 +185,12 @@ export class QuizService {
       throw new AppError('Phiên làm bài đã được nộp', 400);
     }
 
-    const deadline = new Date(session.startTime.getTime() + session.limitedTime * 1000);
-    const endTime = new Date() > deadline ? deadline : new Date();
+    const now = new Date();
+    let endTime = now;
+    if (session.limitedTime > 0) {
+      const deadline = new Date(session.startTime.getTime() + session.limitedTime * 1000);
+      endTime = now > deadline ? deadline : now;
+    }
 
     const quizId = session.quizId;
     const questions = await Question.find({ quizId }).sort({ orderIndex: 1 });
@@ -470,8 +478,8 @@ export class QuizService {
 
   // --- Staff / Admin Methods ---
 
-  static async staffListQuizzes(query: { search?: string; grade?: number; era?: string; page?: number; size?: number }): Promise<any> {
-    const { search, grade, era, page = 0, size = 10 } = query;
+  static async staffListQuizzes(query: { search?: string; grade?: number; era?: string; contextId?: string; page?: number; size?: number }): Promise<any> {
+    const { search, grade, era, contextId, page = 0, size = 10 } = query;
     const skip = page * size;
 
     const filter: any = {};
@@ -483,6 +491,9 @@ export class QuizService {
     }
     if (era) {
       filter.era = era;
+    }
+    if (contextId) {
+      filter.contextId = contextId;
     }
 
     const quizzes = await Quiz.find(filter)

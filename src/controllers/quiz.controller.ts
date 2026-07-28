@@ -9,7 +9,8 @@ export class QuizController {
   static async listQuizzes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const search = req.query.search as string;
-      const data = await QuizService.listQuizzes(search);
+      const contextId = req.query.contextId as string | undefined;
+      const data = await QuizService.listQuizzes(search, contextId);
       sendSuccess(res, data, 'Quizzes retrieved successfully');
     } catch (error) {
       next(error);
@@ -101,10 +102,11 @@ export class QuizController {
       const search = req.query.search as string;
       const grade = req.query.grade ? parseInt(req.query.grade as string) : undefined;
       const era = req.query.era as string;
+      const contextId = req.query.contextId as string | undefined;
       const page = parseInt(req.query.page as string) || 0;
       const size = parseInt(req.query.size as string) || 10;
 
-      const data = await QuizService.staffListQuizzes({ search, grade, era, page, size });
+      const data = await QuizService.staffListQuizzes({ search, grade, era, contextId, page, size });
       sendSuccess(res, data, 'Quizzes retrieved successfully');
     } catch (error) {
       next(error);

@@ -222,6 +222,11 @@ router.post('/submit', authenticate, QuizController.submitSession);
  *         schema:
  *           type: string
  *         description: Search by quiz title
+ *       - in: query
+ *         name: contextId
+ *         schema:
+ *           type: string
+ *         description: Filter by historical context (trận đánh / sự kiện lịch sử) id
  *     responses:
  *       200:
  *         description: Quizzes retrieved successfully
@@ -287,8 +292,8 @@ router.get('/:quizId', optionalAuth, QuizController.getQuizById);
  *         required: false
  *         schema:
  *           type: integer
- *           minimum: 1
- *         description: Optional session time limit in seconds
+ *           minimum: 0
+ *         description: Session time limit in seconds. 0 (or omitted with no quiz default) means no time limit.
  *     responses:
  *       200:
  *         description: Quiz session started successfully
