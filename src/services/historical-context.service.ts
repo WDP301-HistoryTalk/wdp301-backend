@@ -141,6 +141,8 @@ export class HistoricalContextService {
   }
 
   static async update(id: string, data: UpdateHistoricalContextInput): Promise<any> {
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
+
     const updateFields: any = { ...(await sanitizeMediaFields(data)), updatedAt: new Date() };
     const updateQuery: any = {};
     
@@ -153,7 +155,6 @@ export class HistoricalContextService {
     }
     updateQuery.$set = updateFields;
 
-    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const context = await HistoricalContext.findOneAndUpdate(
       { _id: id },
       updateQuery,
@@ -164,6 +165,21 @@ export class HistoricalContextService {
 
     if (!context) {
       throw new AppError('Không tìm thấy bối cảnh lịch sử', 404);
+    }
+
+    // Cascade unpublish characters if context is unpublished or deactivated
+    if (data.isPublished === false || data.isActive === false) {
+      const Character = (await import('../models/character.model')).default;
+      await Character.updateMany(
+        {
+          $or: [
+            { _id: { $in: context.characterIds || [] } },
+            { contextIds: context._id }
+          ],
+          isPublished: true,
+        },
+        { $set: { isPublished: false, updatedAt: new Date() } }
+      );
     }
 
     return await this.mapToResponse(context);

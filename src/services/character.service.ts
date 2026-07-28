@@ -20,6 +20,7 @@ export interface CreateCharacterInput {
   isDeathBc?: boolean;
   era?: EventEra;
   personality?: string;
+  contextIds?: string[];
 }
 
 export interface UpdateCharacterInput extends Partial<CreateCharacterInput> {
@@ -186,6 +187,32 @@ export class CharacterService {
   }
 
   static async update(id: string, data: UpdateCharacterInput): Promise<any> {
+    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
+
+    const existingChar = await Character.findById(id);
+    if (!existingChar) {
+      throw new AppError('Không tìm thấy nhân vật', 404);
+    }
+
+    if (data.isPublished === true) {
+      const contextIdsToCheck = data.contextIds || existingChar.contextIds || [];
+      if (contextIdsToCheck.length > 0) {
+        const draftContexts = await HistoricalContext.find({
+          _id: { $in: contextIdsToCheck },
+          isPublished: false,
+          deletedAt: { $exists: false },
+        }).select('name');
+
+        if (draftContexts.length > 0) {
+          const draftNames = draftContexts.map(c => `"${c.name}"`).join(', ');
+          throw new AppError(
+            `Không thể xuất bản nhân vật vì bối cảnh lịch sử liên kết (${draftNames}) chưa được xuất bản.`,
+            400
+          );
+        }
+      }
+    }
+
     const updateFields: any = { ...(await sanitizeMediaFields(data)), updatedAt: new Date() };
     const updateQuery: any = {};
     
@@ -198,7 +225,6 @@ export class CharacterService {
     }
     updateQuery.$set = updateFields;
 
-    if (!mongoose.isValidObjectId(id)) throw new AppError('ID không hợp lệ', 400);
     const character = await Character.findOneAndUpdate(
       { _id: id },
       updateQuery,
@@ -297,6 +323,13 @@ export class CharacterService {
 
     if (context.characterIds.some((id) => id.toString() === character._id.toString())) {
       throw new AppError('Nhân vật đã được liên kết với bối cảnh lịch sử này', 400);
+    }
+
+    if (character.isPublished && !context.isPublished) {
+      throw new AppError(
+        `Không thể liên kết nhân vật đã xuất bản với bối cảnh lịch sử chưa xuất bản ("${context.name}").`,
+        400
+      );
     }
 
     await HistoricalContext.findOneAndUpdate(
