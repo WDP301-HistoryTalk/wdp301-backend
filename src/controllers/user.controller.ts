@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/user.service';
+import { AuthService } from '../services/auth.service';
 import { PushService } from '../services/push.service';
 import { sendSuccess } from '../utils/response';
+import { UserRole } from '../types/enums';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapToUserProfile = async (user: any) => {
@@ -78,10 +80,44 @@ export class UserController {
     try {
       const page = parseInt(req.query.page as string) || 0;
       const size = parseInt(req.query.size as string) || 10;
-      const data: any = await UserService.listUsers(page, size);
+      const role = req.query.role ? (req.query.role as string).toUpperCase() : undefined;
+      const search = req.query.search ? (req.query.search as string).trim() : undefined;
+      const data: any = await UserService.listUsers(page, size, role, search);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data.content = await Promise.all(data.content.map((u: any) => mapToUserProfile(u)));
       sendSuccess(res, data, 'Users retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async registerContentAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await AuthService.registerContentAdmin(req.body);
+      sendSuccess(res, result, 'Content Admin account created successfully', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async listContentAdmins(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const page = parseInt(req.query.page as string) || 0;
+      const size = parseInt(req.query.size as string) || 10;
+      const search = req.query.search ? (req.query.search as string).trim() : undefined;
+      const data: any = await UserService.listUsers(page, size, UserRole.ContentAdmin, search);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data.content = await Promise.all(data.content.map((u: any) => mapToUserProfile(u)));
+      sendSuccess(res, data, 'Content Admins retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getContentAdminById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = await UserService.getContentAdminById(req.params.id as string);
+      sendSuccess(res, await mapToUserProfile(user), 'Content Admin retrieved successfully');
     } catch (error) {
       next(error);
     }

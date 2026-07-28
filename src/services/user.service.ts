@@ -88,13 +88,30 @@ export class UserService {
 
   // --- Admin Methods ---
 
-  static async listUsers(page: number = 0, size: number = 10) {
+  static async listUsers(page: number = 0, size: number = 10, role?: string, search?: string) {
     const skip = page * size;
-    const users = await User.find().skip(skip).limit(size).populate('tierId');
-    const total = await User.countDocuments();
-    const content = users;
+    const filter: Record<string, unknown> = {};
+    
+    if (role) {
+      filter.role = role;
+    }
+    
+    if (search) {
+      filter.$or = [
+        { userName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { fullName: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(filter).skip(skip).limit(size).populate('tierId').sort({ createdAt: -1 }),
+      User.countDocuments(filter),
+    ]);
+
     return {
-      content,
+      content: users,
       totalElements: total,
       totalPages: Math.ceil(total / size),
       currentPage: page,
@@ -102,6 +119,14 @@ export class UserService {
       hasNext: skip + size < total,
       hasPrevious: page > 0,
     };
+  }
+
+  static async getContentAdminById(id: string) {
+    const user = await User.findById(id).populate('tierId');
+    if (!user || user.role !== UserRole.ContentAdmin) {
+      throw new AppError('Không tìm thấy tài khoản Content Admin', 404);
+    }
+    return user;
   }
 
   static async adminUpdateUser(id: string, data: any) {

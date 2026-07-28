@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, authorizeRoles } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { deviceTokenSchema, removeDeviceTokenSchema } from '../validations/user.validation';
+import { registerContentAdminSchema } from '../validations/auth.validation';
+import { UserRole } from '../types/enums';
 
 const router = Router();
 
@@ -234,19 +236,160 @@ router.patch('/me/password', UserController.changePassword);
 
 // --- Admin Methods ---
 
-import { authorizeRoles } from '../middlewares/auth.middleware';
-import { UserRole } from '../types/enums';
-
 /**
  * @openapi
  * /users:
  *   get:
  *     tags: [Users]
- *     summary: List all users (SystemAdmin only)
+ *     summary: List all users with optional role and search filtering (SystemAdmin only)
  *     security:
  *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [CUSTOMER, CONTENT_ADMIN, SYSTEM_ADMIN]
+ *         description: Filter users by role
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search keyword for username, email, fullname, or phone number
+ *     responses:
+ *       200:
+ *         description: Paginated list of users retrieved successfully
  */
 router.get('/', authorizeRoles(UserRole.SystemAdmin), UserController.listUsers);
+
+/**
+ * @openapi
+ * /users/content-admins:
+ *   get:
+ *     tags: [Content Admin Management]
+ *     summary: List all Content Admin accounts (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of Content Admin accounts retrieved successfully
+ *   post:
+ *     tags: [Content Admin Management]
+ *     summary: Create a new Content Admin account (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterContentAdminBody'
+ *     responses:
+ *       201:
+ *         description: Content Admin account created successfully
+ */
+router.get('/content-admins', authorizeRoles(UserRole.SystemAdmin), UserController.listContentAdmins);
+router.post('/content-admins', authorizeRoles(UserRole.SystemAdmin), validate(registerContentAdminSchema), UserController.registerContentAdmin);
+
+/**
+ * @openapi
+ * /users/content-admins/{id}:
+ *   get:
+ *     tags: [Content Admin Management]
+ *     summary: Get Content Admin account details by ID (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Content Admin account details retrieved successfully
+ *   patch:
+ *     tags: [Content Admin Management]
+ *     summary: Update Content Admin account details (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Content Admin account updated successfully
+ */
+router.get('/content-admins/:id', authorizeRoles(UserRole.SystemAdmin), UserController.getContentAdminById);
+router.patch('/content-admins/:id', authorizeRoles(UserRole.SystemAdmin), UserController.adminUpdateUser);
+
+/**
+ * @openapi
+ * /users/content-admins/{id}/deactivate:
+ *   patch:
+ *     tags: [Content Admin Management]
+ *     summary: Deactivate a Content Admin account (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Content Admin account deactivated successfully
+ */
+router.patch('/content-admins/:id/deactivate', authorizeRoles(UserRole.SystemAdmin), UserController.deactivateUser);
+
+/**
+ * @openapi
+ * /users/content-admins/{id}/restore:
+ *   patch:
+ *     tags: [Content Admin Management]
+ *     summary: Restore a deactivated Content Admin account (SystemAdmin only)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Content Admin account restored successfully
+ */
+router.patch('/content-admins/:id/restore', authorizeRoles(UserRole.SystemAdmin), UserController.restoreUser);
 
 /**
  * @openapi
