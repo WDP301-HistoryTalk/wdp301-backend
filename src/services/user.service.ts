@@ -209,6 +209,27 @@ export class UserService {
     user.deletedAt = undefined;
     user.isActive = true;
     await user.save();
+
+    // Cascade restore user content (chat sessions, quiz sessions, characters, contexts)
+    await Promise.all([
+      ChatSession.updateMany(
+        { uid: targetUserId },
+        { $unset: { deletedAt: 1 } }
+      ),
+      QuizSession.updateMany(
+        { uid: targetUserId },
+        { $unset: { deletedAt: 1 } }
+      ),
+      Character.updateMany(
+        { createdBy: targetUserId },
+        { $unset: { deletedAt: 1 }, $set: { isActive: true } }
+      ),
+      HistoricalContext.updateMany(
+        { createdBy: targetUserId },
+        { $unset: { deletedAt: 1 }, $set: { isActive: true } }
+      ),
+    ]);
+
     return user;
   }
 
@@ -230,6 +251,27 @@ export class UserService {
       }
     }
 
+    if (restoredIds.length > 0) {
+      await Promise.all([
+        ChatSession.updateMany(
+          { uid: { $in: restoredIds } },
+          { $unset: { deletedAt: 1 } }
+        ),
+        QuizSession.updateMany(
+          { uid: { $in: restoredIds } },
+          { $unset: { deletedAt: 1 } }
+        ),
+        Character.updateMany(
+          { createdBy: { $in: restoredIds } },
+          { $unset: { deletedAt: 1 }, $set: { isActive: true } }
+        ),
+        HistoricalContext.updateMany(
+          { createdBy: { $in: restoredIds } },
+          { $unset: { deletedAt: 1 }, $set: { isActive: true } }
+        ),
+      ]);
+    }
+
     const failedIds = userIds.filter(id => !restoredIds.includes(id));
     return {
       restoredCount: restoredIds.length,
@@ -244,10 +286,35 @@ export class UserService {
    * PATCH /users/restore/all
    */
   static async restoreAllUsers() {
+    const deactivatedUsers = await User.find({ deletedAt: { $ne: null, $exists: true } }).select('_id');
+    const deactivatedUserIds = deactivatedUsers.map(u => u._id);
+
     const result = await User.updateMany(
       { deletedAt: { $ne: null, $exists: true } },
-      { $unset: { deletedAt: '' }, $set: { isActive: true } }
+      { $unset: { deletedAt: 1 }, $set: { isActive: true } }
     );
+
+    if (deactivatedUserIds.length > 0) {
+      await Promise.all([
+        ChatSession.updateMany(
+          { uid: { $in: deactivatedUserIds } },
+          { $unset: { deletedAt: 1 } }
+        ),
+        QuizSession.updateMany(
+          { uid: { $in: deactivatedUserIds } },
+          { $unset: { deletedAt: 1 } }
+        ),
+        Character.updateMany(
+          { createdBy: { $in: deactivatedUserIds } },
+          { $unset: { deletedAt: 1 }, $set: { isActive: true } }
+        ),
+        HistoricalContext.updateMany(
+          { createdBy: { $in: deactivatedUserIds } },
+          { $unset: { deletedAt: 1 }, $set: { isActive: true } }
+        ),
+      ]);
+    }
+
     return result.modifiedCount;
   }
 
