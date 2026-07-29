@@ -81,6 +81,15 @@ export interface TodayResponse {
   claimableTokens: number;
 }
 
+export interface UpdateQuestInput {
+  type?: QuestType;
+  title?: string;
+  target?: number;
+  rewardTokens?: number;
+  order?: number;
+  isActive?: boolean;
+}
+
 export class GamificationService {
   /**
    * Lấy danh sách quest đang bật từ DB (cache 60s).
@@ -123,20 +132,24 @@ export class GamificationService {
   static async recordProgress(userId: string, type: QuestType): Promise<void> {
     try {
       if (!mongoose.isValidObjectId(userId)) return;
+      const date = todayKey();
+      const uid = new mongoose.Types.ObjectId(userId);
+
+      // Streak = "có hoạt động học hôm nay" — PHẢI chạy vô điều kiện, không phụ
+      // thuộc việc có quest def nào khớp type hay không. Nếu đặt sau đoạn tìm
+      // quest bên dưới, staff xoá/tắt hết quest của 1 type sẽ vô tình khiến
+      // streak ngừng cộng cho toàn bộ hoạt động loại đó mà không ai biết.
+      await GamificationService.touchStreak(uid, date);
+
       const defs = await GamificationService.getQuestDefs();
       const quest = defs.find((q) => q.type === type);
       if (!quest) return;
-
-      const date = todayKey();
-      const uid = new mongoose.Types.ObjectId(userId);
 
       await UserQuestLog.findOneAndUpdate(
         { uid, questId: quest.questId, date },
         { $inc: { progress: 1 } },
         { upsert: true, setDefaultsOnInsert: true }
       );
-
-      await GamificationService.touchStreak(uid, date);
     } catch (err) {
       logger.error('[gamification] recordProgress failed', err);
     }
@@ -276,5 +289,56 @@ export class GamificationService {
       rewardTokens: quest.rewardTokens,
       tokenBalance: updated?.token ?? 0,
     };
+  }
+
+  // ── Admin CRUD (staff quản lý định nghĩa quest) ─────────────────────────
+
+  /**
+   * [Admin] Toàn bộ quest, kể cả đang tắt — để staff còn thấy mà bật lại.
+   * Khác `getQuestDefs()` (chỉ lấy `isActive:true`, dùng cho user thường).
+   */
+  static async listQuestsAdmin(): Promise<IDailyQuest[]> {
+    return DailyQuest.find().sort({ order: 1 });
+  }
+
+  static async getQuestByIdAdmin(id: string): Promise<IDailyQuest> {
+    const quest = await DailyQuest.findById(id);
+    if (!quest) throw new AppError('Không tìm thấy nhiệm vụ', 404);
+    return quest;
+  }
+
+  /**
+   * Chặn 2 quest active cùng `type`: recordProgress() chỉ ghi tiến độ vào quest
+   * ĐẦU TIÊN khớp type (`defs.find`) — quest active thứ 2 cùng type sẽ mãi mãi
+   * progress = 0 vì không hành động thật nào trỏ vào nó được.
+   */
+  private static async assertNoActiveTypeCollision(type: QuestType, excludeId?: string): Promise<void> {
+    const conflict = await DailyQuest.findOne({
+      type,
+      isActive: true,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (conflict) {
+      throw new AppError(
+        `Đã có nhiệm vụ đang bật cho loại "${type}" (${conflict.title}). Chỉ 1 nhiệm vụ active/loại được tự động cộng tiến độ — hãy tắt nhiệm vụ đó trước.`,
+        400
+      );
+    }
+  }
+
+  /** questId là khoá nối với UserQuestLog nên không nhận trong `data` (chặn ở tầng validation). */
+  static async updateQuest(id: string, data: UpdateQuestInput): Promise<IDailyQuest> {
+    const current = await DailyQuest.findById(id);
+    if (!current) throw new AppError('Không tìm thấy nhiệm vụ', 404);
+
+    const nextType = data.type ?? current.type;
+    const nextActive = data.isActive ?? current.isActive;
+    if (nextActive) {
+      await GamificationService.assertNoActiveTypeCollision(nextType, id);
+    }
+
+    const updated = await DailyQuest.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+    GamificationService.invalidateDefsCache();
+    return updated as IDailyQuest;
   }
 }

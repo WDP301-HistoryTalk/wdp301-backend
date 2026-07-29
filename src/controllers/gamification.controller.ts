@@ -21,4 +21,33 @@ export class GamificationController {
       next(error);
     }
   }
+
+  // ── Staff: quản lý định nghĩa quest (chỉ Read + Update, không Create/Delete) ──
+
+  static async staffListQuests(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await GamificationService.listQuestsAdmin();
+      sendSuccess(res, data, 'Lấy danh sách nhiệm vụ thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async staffGetQuest(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await GamificationService.getQuestByIdAdmin(req.params.id as string);
+      sendSuccess(res, data, 'Lấy thông tin nhiệm vụ thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async staffUpdateQuest(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await GamificationService.updateQuest(req.params.id as string, req.body);
+      sendSuccess(res, data, 'Cập nhật nhiệm vụ thành công');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

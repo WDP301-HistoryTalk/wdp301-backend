@@ -12,6 +12,7 @@ import paymentRoutes from './payment.routes';
 import systemTrashRoutes from './system-trash.routes';
 import tierRoutes from './tier.routes';
 import gamificationRoutes from './gamification.routes';
+import staffQuestRoutes from './staff-quest.routes';
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use('/system-admin/tiers', tierRoutes);
 router.use('/tiers', tierRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/gamification', gamificationRoutes);
+router.use('/staff/quests', staffQuestRoutes);
 router.use('/system/trash', systemTrashRoutes);
 router.use('/', documentRoutes); // historical-documents & character-documents
 
