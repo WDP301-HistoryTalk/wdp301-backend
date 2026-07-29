@@ -5863,15 +5863,233 @@
         "tags": [
           "Users"
         ],
-        "summary": "List all users (SystemAdmin only)",
+        "summary": "List all users with optional role and search filtering (SystemAdmin only)",
         "security": [
           {
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CUSTOMER",
+                "CONTENT_ADMIN",
+                "SYSTEM_ADMIN"
+              ]
+            },
+            "description": "Filter users by role"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search keyword for username, email, fullname, or phone number"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Paginated list of users retrieved successfully"
+          }
+        }
+      }
+    },
+    "/users/content-admins": {
+      "get": {
+        "tags": [
+          "Content Admin Management"
+        ],
+        "summary": "List all Content Admin accounts (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of Content Admin accounts retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content Admin Management"
+        ],
+        "summary": "Create a new Content Admin account (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterContentAdminBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Content Admin account created successfully"
+          }
+        }
+      }
+    },
+    "/users/content-admins/{id}": {
+      "get": {
+        "tags": [
+          "Content Admin Management"
+        ],
+        "summary": "Get Content Admin account details by ID (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content Admin account details retrieved successfully"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Content Admin Management"
+        ],
+        "summary": "Update Content Admin account details (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content Admin account updated successfully"
+          }
+        }
+      }
+    },
+    "/users/content-admins/{id}/deactivate": {
+      "patch": {
+        "tags": [
+          "Content Admin Management"
+        ],
+        "summary": "Deactivate a Content Admin account (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content Admin account deactivated successfully"
+          }
+        }
+      }
+    },
+    "/users/content-admins/{id}/restore": {
+      "patch": {
+        "tags": [
+          "Content Admin Management"
+        ],
+        "summary": "Restore a deactivated Content Admin account (SystemAdmin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content Admin account restored successfully"
           }
         }
       }

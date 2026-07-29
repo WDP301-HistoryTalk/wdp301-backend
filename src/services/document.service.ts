@@ -1,9 +1,16 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { PDFParse } = require('pdf-parse');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { createWorker } = require('tesseract.js');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let PDFParse: any;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfModule = require('pdf-parse');
+  PDFParse = pdfModule.PDFParse || pdfModule;
+} catch {
+  // Will be lazily loaded in extractPdfText if invoked
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let createWorker: any;
 import DocumentModel from '../models/document.model';
 import HistoricalContext from '../models/historical-context.model';
 import Character from '../models/character.model';
@@ -295,6 +302,11 @@ export class DocumentService {
       throw new AppError('Kích thước file PDF vượt quá giới hạn 100MB', 400);
     }
 
+    if (!PDFParse) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pdfModule = require('pdf-parse');
+      PDFParse = pdfModule.PDFParse || pdfModule;
+    }
     const parser = new PDFParse({ data: fileBuffer });
     let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
     try {
@@ -319,6 +331,10 @@ export class DocumentService {
         if (isPageSparse && ocrPageCount < MAX_OCR_PAGES) {
           ocrPageCount += 1;
           try {
+            if (!createWorker) {
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
+              createWorker = require('tesseract.js').createWorker;
+            }
             worker ??= await createWorker(['vie', 'eng']);
             const screenshot = await parser.getScreenshot({
               first: page.num,
